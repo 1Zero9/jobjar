@@ -56,3 +56,15 @@
   - `npm run db:generate` passed
   - `npm run lint` passed
   - `npm run build` passed
+- Split product into dedicated experiences:
+  - `/` Daily use screen for quick Start/Done/Not done actions
+  - `/admin` structured management workspace
+  - `/tv` public dashboard view
+- Added Admin sections for People, Rooms/Areas, and Tasks.
+- Added assignment support in task setup (assign job to household member).
+- Added recurrence setup in task forms (type, interval, and time).
+- Added TV dashboard with metrics and pie charts for RAG and completion state.
+- Updated server actions to revalidate all core views (`/`, `/admin`, `/tv`) after changes.
+- Validation completed:
+  - `npm run lint` passed
+  - `npm run build` passed

@@ -27,7 +27,7 @@ export async function createRoomAction(formData: FormData) {
     },
   });
 
-  revalidatePath("/");
+  refreshViews();
 }
 
 export async function updateRoomAction(formData: FormData) {
@@ -44,7 +44,7 @@ export async function updateRoomAction(formData: FormData) {
     data: { name, designation },
   });
 
-  revalidatePath("/");
+  refreshViews();
 }
 
 export async function deleteRoomAction(formData: FormData) {
@@ -63,7 +63,7 @@ export async function deleteRoomAction(formData: FormData) {
       data: { active: false },
     }),
   ]);
-  revalidatePath("/");
+  refreshViews();
 }
 
 export async function createTaskAction(formData: FormData) {
@@ -76,6 +76,11 @@ export async function createTaskAction(formData: FormData) {
   const dueAt = toDate(formData.get("dueAt")) ?? new Date();
   const description = buildValidationMeta(validationMode, minimumMinutes);
 
+  const recurrenceType = parseRecurrenceType(formData.get("recurrenceType"));
+  const recurrenceInterval = toPositiveInt(formData.get("recurrenceInterval"), 1);
+  const recurrenceTime = String(formData.get("recurrenceTime") ?? "").trim() || "09:00";
+  const assigneeUserId = String(formData.get("assigneeUserId") ?? "").trim();
+
   if (!title || !roomId) {
     return;
   }
@@ -87,6 +92,15 @@ export async function createTaskAction(formData: FormData) {
       estimatedMinutes,
       graceHours,
       description,
+      schedule: {
+        create: {
+          recurrenceType,
+          intervalCount: recurrenceInterval,
+          timeOfDay: recurrenceTime,
+          nextDueAt: dueAt,
+          daysOfWeek: [],
+        },
+      },
     },
     select: { id: true },
   });
@@ -99,23 +113,65 @@ export async function createTaskAction(formData: FormData) {
     },
   });
 
-  revalidatePath("/");
+  if (assigneeUserId) {
+    await prisma.taskAssignment.create({
+      data: {
+        taskId: task.id,
+        userId: assigneeUserId,
+        assignedFrom: new Date(),
+      },
+    });
+  }
+
+  refreshViews();
 }
 
 export async function updateTaskAction(formData: FormData) {
   const taskId = String(formData.get("taskId") ?? "").trim();
-  const title = String(formData.get("title") ?? "").trim();
-  const roomId = String(formData.get("roomId") ?? "").trim();
-  const estimatedMinutes = toPositiveInt(formData.get("estimatedMinutes"), 15);
-  const graceHours = toPositiveInt(formData.get("graceHours"), 12);
-  const minimumMinutes = toNonNegativeInt(formData.get("minimumMinutes"), 0);
-  const validationMode = formData.get("strictMode") === "on" ? "strict" : "basic";
+  if (!taskId) {
+    return;
+  }
+
+  const existing = await prisma.task.findUnique({
+    where: { id: taskId },
+    include: {
+      schedule: true,
+      assignments: {
+        where: { assignedTo: null },
+        orderBy: { assignedFrom: "desc" },
+        take: 1,
+      },
+    },
+  });
+  if (!existing) {
+    return;
+  }
+
+  const title = String(formData.get("title") ?? existing.title).trim() || existing.title;
+  const roomId = String(formData.get("roomId") ?? existing.roomId).trim() || existing.roomId;
+  const estimatedMinutes = toPositiveInt(formData.get("estimatedMinutes"), existing.estimatedMinutes);
+  const graceHours = toPositiveInt(formData.get("graceHours"), existing.graceHours);
+
+  const currentValidationMode = parseValidationMode(existing.description);
+  const currentMinimum = parseMinimumMinutes(existing.description);
+  const validationMode = formData.has("strictMode")
+    ? formData.get("strictMode") === "on"
+      ? "strict"
+      : "basic"
+    : currentValidationMode;
+  const minimumMinutes = toNonNegativeInt(formData.get("minimumMinutes"), currentMinimum);
   const dueAt = toDate(formData.get("dueAt"));
   const description = buildValidationMeta(validationMode, minimumMinutes);
 
-  if (!taskId || !title || !roomId) {
-    return;
-  }
+  const recurrenceType = formData.get("recurrenceType")
+    ? parseRecurrenceType(formData.get("recurrenceType"))
+    : (existing.schedule?.recurrenceType ?? "weekly");
+  const recurrenceInterval = toPositiveInt(formData.get("recurrenceInterval"), existing.schedule?.intervalCount ?? 1);
+  const recurrenceTime = String(formData.get("recurrenceTime") ?? existing.schedule?.timeOfDay ?? "09:00").trim() || "09:00";
+  const currentAssigneeUserId = existing.assignments[0]?.userId ?? "";
+  const assigneeUserId = formData.has("assigneeUserId")
+    ? String(formData.get("assigneeUserId") ?? "").trim()
+    : currentAssigneeUserId;
 
   await prisma.task.update({
     where: { id: taskId },
@@ -125,6 +181,24 @@ export async function updateTaskAction(formData: FormData) {
       estimatedMinutes,
       graceHours,
       description,
+    },
+  });
+
+  await prisma.taskSchedule.upsert({
+    where: { taskId },
+    create: {
+      taskId,
+      recurrenceType,
+      intervalCount: recurrenceInterval,
+      timeOfDay: recurrenceTime,
+      nextDueAt: dueAt ?? new Date(),
+      daysOfWeek: [],
+    },
+    update: {
+      recurrenceType,
+      intervalCount: recurrenceInterval,
+      timeOfDay: recurrenceTime,
+      ...(dueAt ? { nextDueAt: dueAt } : {}),
     },
   });
 
@@ -151,7 +225,22 @@ export async function updateTaskAction(formData: FormData) {
     }
   }
 
-  revalidatePath("/");
+  await prisma.taskAssignment.updateMany({
+    where: { taskId, assignedTo: null },
+    data: { assignedTo: new Date() },
+  });
+
+  if (assigneeUserId) {
+    await prisma.taskAssignment.create({
+      data: {
+        taskId,
+        userId: assigneeUserId,
+        assignedFrom: new Date(),
+      },
+    });
+  }
+
+  refreshViews();
 }
 
 export async function deleteTaskAction(formData: FormData) {
@@ -164,7 +253,66 @@ export async function deleteTaskAction(formData: FormData) {
     where: { id: taskId },
     data: { active: false },
   });
-  revalidatePath("/");
+  refreshViews();
+}
+
+export async function createPersonAction(formData: FormData) {
+  const displayName = String(formData.get("displayName") ?? "").trim();
+  const emailInput = String(formData.get("email") ?? "").trim();
+
+  if (!displayName) {
+    return;
+  }
+
+  const householdId = await getOrCreateDefaultHouseholdId();
+  const email =
+    emailInput || `${displayName.toLowerCase().replace(/[^a-z0-9]+/g, ".").replace(/^\.|\.$/g, "")}@jobjar.local`;
+
+  const user = await prisma.user.upsert({
+    where: { email },
+    update: { displayName },
+    create: {
+      email,
+      displayName,
+    },
+  });
+
+  await prisma.householdMember.upsert({
+    where: {
+      householdId_userId: {
+        householdId,
+        userId: user.id,
+      },
+    },
+    update: { role: "member" },
+    create: {
+      householdId,
+      userId: user.id,
+      role: "member",
+    },
+  });
+
+  refreshViews();
+}
+
+export async function removePersonAction(formData: FormData) {
+  const userId = String(formData.get("userId") ?? "").trim();
+  if (!userId) {
+    return;
+  }
+
+  const householdId = await getOrCreateDefaultHouseholdId();
+
+  await prisma.householdMember.deleteMany({
+    where: { householdId, userId },
+  });
+
+  await prisma.taskAssignment.updateMany({
+    where: { userId, assignedTo: null },
+    data: { assignedTo: new Date() },
+  });
+
+  refreshViews();
 }
 
 export async function startTaskAction(formData: FormData) {
@@ -181,7 +329,7 @@ export async function startTaskAction(formData: FormData) {
     },
   });
 
-  revalidatePath("/");
+  refreshViews();
 }
 
 export async function completeTaskAction(formData: FormData) {
@@ -264,7 +412,7 @@ export async function completeTaskAction(formData: FormData) {
     },
   });
 
-  revalidatePath("/");
+  refreshViews();
 }
 
 export async function reopenTaskAction(formData: FormData) {
@@ -298,7 +446,7 @@ export async function reopenTaskAction(formData: FormData) {
     },
   });
 
-  revalidatePath("/");
+  refreshViews();
 }
 
 function toPositiveInt(value: FormDataEntryValue | null, fallback: number) {
@@ -329,6 +477,14 @@ function toDate(value: FormDataEntryValue | null) {
   return date;
 }
 
+function parseRecurrenceType(value: FormDataEntryValue | null) {
+  const raw = String(value ?? "").trim();
+  if (raw === "daily" || raw === "weekly" || raw === "monthly" || raw === "custom") {
+    return raw;
+  }
+  return "weekly";
+}
+
 function buildValidationMeta(mode: "basic" | "strict", minimumMinutes: number) {
   if (mode === "strict") {
     return `validation=strict;min=${minimumMinutes}`;
@@ -352,4 +508,10 @@ function parseMinimumMinutes(description: string | null) {
     return 0;
   }
   return Number(match[1]) || 0;
+}
+
+function refreshViews() {
+  revalidatePath("/");
+  revalidatePath("/admin");
+  revalidatePath("/tv");
 }
