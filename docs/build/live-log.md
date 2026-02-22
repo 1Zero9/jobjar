@@ -27,3 +27,6 @@
   - `npm run db:generate` passed
   - `npm run lint` passed
   - `npm run build` passed
+- Switched dashboard data source from static demo arrays to Prisma-backed server data.
+- Added fallback behavior to demo data when DB is unavailable.
+- Added UI source indicator (`Live DB` vs `Demo fallback`) in dashboard header.

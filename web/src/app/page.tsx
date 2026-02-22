@@ -1,9 +1,12 @@
-import { rooms, tasks } from "@/lib/demo-data";
+import { getDashboardData } from "@/lib/dashboard-data";
 import { deriveTaskRag, rollupRoomRag } from "@/lib/rag";
 import { RagStatus } from "@/lib/types";
 
-export default function Home() {
-  const now = new Date("2026-02-22T14:00:00.000Z");
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const now = new Date();
+  const { rooms, tasks, source } = await getDashboardData();
   const taskWithRag = tasks.map((task) => ({ task, rag: deriveTaskRag(task, now) }));
   const roomSummaries = rooms.map((room) => {
     const roomTasks = taskWithRag.filter((entry) => entry.task.roomId === room.id);
@@ -29,6 +32,9 @@ export default function Home() {
             <Tab label="Rooms" />
             <Tab label="Calendar" />
           </div>
+          <p className="mt-3 text-xs text-muted">
+            Data source: <span className="font-semibold">{source === "database" ? "Live DB" : "Demo fallback"}</span>
+          </p>
         </header>
 
         <section className="rounded-3xl border border-border bg-card p-4 shadow-sm">
