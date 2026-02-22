@@ -126,6 +126,70 @@ export async function createTaskAction(formData: FormData) {
   refreshViews();
 }
 
+export async function createQuickTaskAction(formData: FormData) {
+  const title = String(formData.get("title") ?? "").trim();
+  const requestedRoomId = String(formData.get("roomId") ?? "").trim();
+  if (!title) {
+    return;
+  }
+
+  const householdId = await getOrCreateDefaultHouseholdId();
+  let roomId = requestedRoomId;
+
+  if (!roomId) {
+    const firstRoom = await prisma.room.findFirst({
+      where: { householdId, active: true },
+      orderBy: { sortOrder: "asc" },
+      select: { id: true },
+    });
+    if (firstRoom) {
+      roomId = firstRoom.id;
+    } else {
+      const createdRoom = await prisma.room.create({
+        data: {
+          householdId,
+          name: "General",
+          designation: "Quick add area",
+          sortOrder: 1,
+        },
+        select: { id: true },
+      });
+      roomId = createdRoom.id;
+    }
+  }
+
+  const dueAt = new Date();
+  const task = await prisma.task.create({
+    data: {
+      title,
+      roomId,
+      estimatedMinutes: 15,
+      graceHours: 12,
+      description: "validation=basic;min=0",
+      schedule: {
+        create: {
+          recurrenceType: "weekly",
+          intervalCount: 1,
+          timeOfDay: "09:00",
+          nextDueAt: dueAt,
+          daysOfWeek: [],
+        },
+      },
+    },
+    select: { id: true },
+  });
+
+  await prisma.taskOccurrence.create({
+    data: {
+      taskId: task.id,
+      dueAt,
+      status: "pending",
+    },
+  });
+
+  refreshViews();
+}
+
 export async function updateTaskAction(formData: FormData) {
   const taskId = String(formData.get("taskId") ?? "").trim();
   if (!taskId) {

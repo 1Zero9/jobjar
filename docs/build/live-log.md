@@ -68,3 +68,13 @@
 - Validation completed:
   - `npm run lint` passed
   - `npm run build` passed
+- Reworked daily mobile UX into an ADO-style board with three clear sections:
+  - To Do
+  - In Progress
+  - Done
+- Added mobile-first quick add form on daily screen with minimal fields (title + optional room).
+- Added `createQuickTaskAction` for fast capture, with default room fallback.
+- Kept advanced setup details (assignment, recurrence, validation tuning) in Admin only.
+- Validation completed:
+  - `npm run lint` passed
+  - `npm run build` passed
