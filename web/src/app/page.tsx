@@ -1,10 +1,13 @@
 import {
   completeTaskAction,
   createQuickTaskAction,
+  logoutAction,
   reopenTaskAction,
   startTaskAction,
 } from "@/app/actions";
+import { requireSessionUserId } from "@/lib/auth";
 import { getDashboardData } from "@/lib/dashboard-data";
+import { prisma } from "@/lib/prisma";
 import { deriveTaskRag } from "@/lib/rag";
 import { RagStatus, TaskItem } from "@/lib/types";
 import Link from "next/link";
@@ -12,6 +15,9 @@ import Link from "next/link";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
+  const currentUserId = await requireSessionUserId("/");
+  const currentUser = await prisma.user.findUnique({ where: { id: currentUserId }, select: { displayName: true } });
+
   const now = new Date();
   const { rooms, tasks, source } = await getDashboardData();
   const taskWithRag = tasks.map((task) => ({ task, rag: deriveTaskRag(task, now) }));
@@ -24,26 +30,38 @@ export default async function Home() {
   const stars = done.length * 4;
   const completionRate = tasks.length === 0 ? 0 : Math.round((done.length / tasks.length) * 100);
 
+  const myTasks = tasks.filter((task) => task.assigneeUserId === currentUserId);
+  const myDone = myTasks.filter((task) => task.status === "done").length;
+  const myRate = myTasks.length === 0 ? 0 : Math.round((myDone / myTasks.length) * 100);
+
   return (
     <div className="family-gradient min-h-screen px-3 py-4 sm:px-4 sm:py-6">
       <main className="mx-auto flex w-full max-w-3xl flex-col gap-4">
         <header className="playful-card p-4 sm:p-5">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Household Job Jar</p>
-          <div className="mt-1 flex items-start justify-between gap-3">
+          <div className="flex items-start justify-between gap-3">
             <div>
-              <h1 className="text-2xl font-bold sm:text-3xl">Family Mission Board</h1>
-              <p className="mt-1 text-sm text-muted">Quick, friendly, and phone-first. Add now, refine details later in Admin.</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted">Household Job Jar</p>
+              <h1 className="mt-1 text-2xl font-bold sm:text-3xl">Family Mission Board</h1>
+              <p className="mt-1 text-sm text-muted">
+                Welcome {currentUser?.displayName ?? "Family Member"}. Quick, friendly, and phone-first.
+              </p>
             </div>
-            <div className="rounded-2xl border border-border bg-white px-3 py-2 text-right">
-              <p className="text-xs text-muted">Stars today</p>
-              <p className="text-xl font-bold">{stars} ⭐</p>
-            </div>
+            <form action={logoutAction}>
+              <button className="action-btn warn">Log out</button>
+            </form>
+          </div>
+
+          <div className="mt-3 flex items-center gap-3 rounded-2xl border border-border bg-white px-3 py-2">
+            <p className="text-sm font-semibold">My jobs:</p>
+            <p className="text-sm text-muted">
+              {myDone}/{myTasks.length} done ({myRate}%)
+            </p>
           </div>
 
           <div className="mt-3 grid grid-cols-3 gap-2">
             <StatChip label="Total" value={String(tasks.length)} />
             <StatChip label="Done" value={String(done.length)} />
-            <StatChip label="Progress" value={`${completionRate}%`} />
+            <StatChip label="Stars" value={`${stars}`} />
           </div>
 
           <form action={createQuickTaskAction} className="mt-3 grid grid-cols-1 gap-2 rounded-2xl border border-border bg-white p-3 sm:grid-cols-[1fr_auto_auto]">
@@ -73,7 +91,9 @@ export default async function Home() {
               Open TV Dashboard
             </Link>
           </div>
-          <p className="mt-2 text-xs text-muted">Data source: {source === "database" ? "Live DB" : "Demo fallback"}</p>
+          <p className="mt-2 text-xs text-muted">
+            Data source: {source === "database" ? "Live DB" : "Demo fallback"} • Overall progress {completionRate}%
+          </p>
         </header>
 
         <TaskLane title="To Do" subtitle="Pick one and press Start" items={todo} laneClass="lane-todo" roomNameById={roomNameById} />
@@ -143,7 +163,8 @@ function TaskCard({
             {task.title}
           </p>
           <p className="mt-1 text-xs text-muted">
-            {roomName} • Due {formatTime(task.dueAt)}
+            {roomName}
+            {task.assigneeName ? ` • Assigned ${task.assigneeName}` : " • Unassigned"} • Due {formatTime(task.dueAt)}
             {task.startedAt ? ` • Running ${elapsedLabel(task.startedAt)}` : ""}
           </p>
           {task.validationMode === "strict" ? (

@@ -10,6 +10,8 @@ export type TaskItem = {
   dueAt: string;
   graceHours: number;
   estimatedMinutes: number;
+  assigneeUserId?: string;
+  assigneeName?: string;
   status: TaskStatus;
   validationMode: ValidationMode;
   minimumMinutes: number;

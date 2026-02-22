@@ -2,7 +2,9 @@
 
 import { getOrCreateDefaultHouseholdId } from "@/lib/household";
 import { prisma } from "@/lib/prisma";
+import { clearSession, getHouseholdPasscode, getSessionUserId, setSessionUserId } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 export async function createRoomAction(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
@@ -159,6 +161,7 @@ export async function createQuickTaskAction(formData: FormData) {
   }
 
   const dueAt = new Date();
+  const currentUserId = await getSessionUserId();
   const task = await prisma.task.create({
     data: {
       title,
@@ -186,6 +189,16 @@ export async function createQuickTaskAction(formData: FormData) {
       status: "pending",
     },
   });
+
+  if (currentUserId) {
+    await prisma.taskAssignment.create({
+      data: {
+        taskId: task.id,
+        userId: currentUserId,
+        assignedFrom: new Date(),
+      },
+    });
+  }
 
   refreshViews();
 }
@@ -406,6 +419,7 @@ export async function completeTaskAction(formData: FormData) {
   }
 
   const now = new Date();
+  const currentUserId = await getSessionUserId();
   const task = await prisma.task.findUnique({
     where: { id: taskId },
     select: {
@@ -454,6 +468,7 @@ export async function completeTaskAction(formData: FormData) {
       data: {
         status: "done",
         completedAt: now,
+        ...(currentUserId ? { completedBy: currentUserId } : {}),
       },
     });
   } else {
@@ -463,6 +478,7 @@ export async function completeTaskAction(formData: FormData) {
         dueAt: now,
         status: "done",
         completedAt: now,
+        ...(currentUserId ? { completedBy: currentUserId } : {}),
       },
     });
   }
@@ -479,6 +495,32 @@ export async function completeTaskAction(formData: FormData) {
   });
 
   refreshViews();
+}
+
+export async function loginAction(formData: FormData) {
+  const userId = String(formData.get("userId") ?? "").trim();
+  const passcode = String(formData.get("passcode") ?? "").trim();
+  const nextPath = String(formData.get("next") ?? "/").trim() || "/";
+
+  if (!userId || passcode !== getHouseholdPasscode()) {
+    redirect(`/login?next=${encodeURIComponent(nextPath)}&error=invalid`);
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true },
+  });
+  if (!user) {
+    redirect(`/login?next=${encodeURIComponent(nextPath)}&error=invalid`);
+  }
+
+  await setSessionUserId(user.id);
+  redirect(nextPath.startsWith("/") ? nextPath : "/");
+}
+
+export async function logoutAction() {
+  await clearSession();
+  redirect("/login");
 }
 
 export async function reopenTaskAction(formData: FormData) {

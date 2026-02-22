@@ -98,3 +98,17 @@
 - Validation completed:
   - `npm run lint` passed
   - `npm run build` passed
+- Updated Admin experience to a light theme while keeping board-style structure.
+- Added lightweight household auth system:
+  - `/login` page (member + passcode)
+  - session cookie management
+  - middleware protection for `/` and `/admin`
+  - logout action
+- Added assignment visibility and personal progress on daily board:
+  - task cards now show assignee name
+  - "My jobs" completion metric shown in header for signed-in user
+  - quick-add task defaults assignment to signed-in user
+- Added `HOUSEHOLD_PASSCODE` to env template.
+- Validation completed:
+  - `npm run lint` passed
+  - `npm run build` passed

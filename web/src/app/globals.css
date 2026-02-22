@@ -98,25 +98,30 @@ body {
 
 .admin-shell {
   background:
-    linear-gradient(180deg, #0f1f2a 0%, #172938 100%);
-  color: #e8f0f5;
+    radial-gradient(circle at 15% 10%, rgba(128, 193, 255, 0.18), transparent 30%),
+    radial-gradient(circle at 88% 12%, rgba(255, 198, 106, 0.22), transparent 30%),
+    linear-gradient(180deg, #eff4f9 0%, #e7edf5 100%);
+  color: #1a3145;
 }
 
 .admin-panel {
   border-radius: 1.1rem;
-  border: 1px solid rgba(190, 209, 224, 0.22);
-  background: rgba(20, 35, 47, 0.85);
+  border: 1px solid rgba(103, 135, 164, 0.28);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow:
+    0 2px 0 rgba(26, 49, 69, 0.04),
+    0 8px 24px rgba(42, 73, 104, 0.08);
 }
 
 .admin-input {
   border-radius: 0.7rem;
-  border: 1px solid rgba(190, 209, 224, 0.3);
-  background: rgba(14, 26, 36, 0.9);
-  color: #edf4f8;
+  border: 1px solid rgba(103, 135, 164, 0.36);
+  background: #fff;
+  color: #1a3145;
 }
 
 .admin-input::placeholder {
-  color: rgba(230, 238, 244, 0.55);
+  color: rgba(52, 78, 101, 0.55);
 }
 
 .tv-stars {
