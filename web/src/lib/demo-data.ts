@@ -15,6 +15,8 @@ export const tasks: TaskItem[] = [
     graceHours: 12,
     estimatedMinutes: 20,
     status: "pending",
+    validationMode: "basic",
+    minimumMinutes: 0,
     lastCompletedAt: "2026-02-20T18:11:00.000Z",
   },
   {
@@ -25,6 +27,8 @@ export const tasks: TaskItem[] = [
     graceHours: 12,
     estimatedMinutes: 15,
     status: "pending",
+    validationMode: "basic",
+    minimumMinutes: 0,
     lastCompletedAt: "2026-02-19T11:40:00.000Z",
   },
   {
@@ -35,6 +39,8 @@ export const tasks: TaskItem[] = [
     graceHours: 8,
     estimatedMinutes: 10,
     status: "pending",
+    validationMode: "strict",
+    minimumMinutes: 5,
     lastCompletedAt: "2026-02-18T08:06:00.000Z",
   },
   {
@@ -45,6 +51,8 @@ export const tasks: TaskItem[] = [
     graceHours: 24,
     estimatedMinutes: 40,
     status: "pending",
+    validationMode: "strict",
+    minimumMinutes: 20,
     lastCompletedAt: "2026-02-15T10:45:00.000Z",
   },
   {
@@ -55,6 +63,8 @@ export const tasks: TaskItem[] = [
     graceHours: 2,
     estimatedMinutes: 30,
     status: "done",
+    validationMode: "basic",
+    minimumMinutes: 0,
     lastCompletedAt: "2026-02-22T15:42:00.000Z",
   },
 ];

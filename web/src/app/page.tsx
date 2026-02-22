@@ -1,8 +1,11 @@
 import {
+  completeTaskAction,
   createRoomAction,
   createTaskAction,
   deleteRoomAction,
   deleteTaskAction,
+  reopenTaskAction,
+  startTaskAction,
   updateRoomAction,
   updateTaskAction,
 } from "@/app/actions";
@@ -33,7 +36,7 @@ export default async function Home() {
           <p className="text-xs font-semibold uppercase tracking-wide text-muted">Household Job Jar</p>
           <h1 className="mt-2 text-3xl font-bold">Daily Jobs</h1>
           <p className="mt-1 text-sm text-muted">
-            Built for everyone in the house. Tap tasks in daily mode, manage setup in admin mode.
+            Built for everyone in the house. Use quick Start/Done buttons here. Setup is below in plain language.
           </p>
           <p className="mt-3 text-xs text-muted">
             Data source: <span className="font-semibold">{source === "database" ? "Live DB" : "Demo fallback"}</span>
@@ -47,21 +50,47 @@ export default async function Home() {
           </div>
           <div className="space-y-2">
             {taskWithRag.map(({ task, rag }) => (
-              <article
-                key={task.id}
-                className="grid grid-cols-[1fr_auto] gap-3 rounded-2xl border border-border bg-white p-3"
-              >
+              <article key={task.id} className="rounded-2xl border border-border bg-white p-3">
                 <div>
                   <p className="text-sm font-semibold">{task.title}</p>
                   <p className="mt-1 text-xs text-muted">
                     Due {formatTime(task.dueAt)} • {task.estimatedMinutes} mins
                   </p>
+                  {task.validationMode === "strict" ? (
+                    <p className="mt-1 text-xs font-semibold text-amber">
+                      Strict check: press Start first, add note, minimum {task.minimumMinutes} mins.
+                    </p>
+                  ) : null}
                 </div>
-                <div className="flex flex-col items-end gap-2">
+                <div className="mt-3 flex items-center justify-between gap-2">
                   <StatusPill rag={rag} />
-                  <span className="rounded-full bg-foreground px-3 py-1 text-xs font-semibold text-background">
-                    {task.status === "done" ? "Logged" : "Open"}
-                  </span>
+                  <div className="flex flex-wrap items-center justify-end gap-2">
+                    <form action={startTaskAction}>
+                      <input type="hidden" name="taskId" value={task.id} />
+                      <button className="rounded-full border border-border px-3 py-1 text-xs font-semibold">Start</button>
+                    </form>
+                    {task.status === "done" ? (
+                      <form action={reopenTaskAction}>
+                        <input type="hidden" name="taskId" value={task.id} />
+                        <button className="rounded-full border border-red px-3 py-1 text-xs font-semibold text-red">
+                          Not done
+                        </button>
+                      </form>
+                    ) : (
+                      <form action={completeTaskAction} className="flex items-center gap-2">
+                        <input type="hidden" name="taskId" value={task.id} />
+                        <input
+                          name="note"
+                          type="text"
+                          placeholder="Quick note"
+                          className="w-32 rounded-full border border-border px-3 py-1 text-xs"
+                        />
+                        <button className="rounded-full bg-foreground px-3 py-1 text-xs font-semibold text-background">
+                          Done
+                        </button>
+                      </form>
+                    )}
+                  </div>
                 </div>
               </article>
             ))}
@@ -94,13 +123,13 @@ export default async function Home() {
         </section>
 
         <details className="rounded-3xl border border-border bg-card p-4 shadow-sm">
-          <summary className="cursor-pointer list-none text-base font-semibold">Setup & Admin</summary>
+          <summary className="cursor-pointer list-none text-base font-semibold">Setup (rooms and jobs)</summary>
           <p className="mt-2 text-xs text-muted">
-            Use this section to create and edit rooms/tasks. Delete actions archive items from daily view.
+            Add rooms and jobs using normal language. Archive hides items from daily use.
           </p>
 
           <section className="mt-3 rounded-2xl border border-border bg-white p-3">
-            <h3 className="mb-2 text-sm font-semibold">Add room</h3>
+            <h3 className="mb-2 text-sm font-semibold">Add a room</h3>
             <form action={createRoomAction} className="grid grid-cols-1 gap-2">
               <input
                 name="name"
@@ -112,12 +141,10 @@ export default async function Home() {
               <input
                 name="designation"
                 type="text"
-                placeholder="Designation (e.g. Food + surfaces)"
+                placeholder="What is this room mainly for?"
                 className="rounded-xl border border-border px-3 py-2 text-sm"
               />
-              <button className="rounded-xl bg-foreground px-3 py-2 text-sm font-semibold text-background">
-                Create room
-              </button>
+              <button className="rounded-xl bg-foreground px-3 py-2 text-sm font-semibold text-background">Add room</button>
             </form>
           </section>
 
@@ -142,13 +169,13 @@ export default async function Home() {
                       className="rounded-xl border border-border px-3 py-2 text-sm"
                     />
                     <button className="rounded-xl bg-foreground px-3 py-2 text-sm font-semibold text-background">
-                      Save room
+                      Save changes
                     </button>
                   </form>
                   <form action={deleteRoomAction} className="mt-2">
                     <input type="hidden" name="roomId" value={room.id} />
                     <button className="w-full rounded-xl border border-red px-3 py-2 text-sm font-semibold text-red">
-                      Archive room
+                      Archive this room
                     </button>
                   </form>
                 </article>
@@ -157,17 +184,17 @@ export default async function Home() {
           </section>
 
           <section className="mt-3 rounded-2xl border border-border bg-white p-3">
-            <h3 className="mb-2 text-sm font-semibold">Add task</h3>
+            <h3 className="mb-2 text-sm font-semibold">Add a job</h3>
             <form action={createTaskAction} className="grid grid-cols-1 gap-2">
               <input
                 name="title"
                 type="text"
                 required
-                placeholder="Task title"
+                placeholder="What needs done? (e.g. Hoover rug)"
                 className="rounded-xl border border-border px-3 py-2 text-sm"
               />
               <select name="roomId" required className="rounded-xl border border-border px-3 py-2 text-sm">
-                <option value="">Select room</option>
+                <option value="">Where is this job?</option>
                 {rooms.map((room) => (
                   <option key={room.id} value={room.id}>
                     {room.name}
@@ -191,14 +218,24 @@ export default async function Home() {
                 />
               </div>
               <input name="dueAt" type="datetime-local" className="rounded-xl border border-border px-3 py-2 text-sm" />
-              <button className="rounded-xl bg-foreground px-3 py-2 text-sm font-semibold text-background">
-                Create task
-              </button>
+              <label className="flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm">
+                <input type="checkbox" name="strictMode" />
+                Require proof check before Done
+              </label>
+              <input
+                name="minimumMinutes"
+                type="number"
+                min={0}
+                defaultValue={0}
+                placeholder="Minimum minutes before Done (strict jobs)"
+                className="rounded-xl border border-border px-3 py-2 text-sm"
+              />
+              <button className="rounded-xl bg-foreground px-3 py-2 text-sm font-semibold text-background">Add job</button>
             </form>
           </section>
 
           <section className="mt-3 rounded-2xl border border-border bg-white p-3">
-            <h3 className="mb-2 text-sm font-semibold">Edit tasks</h3>
+            <h3 className="mb-2 text-sm font-semibold">Edit jobs</h3>
             <div className="space-y-2">
               {tasks.map((task) => (
                 <article key={task.id} className="rounded-xl border border-border p-3">
@@ -240,19 +277,30 @@ export default async function Home() {
                       />
                     </div>
                     <input
+                      name="minimumMinutes"
+                      type="number"
+                      min={0}
+                      defaultValue={task.minimumMinutes}
+                      className="rounded-xl border border-border px-3 py-2 text-sm"
+                    />
+                    <label className="flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm">
+                      <input type="checkbox" name="strictMode" defaultChecked={task.validationMode === "strict"} />
+                      Require proof check before Done
+                    </label>
+                    <input
                       name="dueAt"
                       type="datetime-local"
                       defaultValue={toDateTimeLocal(task.dueAt)}
                       className="rounded-xl border border-border px-3 py-2 text-sm"
                     />
                     <button className="rounded-xl bg-foreground px-3 py-2 text-sm font-semibold text-background">
-                      Save task
+                      Save changes
                     </button>
                   </form>
                   <form action={deleteTaskAction} className="mt-2">
                     <input type="hidden" name="taskId" value={task.id} />
                     <button className="w-full rounded-xl border border-red px-3 py-2 text-sm font-semibold text-red">
-                      Archive task
+                      Archive this job
                     </button>
                   </form>
                 </article>

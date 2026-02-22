@@ -23,6 +23,11 @@ export async function getDashboardData(): Promise<DashboardData> {
                   orderBy: { dueAt: "desc" },
                   take: 1,
                 },
+                logs: {
+                  where: { action: "started" },
+                  orderBy: { atTime: "desc" },
+                  take: 1,
+                },
               },
               orderBy: { createdAt: "asc" },
             },
@@ -57,6 +62,9 @@ export async function getDashboardData(): Promise<DashboardData> {
           graceHours: task.graceHours,
           estimatedMinutes: task.estimatedMinutes,
           status,
+          validationMode: parseValidationMode(task.description),
+          minimumMinutes: parseMinimumMinutes(task.description),
+          startedAt: task.logs[0]?.atTime.toISOString(),
           lastCompletedAt: latestOccurrence?.completedAt?.toISOString(),
         };
       }),
@@ -76,4 +84,22 @@ function mapOccurrenceStatus(status: string | undefined): TaskStatus {
     return "skipped";
   }
   return "pending";
+}
+
+function parseValidationMode(description: string | null) {
+  if (!description) {
+    return "basic";
+  }
+  return description.includes("validation=strict") ? "strict" : "basic";
+}
+
+function parseMinimumMinutes(description: string | null) {
+  if (!description) {
+    return 0;
+  }
+  const match = description.match(/min=(\d+)/);
+  if (!match) {
+    return 0;
+  }
+  return Number(match[1]) || 0;
 }

@@ -1,6 +1,7 @@
 export type RagStatus = "green" | "amber" | "red";
 
 export type TaskStatus = "pending" | "done" | "skipped";
+export type ValidationMode = "basic" | "strict";
 
 export type TaskItem = {
   id: string;
@@ -10,6 +11,9 @@ export type TaskItem = {
   graceHours: number;
   estimatedMinutes: number;
   status: TaskStatus;
+  validationMode: ValidationMode;
+  minimumMinutes: number;
+  startedAt?: string;
   lastCompletedAt?: string;
 };
 

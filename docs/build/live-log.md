@@ -45,3 +45,14 @@
 - Validation completed:
   - `npm run lint` passed
   - `npm run build` passed
+- Shifted setup language to plain, user-friendly wording for family usage.
+- Added daily action workflow on each job card: Start, Done, and Not done.
+- Added strict validation mode for jobs that need proof checks:
+  - Requires Start before Done
+  - Requires a short note
+  - Enforces minimum time before Done
+- Implemented validation metadata without new DB columns (stored in task description) to avoid migration blockers.
+- Validation completed:
+  - `npm run db:generate` passed
+  - `npm run lint` passed
+  - `npm run build` passed
