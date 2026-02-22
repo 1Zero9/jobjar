@@ -70,17 +70,24 @@ export default async function Home() {
 
         <section className="rounded-3xl border border-border bg-card p-4 shadow-sm">
           <h2 className="mb-3 text-base font-semibold">Room status</h2>
-          <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {roomSummaries.map(({ room, rag, taskCount, overdue }) => (
-              <article key={room.id} className="rounded-2xl border border-border bg-white p-3">
-                <div className="flex items-center justify-between">
-                  <p className="font-semibold">{room.name}</p>
-                  <StatusPill rag={rag} />
+              <article key={room.id} className="rounded-2xl border border-border bg-white p-3 text-center">
+                <div
+                  className={`mx-auto flex h-20 w-20 items-center justify-center rounded-full border-4 text-3xl ${roomAuraClass(
+                    rag,
+                  )}`}
+                >
+                  <span aria-hidden>{roomEmoji(room.name)}</span>
                 </div>
+                <p className="mt-2 text-sm font-semibold">{room.name}</p>
                 <p className="mt-1 text-xs text-muted">{room.designation}</p>
                 <p className="mt-2 text-xs text-muted">
                   {taskCount} active tasks • {overdue} overdue
                 </p>
+                <div className="mt-2">
+                  <StatusPill rag={rag} />
+                </div>
               </article>
             ))}
           </div>
@@ -275,4 +282,34 @@ function toDateTimeLocal(dateIso: string) {
     return "";
   }
   return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+}
+
+function roomAuraClass(rag: RagStatus) {
+  if (rag === "green") {
+    return "border-green bg-green/10 shadow-[0_0_18px_rgba(47,143,81,0.35)]";
+  }
+  if (rag === "amber") {
+    return "border-amber bg-amber/10 shadow-[0_0_18px_rgba(198,122,6,0.35)]";
+  }
+  return "border-red bg-red/10 shadow-[0_0_18px_rgba(192,50,33,0.35)]";
+}
+
+function roomEmoji(roomName: string) {
+  const key = roomName.toLowerCase();
+  if (key.includes("kitchen")) {
+    return "🍽️";
+  }
+  if (key.includes("living")) {
+    return "🛋️";
+  }
+  if (key.includes("garden")) {
+    return "🌿";
+  }
+  if (key.includes("bath")) {
+    return "🛁";
+  }
+  if (key.includes("bed")) {
+    return "🛏️";
+  }
+  return "🏠";
 }
