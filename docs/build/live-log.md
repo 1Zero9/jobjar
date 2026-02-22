@@ -30,3 +30,10 @@
 - Switched dashboard data source from static demo arrays to Prisma-backed server data.
 - Added fallback behavior to demo data when DB is unavailable.
 - Added UI source indicator (`Live DB` vs `Demo fallback`) in dashboard header.
+- Implemented Room CRUD with Prisma server actions (create, update, delete).
+- Implemented Task CRUD with Prisma server actions (create, update, delete).
+- Added mobile-first management forms directly in dashboard UI for immediate data operations.
+- Added default-household bootstrap helper so first CRUD actions can initialize a base household if none exists.
+- Validation completed:
+  - `npm run lint` passed
+  - `npm run build` passed

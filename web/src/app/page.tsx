@@ -1,6 +1,14 @@
 import { getDashboardData } from "@/lib/dashboard-data";
 import { deriveTaskRag, rollupRoomRag } from "@/lib/rag";
 import { RagStatus } from "@/lib/types";
+import {
+  createRoomAction,
+  createTaskAction,
+  deleteRoomAction,
+  deleteTaskAction,
+  updateRoomAction,
+  updateTaskAction,
+} from "@/app/actions";
 
 export const dynamic = "force-dynamic";
 
@@ -99,6 +107,167 @@ export default async function Home() {
             ))}
           </div>
         </section>
+
+        <section className="rounded-3xl border border-border bg-card p-4 shadow-sm">
+          <h2 className="mb-3 text-base font-semibold">Manage rooms</h2>
+          <form action={createRoomAction} className="mb-3 grid grid-cols-1 gap-2 rounded-2xl border border-border bg-white p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">Add room</p>
+            <input
+              name="name"
+              type="text"
+              required
+              placeholder="Room name (e.g. Kitchen)"
+              className="rounded-xl border border-border px-3 py-2 text-sm"
+            />
+            <input
+              name="designation"
+              type="text"
+              placeholder="Designation (e.g. Food + surfaces)"
+              className="rounded-xl border border-border px-3 py-2 text-sm"
+            />
+            <button className="rounded-xl bg-foreground px-3 py-2 text-sm font-semibold text-background">
+              Create room
+            </button>
+          </form>
+
+          <div className="space-y-2">
+            {rooms.map((room) => (
+              <article key={room.id} className="rounded-2xl border border-border bg-white p-3">
+                <form action={updateRoomAction} className="grid grid-cols-1 gap-2">
+                  <input type="hidden" name="roomId" value={room.id} />
+                  <input
+                    name="name"
+                    type="text"
+                    defaultValue={room.name}
+                    required
+                    className="rounded-xl border border-border px-3 py-2 text-sm"
+                  />
+                  <input
+                    name="designation"
+                    type="text"
+                    defaultValue={room.designation}
+                    className="rounded-xl border border-border px-3 py-2 text-sm"
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <button className="rounded-xl bg-foreground px-3 py-2 text-sm font-semibold text-background">
+                      Save
+                    </button>
+                    <button
+                      formAction={deleteRoomAction}
+                      className="rounded-xl border border-red px-3 py-2 text-sm font-semibold text-red"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </form>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-3xl border border-border bg-card p-4 shadow-sm">
+          <h2 className="mb-3 text-base font-semibold">Manage tasks</h2>
+          <form action={createTaskAction} className="mb-3 grid grid-cols-1 gap-2 rounded-2xl border border-border bg-white p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">Add task</p>
+            <input
+              name="title"
+              type="text"
+              required
+              placeholder="Task title"
+              className="rounded-xl border border-border px-3 py-2 text-sm"
+            />
+            <select name="roomId" required className="rounded-xl border border-border px-3 py-2 text-sm">
+              <option value="">Select room</option>
+              {rooms.map((room) => (
+                <option key={room.id} value={room.id}>
+                  {room.name}
+                </option>
+              ))}
+            </select>
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                name="estimatedMinutes"
+                type="number"
+                min={1}
+                defaultValue={15}
+                className="rounded-xl border border-border px-3 py-2 text-sm"
+              />
+              <input
+                name="graceHours"
+                type="number"
+                min={1}
+                defaultValue={12}
+                className="rounded-xl border border-border px-3 py-2 text-sm"
+              />
+            </div>
+            <input name="dueAt" type="datetime-local" className="rounded-xl border border-border px-3 py-2 text-sm" />
+            <button className="rounded-xl bg-foreground px-3 py-2 text-sm font-semibold text-background">
+              Create task
+            </button>
+          </form>
+
+          <div className="space-y-2">
+            {tasks.map((task) => (
+              <article key={task.id} className="rounded-2xl border border-border bg-white p-3">
+                <form action={updateTaskAction} className="grid grid-cols-1 gap-2">
+                  <input type="hidden" name="taskId" value={task.id} />
+                  <input
+                    name="title"
+                    type="text"
+                    defaultValue={task.title}
+                    required
+                    className="rounded-xl border border-border px-3 py-2 text-sm"
+                  />
+                  <select
+                    name="roomId"
+                    required
+                    defaultValue={task.roomId}
+                    className="rounded-xl border border-border px-3 py-2 text-sm"
+                  >
+                    {rooms.map((room) => (
+                      <option key={room.id} value={room.id}>
+                        {room.name}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      name="estimatedMinutes"
+                      type="number"
+                      min={1}
+                      defaultValue={task.estimatedMinutes}
+                      className="rounded-xl border border-border px-3 py-2 text-sm"
+                    />
+                    <input
+                      name="graceHours"
+                      type="number"
+                      min={1}
+                      defaultValue={task.graceHours}
+                      className="rounded-xl border border-border px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <input
+                    name="dueAt"
+                    type="datetime-local"
+                    defaultValue={toDateTimeLocal(task.dueAt)}
+                    className="rounded-xl border border-border px-3 py-2 text-sm"
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <button className="rounded-xl bg-foreground px-3 py-2 text-sm font-semibold text-background">
+                      Save
+                    </button>
+                    <button
+                      formAction={deleteTaskAction}
+                      className="rounded-xl border border-red px-3 py-2 text-sm font-semibold text-red"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </form>
+              </article>
+            ))}
+          </div>
+        </section>
       </main>
     </div>
   );
@@ -125,4 +294,12 @@ function formatTime(dateIso: string) {
     hour: "numeric",
     minute: "2-digit",
   }).format(new Date(dateIso));
+}
+
+function toDateTimeLocal(dateIso: string) {
+  const date = new Date(dateIso);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
 }
