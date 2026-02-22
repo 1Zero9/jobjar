@@ -28,6 +28,7 @@ export default async function Home() {
       overdue: roomTasks.filter((entry) => entry.rag === "red").length,
     };
   });
+  const roomStatusById = new Map(roomSummaries.map((entry) => [entry.room.id, entry.rag]));
 
   return (
     <div className="soft-gradient min-h-screen px-4 py-6">
@@ -150,36 +151,66 @@ export default async function Home() {
 
           <section className="mt-3 rounded-2xl border border-border bg-white p-3">
             <h3 className="mb-2 text-sm font-semibold">Edit rooms</h3>
-            <div className="space-y-2">
-              {rooms.map((room) => (
-                <article key={room.id} className="rounded-xl border border-border p-3">
-                  <form action={updateRoomAction} className="grid grid-cols-1 gap-2">
-                    <input type="hidden" name="roomId" value={room.id} />
-                    <input
-                      name="name"
-                      type="text"
-                      defaultValue={room.name}
-                      required
-                      className="rounded-xl border border-border px-3 py-2 text-sm"
-                    />
-                    <input
-                      name="designation"
-                      type="text"
-                      defaultValue={room.designation}
-                      className="rounded-xl border border-border px-3 py-2 text-sm"
-                    />
-                    <button className="rounded-xl bg-foreground px-3 py-2 text-sm font-semibold text-background">
-                      Save changes
-                    </button>
-                  </form>
-                  <form action={deleteRoomAction} className="mt-2">
-                    <input type="hidden" name="roomId" value={room.id} />
-                    <button className="w-full rounded-xl border border-red px-3 py-2 text-sm font-semibold text-red">
-                      Archive this room
-                    </button>
-                  </form>
-                </article>
-              ))}
+            <div className="overflow-x-auto rounded-xl border border-border">
+              <table className="min-w-full border-collapse text-left text-xs sm:text-sm">
+                <thead className="bg-background">
+                  <tr>
+                    <th className="border-b border-border px-3 py-2 font-semibold">#</th>
+                    <th className="border-b border-border px-3 py-2 font-semibold">Room</th>
+                    <th className="border-b border-border px-3 py-2 font-semibold">Purpose</th>
+                    <th className="border-b border-border px-3 py-2 font-semibold">Status</th>
+                    <th className="border-b border-border px-3 py-2 font-semibold">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rooms.map((room, index) => (
+                    <tr key={room.id} className="align-top">
+                      <td className="border-b border-border px-3 py-2 text-muted">{index + 1}</td>
+                      <td className="border-b border-border px-3 py-2">
+                        <form action={updateRoomAction} className="space-y-2">
+                          <input type="hidden" name="roomId" value={room.id} />
+                          <input
+                            name="name"
+                            type="text"
+                            defaultValue={room.name}
+                            required
+                            className="w-full rounded-lg border border-border px-2 py-1.5"
+                          />
+                          <button className="rounded-lg bg-foreground px-2 py-1 text-xs font-semibold text-background">
+                            Save
+                          </button>
+                        </form>
+                      </td>
+                      <td className="border-b border-border px-3 py-2">
+                        <form action={updateRoomAction} className="space-y-2">
+                          <input type="hidden" name="roomId" value={room.id} />
+                          <input type="hidden" name="name" value={room.name} />
+                          <input
+                            name="designation"
+                            type="text"
+                            defaultValue={room.designation}
+                            className="w-full rounded-lg border border-border px-2 py-1.5"
+                          />
+                          <button className="rounded-lg border border-border px-2 py-1 text-xs font-semibold">
+                            Save
+                          </button>
+                        </form>
+                      </td>
+                      <td className="border-b border-border px-3 py-2">
+                        <StatusPill rag={roomStatusById.get(room.id) ?? "green"} />
+                      </td>
+                      <td className="border-b border-border px-3 py-2">
+                        <form action={deleteRoomAction}>
+                          <input type="hidden" name="roomId" value={room.id} />
+                          <button className="rounded-lg border border-red px-2 py-1 text-xs font-semibold text-red">
+                            Archive
+                          </button>
+                        </form>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </section>
 
