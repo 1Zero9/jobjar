@@ -133,3 +133,14 @@
 - Validation completed:
   - `npm run lint` passed
   - `npm run build` passed
+- Refactored Admin into a clearer setup wizard flow (Step 1 People, Step 2 Rooms, Step 3 Tasks).
+- Added per-user passcode support with secure hashing and SQL-backed credential store.
+- Added action-level role enforcement:
+  - Admin-only: rooms/tasks/people management
+  - Member-only: daily task state changes
+- Added admin capability to set/reset passcodes per person.
+- Added admin-role route enforcement on `/admin`.
+- Validation completed:
+  - `npm run db:generate` passed
+  - `npm run lint` passed
+  - `npm run build` passed
