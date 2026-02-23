@@ -162,3 +162,12 @@
 - Validation completed:
   - `npm run lint` passed
   - `npm run build` passed
+- Redesigned `/admin` to match the brighter board direction used on normal view:
+  - switched admin shell/header to bright board styling
+  - added color-coded setup sections (People, Rooms, Tasks)
+  - updated People/Rooms controls to brighter board buttons and cleaner table styling
+  - replaced per-room task cards with a board-row style task editor list
+  - kept quick-edit first, with Advanced controls still available per task
+- Validation completed:
+  - `npm run lint` passed
+  - `npm run build` passed

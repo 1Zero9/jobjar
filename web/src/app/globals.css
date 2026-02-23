@@ -212,6 +212,22 @@ body {
   color: rgba(52, 78, 101, 0.55);
 }
 
+.admin-step {
+  border-top: 4px solid #5a8dff;
+}
+
+.admin-step.people {
+  border-top-color: #5a8dff;
+}
+
+.admin-step.rooms {
+  border-top-color: #00c1a3;
+}
+
+.admin-step.tasks {
+  border-top-color: #ffb020;
+}
+
 .tv-stars {
   position: relative;
   overflow: hidden;
