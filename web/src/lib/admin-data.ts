@@ -20,7 +20,7 @@ export type AdminTask = {
   roomId: string;
   estimatedMinutes: number;
   graceHours: number;
-  dueAt: string;
+  dueAt: string | null;
   validationMode: "basic" | "strict";
   minimumMinutes: number;
   recurrenceType: "daily" | "weekly" | "monthly" | "custom";
@@ -35,9 +35,9 @@ export type AdminData = {
   tasks: AdminTask[];
 };
 
-export async function getAdminData(): Promise<AdminData> {
+export async function getAdminData(options: { householdId: string }): Promise<AdminData> {
   const household = await prisma.household.findFirst({
-    orderBy: { createdAt: "asc" },
+    where: { id: options.householdId },
     include: {
       rooms: {
         where: { active: true },
@@ -48,7 +48,7 @@ export async function getAdminData(): Promise<AdminData> {
             include: {
               occurrences: {
                 orderBy: { dueAt: "desc" },
-                take: 1,
+                take: 5,
               },
               schedule: true,
               assignments: {
@@ -87,7 +87,7 @@ export async function getAdminData(): Promise<AdminData> {
 
   const tasks: AdminTask[] = household.rooms.flatMap((room) =>
     room.tasks.map((task) => {
-      const latestOccurrence = task.occurrences[0];
+      const pendingOccurrence = task.occurrences.find((entry) => entry.status !== "done");
       const schedule = task.schedule;
       const assignee = task.assignments[0];
       return {
@@ -96,7 +96,7 @@ export async function getAdminData(): Promise<AdminData> {
         roomId: room.id,
         estimatedMinutes: task.estimatedMinutes,
         graceHours: task.graceHours,
-        dueAt: (latestOccurrence?.dueAt ?? new Date()).toISOString(),
+        dueAt: pendingOccurrence?.dueAt?.toISOString() ?? schedule?.nextDueAt?.toISOString() ?? null,
         validationMode: parseValidationMode(task.description),
         minimumMinutes: parseMinimumMinutes(task.description),
         recurrenceType: schedule?.recurrenceType ?? "weekly",

@@ -8,9 +8,10 @@ type DashboardData = {
   source: "database" | "demo";
 };
 
-export async function getDashboardData(): Promise<DashboardData> {
+export async function getDashboardData(options: { householdId?: string } = {}): Promise<DashboardData> {
   try {
-    const households = await prisma.household.findMany({
+    const household = await prisma.household.findFirst({
+      ...(options.householdId ? { where: { id: options.householdId } } : {}),
       include: {
         rooms: {
           where: { active: true },
@@ -21,7 +22,7 @@ export async function getDashboardData(): Promise<DashboardData> {
               include: {
                 occurrences: {
                   orderBy: { dueAt: "desc" },
-                  take: 1,
+                  take: 5,
                 },
                 logs: {
                   where: { action: "started" },
@@ -40,11 +41,9 @@ export async function getDashboardData(): Promise<DashboardData> {
           },
         },
       },
-      orderBy: { createdAt: "asc" },
-      take: 1,
+      ...(options.householdId ? {} : { orderBy: { createdAt: "asc" } }),
     });
 
-    const household = households[0];
     if (!household) {
       return { rooms: demoRooms, tasks: demoTasks, source: "demo" };
     }
@@ -58,13 +57,15 @@ export async function getDashboardData(): Promise<DashboardData> {
     const tasks: TaskItem[] = household.rooms.flatMap((room) =>
       room.tasks.map((task) => {
         const latestOccurrence = task.occurrences[0];
-        const dueAt = latestOccurrence?.dueAt ?? new Date();
-        const status = mapOccurrenceStatus(latestOccurrence?.status);
+        const pendingOccurrence = task.occurrences.find((entry) => entry.status !== "done");
+        const statusSource = pendingOccurrence ?? latestOccurrence;
+        const lastDone = task.occurrences.find((entry) => entry.status === "done");
+        const status = mapOccurrenceStatus(statusSource?.status);
         return {
           id: task.id,
           roomId: room.id,
           title: task.title,
-          dueAt: dueAt.toISOString(),
+          dueAt: pendingOccurrence?.dueAt?.toISOString() ?? null,
           graceHours: task.graceHours,
           estimatedMinutes: task.estimatedMinutes,
           assigneeUserId: task.assignments[0]?.userId,
@@ -73,7 +74,7 @@ export async function getDashboardData(): Promise<DashboardData> {
           validationMode: parseValidationMode(task.description),
           minimumMinutes: parseMinimumMinutes(task.description),
           startedAt: task.logs[0]?.atTime.toISOString(),
-          lastCompletedAt: latestOccurrence?.completedAt?.toISOString(),
+          lastCompletedAt: lastDone?.completedAt?.toISOString(),
         };
       }),
     );

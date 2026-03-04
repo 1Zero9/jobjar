@@ -5,7 +5,7 @@ import {
   reopenTaskAction,
   startTaskAction,
 } from "@/app/actions";
-import { requireSessionUserId } from "@/lib/auth";
+import { requireSessionContext } from "@/lib/auth";
 import { getDashboardData } from "@/lib/dashboard-data";
 import { prisma } from "@/lib/prisma";
 import { deriveTaskRag } from "@/lib/rag";
@@ -15,11 +15,11 @@ import Link from "next/link";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const currentUserId = await requireSessionUserId("/");
+  const { userId: currentUserId, householdId } = await requireSessionContext("/");
   const currentUser = await prisma.user.findUnique({ where: { id: currentUserId }, select: { displayName: true } });
 
   const now = new Date();
-  const { rooms, tasks, source } = await getDashboardData();
+  const { rooms, tasks, source } = await getDashboardData({ householdId });
   const taskWithRag = tasks.map((task) => ({ task, rag: deriveTaskRag(task, now) }));
 
   const inProgress = taskWithRag.filter((entry) => entry.task.status !== "done" && Boolean(entry.task.startedAt));
@@ -64,24 +64,17 @@ export default async function Home() {
             <StatChip label="In progress" value={String(inProgress.length)} />
           </div>
 
-          <form action={createQuickTaskAction} className="mt-3 grid grid-cols-1 gap-2 rounded-2xl border border-[#d7e3f4] bg-[#f3f8ff] p-3 sm:grid-cols-[1fr_auto_auto]">
+          <form action={createQuickTaskAction} className="mt-3 grid grid-cols-1 gap-2 rounded-2xl border border-[#d7e3f4] bg-[#f3f8ff] p-3 sm:grid-cols-[1fr_auto]">
             <input
               name="title"
               type="text"
               required
-              placeholder="What job needs done right now?"
+              placeholder="Capture a job fast..."
               className="rounded-xl border border-[#d7e3f4] bg-[#f8fbff] px-3 py-2 text-sm"
             />
-            <select name="roomId" className="rounded-xl border border-[#d7e3f4] bg-[#f8fbff] px-3 py-2 text-sm">
-              <option value="">Any room</option>
-              {rooms.map((room) => (
-                <option key={room.id} value={room.id}>
-                  {room.name}
-                </option>
-              ))}
-            </select>
             <button className="action-btn bright">Add task</button>
           </form>
+          <p className="mt-2 text-xs text-[#5e6e80]">Quick captures go to Inbox with no due date. Triage room and schedule later.</p>
 
           <div className="mt-3 grid grid-cols-2 gap-2 sm:w-[28rem]">
             <Link href="/admin" className="action-btn subtle text-center">
@@ -96,7 +89,7 @@ export default async function Home() {
           </p>
         </header>
 
-        <section className="grid grid-cols-1 gap-3 xl:grid-cols-3">
+        <section className="grid grid-cols-1 gap-4 xl:grid-cols-3">
           <TaskSection title="To Do" subtitle="Ready to start" items={todo} laneClass="lane-kanban-todo" roomNameById={roomNameById} />
           <TaskSection
             title="In Progress"
@@ -126,7 +119,7 @@ function TaskSection({
   roomNameById: Map<string, string>;
 }) {
   return (
-    <section className={`board-shell kanban-lane ${laneClass}`}>
+    <section className={`board-shell kanban-lane p-4 ${laneClass}`}>
       <div className="mb-3 flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold text-[#17263a]">{title}</h2>
@@ -167,7 +160,7 @@ function TaskBoardCard({
             {task.title}
           </p>
           <p className="mt-1 text-xs text-[#5e6e80]">
-            {roomName} • {task.assigneeName ?? "Unassigned"} • {formatTime(task.dueAt)}
+            {roomName} • {task.assigneeName ?? "Unassigned"} • {formatDueLabel(task.dueAt)}
           </p>
           {task.validationMode === "strict" ? <p className="mt-1 text-[11px] font-semibold text-[#d67b00]">Strict check enabled</p> : null}
         </div>
@@ -212,7 +205,11 @@ function StatChip({ label, value }: { label: string; value: string }) {
   );
 }
 
-function formatTime(dateIso: string) {
+function formatDueLabel(dateIso: string | null) {
+  if (!dateIso) {
+    return "No due date";
+  }
+
   return new Intl.DateTimeFormat("en-US", {
     hour: "numeric",
     minute: "2-digit",
@@ -240,9 +237,12 @@ function taskEmoji(title: string, roomName: string) {
   return "⭐";
 }
 
-function dueBadge(dueIso: string, status: TaskItem["status"]) {
+function dueBadge(dueIso: string | null, status: TaskItem["status"]) {
   if (status === "done") {
     return "done";
+  }
+  if (!dueIso) {
+    return "no due";
   }
   const due = new Date(dueIso).getTime();
   const now = Date.now();

@@ -5,6 +5,10 @@ export function deriveTaskRag(task: TaskItem, now = new Date()): RagStatus {
     return "green";
   }
 
+  if (!task.dueAt) {
+    return "green";
+  }
+
   const dueAt = new Date(task.dueAt);
   const msToDue = dueAt.getTime() - now.getTime();
   const graceMs = task.graceHours * 60 * 60 * 1000;

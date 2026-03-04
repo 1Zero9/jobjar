@@ -7,7 +7,7 @@ export type TaskItem = {
   id: string;
   roomId: string;
   title: string;
-  dueAt: string;
+  dueAt: string | null;
   graceHours: number;
   estimatedMinutes: number;
   assigneeUserId?: string;

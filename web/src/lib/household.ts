@@ -4,16 +4,43 @@ const DEFAULT_OWNER_EMAIL = "owner@jobjar.app";
 const DEFAULT_OWNER_NAME = "House Admin";
 const DEFAULT_HOUSEHOLD_NAME = "Demo Household";
 
-export async function getOrCreateDefaultHouseholdId() {
-  const existing = await prisma.household.findFirst({
-    orderBy: { createdAt: "asc" },
+export async function getOrCreateHouseholdForUser(userId: string) {
+  const existingMembership = await prisma.householdMember.findFirst({
+    where: { userId },
+    orderBy: { joinedAt: "asc" },
+    select: { householdId: true },
+  });
+  if (existingMembership) {
+    return existingMembership.householdId;
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { displayName: true },
+  });
+  if (!user) {
+    throw new Error("User not found for household bootstrap");
+  }
+
+  const household = await prisma.household.create({
+    data: {
+      name: user.displayName ? `${user.displayName}'s Household` : DEFAULT_HOUSEHOLD_NAME,
+      ownerUserId: userId,
+      timezone: "Europe/Dublin",
+      members: {
+        create: {
+          userId,
+          role: "admin",
+        },
+      },
+    },
     select: { id: true },
   });
 
-  if (existing) {
-    return existing.id;
-  }
+  return household.id;
+}
 
+export async function getOrCreateDefaultHouseholdId() {
   const owner = await prisma.user.upsert({
     where: { email: DEFAULT_OWNER_EMAIL },
     update: {},
@@ -23,20 +50,5 @@ export async function getOrCreateDefaultHouseholdId() {
     },
   });
 
-  const household = await prisma.household.create({
-    data: {
-      name: DEFAULT_HOUSEHOLD_NAME,
-      ownerUserId: owner.id,
-      timezone: "Europe/Dublin",
-      members: {
-        create: {
-          userId: owner.id,
-          role: "admin",
-        },
-      },
-    },
-    select: { id: true },
-  });
-
-  return household.id;
+  return getOrCreateHouseholdForUser(owner.id);
 }

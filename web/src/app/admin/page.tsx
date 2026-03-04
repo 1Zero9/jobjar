@@ -17,8 +17,8 @@ import Link from "next/link";
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
-  await requireAdmin("/admin");
-  const { rooms, tasks, people } = await getAdminData();
+  const { householdId } = await requireAdmin("/admin");
+  const { rooms, tasks, people } = await getAdminData({ householdId });
   const peopleById = new Map(people.map((person) => [person.id, person.displayName]));
   const roomNameById = new Map(rooms.map((room) => [room.id, room.name]));
 
@@ -141,7 +141,7 @@ export default async function AdminPage() {
 
         <section id="step-tasks" className="board-shell admin-step tasks p-4">
           <h2 className="text-lg font-semibold">Step 3: Tasks</h2>
-          <p className="text-xs text-[#5e6e80]">Quick add first. Open Advanced for schedule and validation settings.</p>
+          <p className="text-xs text-[#5e6e80]">Quick add first. Due date is optional. Open Advanced for schedule and validation settings.</p>
 
           <form action={createTaskAction} className="mt-3 grid grid-cols-1 gap-2 rounded-xl border border-[#d7e3f4] bg-[#f2f8ff] p-3 md:grid-cols-4">
             <input name="title" type="text" required placeholder="Task title" className="admin-input px-3 py-2 text-sm" />
@@ -276,7 +276,10 @@ function ProgressChip({ label, value }: { label: string; value: string }) {
   );
 }
 
-function toDateTimeLocal(dateIso: string) {
+function toDateTimeLocal(dateIso: string | null) {
+  if (!dateIso) {
+    return "";
+  }
   const date = new Date(dateIso);
   if (Number.isNaN(date.getTime())) {
     return "";

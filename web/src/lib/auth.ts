@@ -1,65 +1,154 @@
+import { createHmac, timingSafeEqual } from "node:crypto";
+import { MemberRole } from "@prisma/client";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 
-const SESSION_COOKIE = "jobjar_session_user";
+const SESSION_USER_COOKIE = "jobjar_session_user";
+const SESSION_HOUSEHOLD_COOKIE = "jobjar_session_household";
+const SESSION_SIGNING_SECRET = process.env.SESSION_SIGNING_SECRET || process.env.NEXTAUTH_SECRET || "jobjar-dev-secret";
+
+const SESSION_COOKIE_OPTIONS = {
+  httpOnly: true,
+  sameSite: "lax" as const,
+  secure: process.env.NODE_ENV === "production",
+  path: "/",
+  maxAge: 60 * 60 * 24 * 30,
+};
+
+export type SessionContext = {
+  userId: string;
+  householdId: string;
+  role: MemberRole;
+};
 
 export async function getSessionUserId() {
   const jar = await cookies();
-  return jar.get(SESSION_COOKIE)?.value ?? null;
+  return decodeSignedValue(jar.get(SESSION_USER_COOKIE)?.value);
 }
 
-export async function setSessionUserId(userId: string) {
+export async function getSessionHouseholdId() {
   const jar = await cookies();
-  jar.set(SESSION_COOKIE, userId, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 30,
-  });
+  return decodeSignedValue(jar.get(SESSION_HOUSEHOLD_COOKIE)?.value);
+}
+
+export async function setSessionUserId(userId: string, householdId?: string) {
+  const jar = await cookies();
+  jar.set(SESSION_USER_COOKIE, encodeSignedValue(userId), SESSION_COOKIE_OPTIONS);
+  if (householdId) {
+    jar.set(SESSION_HOUSEHOLD_COOKIE, encodeSignedValue(householdId), SESSION_COOKIE_OPTIONS);
+  }
+}
+
+export async function setSessionHouseholdId(householdId: string) {
+  const jar = await cookies();
+  jar.set(SESSION_HOUSEHOLD_COOKIE, encodeSignedValue(householdId), SESSION_COOKIE_OPTIONS);
 }
 
 export async function clearSession() {
   const jar = await cookies();
-  jar.delete(SESSION_COOKIE);
+  jar.delete(SESSION_USER_COOKIE);
+  jar.delete(SESSION_HOUSEHOLD_COOKIE);
 }
 
-export async function requireSessionUserId(nextPath = "/") {
-  const userId = await getSessionUserId();
-  if (!userId) {
-    redirect(`/login?next=${encodeURIComponent(nextPath)}`);
-  }
-  return userId;
-}
-
-export async function getSessionRole() {
+export async function getSessionContext(): Promise<SessionContext | null> {
   const userId = await getSessionUserId();
   if (!userId) {
     return null;
   }
-  const household = await prisma.household.findFirst({
-    orderBy: { createdAt: "asc" },
-    select: {
-      id: true,
-      members: {
-        where: { userId },
-        select: { role: true },
-        take: 1,
-      },
-    },
-  });
-  return household?.members[0]?.role ?? null;
+
+  const preferredHouseholdId = await getSessionHouseholdId();
+  const preferredMembership = preferredHouseholdId
+    ? await prisma.householdMember.findUnique({
+        where: {
+          householdId_userId: {
+            householdId: preferredHouseholdId,
+            userId,
+          },
+        },
+        select: { householdId: true, role: true },
+      })
+    : null;
+
+  const membership =
+    preferredMembership ??
+    (await prisma.householdMember.findFirst({
+      where: { userId },
+      orderBy: { joinedAt: "asc" },
+      select: { householdId: true, role: true },
+    }));
+
+  if (!membership) {
+    return null;
+  }
+
+  return {
+    userId,
+    householdId: membership.householdId,
+    role: membership.role,
+  };
+}
+
+export async function requireSessionContext(nextPath = "/"): Promise<SessionContext> {
+  const context = await getSessionContext();
+  if (!context) {
+    redirect(`/login?next=${encodeURIComponent(nextPath)}`);
+  }
+  return context;
+}
+
+export async function requireSessionUserId(nextPath = "/") {
+  const context = await requireSessionContext(nextPath);
+  return context.userId;
+}
+
+export async function getSessionRole() {
+  const context = await getSessionContext();
+  return context?.role ?? null;
 }
 
 export async function requireAdmin(nextPath = "/admin") {
-  await requireSessionUserId(nextPath);
-  const role = await getSessionRole();
-  if (role !== "admin") {
+  const context = await requireSessionContext(nextPath);
+  if (context.role !== "admin") {
     redirect("/");
   }
+  return context;
 }
 
 export function getHouseholdPasscode() {
   return process.env.HOUSEHOLD_PASSCODE || "jobjar";
+}
+
+function encodeSignedValue(value: string) {
+  const signature = createHmac("sha256", SESSION_SIGNING_SECRET).update(value).digest("hex");
+  return `${value}.${signature}`;
+}
+
+function decodeSignedValue(rawValue: string | undefined) {
+  if (!rawValue) {
+    return null;
+  }
+
+  const splitIndex = rawValue.lastIndexOf(".");
+  if (splitIndex <= 0 || splitIndex === rawValue.length - 1) {
+    return null;
+  }
+
+  const payload = rawValue.slice(0, splitIndex);
+  const providedSignature = rawValue.slice(splitIndex + 1);
+  const expectedSignature = createHmac("sha256", SESSION_SIGNING_SECRET).update(payload).digest("hex");
+
+  try {
+    const providedBuffer = Buffer.from(providedSignature, "hex");
+    const expectedBuffer = Buffer.from(expectedSignature, "hex");
+    if (providedBuffer.length !== expectedBuffer.length) {
+      return null;
+    }
+    if (!timingSafeEqual(providedBuffer, expectedBuffer)) {
+      return null;
+    }
+    return payload;
+  } catch {
+    return null;
+  }
 }

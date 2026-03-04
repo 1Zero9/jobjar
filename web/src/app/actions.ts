@@ -1,15 +1,15 @@
 "use server";
 
-import { getOrCreateDefaultHouseholdId } from "@/lib/household";
+import { requireSessionContext, clearSession, getHouseholdPasscode, setSessionUserId } from "@/lib/auth";
+import { getOrCreateHouseholdForUser } from "@/lib/household";
 import { prisma } from "@/lib/prisma";
-import { clearSession, getHouseholdPasscode, getSessionRole, getSessionUserId, setSessionUserId } from "@/lib/auth";
 import { getUserPasswordHash, setUserPasswordHash } from "@/lib/auth-store";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 export async function createRoomAction(formData: FormData) {
-  await requireAdminAction();
+  const { householdId } = await requireAdminAction();
   const name = String(formData.get("name") ?? "").trim();
   const designation = String(formData.get("designation") ?? "").trim() || "General";
 
@@ -17,7 +17,6 @@ export async function createRoomAction(formData: FormData) {
     return;
   }
 
-  const householdId = await getOrCreateDefaultHouseholdId();
   const maxSort = await prisma.room.aggregate({
     where: { householdId },
     _max: { sortOrder: true },
@@ -36,8 +35,8 @@ export async function createRoomAction(formData: FormData) {
 }
 
 export async function updateRoomAction(formData: FormData) {
-  await requireAdminAction();
-  const roomId = String(formData.get("roomId") ?? "");
+  const { householdId } = await requireAdminAction();
+  const roomId = String(formData.get("roomId") ?? "").trim();
   const name = String(formData.get("name") ?? "").trim();
   const designation = String(formData.get("designation") ?? "").trim() || "General";
 
@@ -45,8 +44,8 @@ export async function updateRoomAction(formData: FormData) {
     return;
   }
 
-  await prisma.room.update({
-    where: { id: roomId },
+  await prisma.room.updateMany({
+    where: { id: roomId, householdId, active: true },
     data: { name, designation },
   });
 
@@ -54,19 +53,27 @@ export async function updateRoomAction(formData: FormData) {
 }
 
 export async function deleteRoomAction(formData: FormData) {
-  await requireAdminAction();
-  const roomId = String(formData.get("roomId") ?? "");
+  const { householdId } = await requireAdminAction();
+  const roomId = String(formData.get("roomId") ?? "").trim();
   if (!roomId) {
+    return;
+  }
+
+  const room = await prisma.room.findFirst({
+    where: { id: roomId, householdId },
+    select: { id: true },
+  });
+  if (!room) {
     return;
   }
 
   await prisma.$transaction([
     prisma.task.updateMany({
-      where: { roomId },
+      where: { roomId: room.id },
       data: { active: false },
     }),
-    prisma.room.update({
-      where: { id: roomId },
+    prisma.room.updateMany({
+      where: { id: room.id, householdId },
       data: { active: false },
     }),
   ]);
@@ -74,14 +81,14 @@ export async function deleteRoomAction(formData: FormData) {
 }
 
 export async function createTaskAction(formData: FormData) {
-  await requireAdminAction();
+  const { householdId } = await requireAdminAction();
   const title = String(formData.get("title") ?? "").trim();
-  const roomId = String(formData.get("roomId") ?? "").trim();
+  const requestedRoomId = String(formData.get("roomId") ?? "").trim();
   const estimatedMinutes = toPositiveInt(formData.get("estimatedMinutes"), 15);
   const graceHours = toPositiveInt(formData.get("graceHours"), 12);
   const minimumMinutes = toNonNegativeInt(formData.get("minimumMinutes"), 0);
   const validationMode = formData.get("strictMode") === "on" ? "strict" : "basic";
-  const dueAt = toDate(formData.get("dueAt")) ?? new Date();
+  const dueAt = toDate(formData.get("dueAt"));
   const description = buildValidationMeta(validationMode, minimumMinutes);
 
   const recurrenceType = parseRecurrenceType(formData.get("recurrenceType"));
@@ -89,14 +96,22 @@ export async function createTaskAction(formData: FormData) {
   const recurrenceTime = String(formData.get("recurrenceTime") ?? "").trim() || "09:00";
   const assigneeUserId = String(formData.get("assigneeUserId") ?? "").trim();
 
-  if (!title || !roomId) {
+  if (!title || !requestedRoomId) {
+    return;
+  }
+
+  const room = await prisma.room.findFirst({
+    where: { id: requestedRoomId, householdId, active: true },
+    select: { id: true },
+  });
+  if (!room) {
     return;
   }
 
   const task = await prisma.task.create({
     data: {
       title,
-      roomId,
+      roomId: room.id,
       estimatedMinutes,
       graceHours,
       description,
@@ -113,62 +128,49 @@ export async function createTaskAction(formData: FormData) {
     select: { id: true },
   });
 
-  await prisma.taskOccurrence.create({
-    data: {
-      taskId: task.id,
-      dueAt,
-      status: "pending",
-    },
-  });
-
-  if (assigneeUserId) {
-    await prisma.taskAssignment.create({
+  if (dueAt) {
+    await prisma.taskOccurrence.create({
       data: {
         taskId: task.id,
-        userId: assigneeUserId,
-        assignedFrom: new Date(),
+        dueAt,
+        status: "pending",
       },
     });
+  }
+
+  if (assigneeUserId) {
+    const assigneeMembership = await prisma.householdMember.findUnique({
+      where: {
+        householdId_userId: {
+          householdId,
+          userId: assigneeUserId,
+        },
+      },
+      select: { userId: true },
+    });
+
+    if (assigneeMembership) {
+      await prisma.taskAssignment.create({
+        data: {
+          taskId: task.id,
+          userId: assigneeUserId,
+          assignedFrom: new Date(),
+        },
+      });
+    }
   }
 
   refreshViews();
 }
 
 export async function createQuickTaskAction(formData: FormData) {
-  await requireSessionMemberAction();
+  const { userId, householdId } = await requireSessionMemberAction();
   const title = String(formData.get("title") ?? "").trim();
-  const requestedRoomId = String(formData.get("roomId") ?? "").trim();
   if (!title) {
     return;
   }
 
-  const householdId = await getOrCreateDefaultHouseholdId();
-  let roomId = requestedRoomId;
-
-  if (!roomId) {
-    const firstRoom = await prisma.room.findFirst({
-      where: { householdId, active: true },
-      orderBy: { sortOrder: "asc" },
-      select: { id: true },
-    });
-    if (firstRoom) {
-      roomId = firstRoom.id;
-    } else {
-      const createdRoom = await prisma.room.create({
-        data: {
-          householdId,
-          name: "General",
-          designation: "Quick add area",
-          sortOrder: 1,
-        },
-        select: { id: true },
-      });
-      roomId = createdRoom.id;
-    }
-  }
-
-  const dueAt = new Date();
-  const currentUserId = await getSessionUserId();
+  const roomId = await getOrCreateCaptureRoomId(householdId);
   const task = await prisma.task.create({
     data: {
       title,
@@ -176,49 +178,33 @@ export async function createQuickTaskAction(formData: FormData) {
       estimatedMinutes: 15,
       graceHours: 12,
       description: "validation=basic;min=0",
-      schedule: {
-        create: {
-          recurrenceType: "weekly",
-          intervalCount: 1,
-          timeOfDay: "09:00",
-          nextDueAt: dueAt,
-          daysOfWeek: [],
-        },
-      },
     },
     select: { id: true },
   });
 
-  await prisma.taskOccurrence.create({
+  await prisma.taskAssignment.create({
     data: {
       taskId: task.id,
-      dueAt,
-      status: "pending",
+      userId,
+      assignedFrom: new Date(),
     },
   });
-
-  if (currentUserId) {
-    await prisma.taskAssignment.create({
-      data: {
-        taskId: task.id,
-        userId: currentUserId,
-        assignedFrom: new Date(),
-      },
-    });
-  }
 
   refreshViews();
 }
 
 export async function updateTaskAction(formData: FormData) {
-  await requireAdminAction();
+  const { householdId } = await requireAdminAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
   if (!taskId) {
     return;
   }
 
-  const existing = await prisma.task.findUnique({
-    where: { id: taskId },
+  const existing = await prisma.task.findFirst({
+    where: {
+      id: taskId,
+      room: { householdId },
+    },
     include: {
       schedule: true,
       assignments: {
@@ -233,7 +219,7 @@ export async function updateTaskAction(formData: FormData) {
   }
 
   const title = String(formData.get("title") ?? existing.title).trim() || existing.title;
-  const roomId = String(formData.get("roomId") ?? existing.roomId).trim() || existing.roomId;
+  const requestedRoomId = String(formData.get("roomId") ?? existing.roomId).trim() || existing.roomId;
   const estimatedMinutes = toPositiveInt(formData.get("estimatedMinutes"), existing.estimatedMinutes);
   const graceHours = toPositiveInt(formData.get("graceHours"), existing.graceHours);
 
@@ -247,8 +233,21 @@ export async function updateTaskAction(formData: FormData) {
       ? "basic"
       : currentValidationMode;
   const minimumMinutes = toNonNegativeInt(formData.get("minimumMinutes"), currentMinimum);
-  const dueAt = toDate(formData.get("dueAt"));
+  const dueAtRaw = formData.get("dueAt");
+  const dueAt = toDate(dueAtRaw);
+  const dueWasSupplied = dueAtRaw !== null;
   const description = buildValidationMeta(validationMode, minimumMinutes);
+
+  let roomId = existing.roomId;
+  if (requestedRoomId !== existing.roomId) {
+    const targetRoom = await prisma.room.findFirst({
+      where: { id: requestedRoomId, householdId, active: true },
+      select: { id: true },
+    });
+    if (targetRoom) {
+      roomId = targetRoom.id;
+    }
+  }
 
   const recurrenceType = formData.get("recurrenceType")
     ? parseRecurrenceType(formData.get("recurrenceType"))
@@ -278,14 +277,14 @@ export async function updateTaskAction(formData: FormData) {
       recurrenceType,
       intervalCount: recurrenceInterval,
       timeOfDay: recurrenceTime,
-      nextDueAt: dueAt ?? new Date(),
+      nextDueAt: dueAt,
       daysOfWeek: [],
     },
     update: {
       recurrenceType,
       intervalCount: recurrenceInterval,
       timeOfDay: recurrenceTime,
-      ...(dueAt ? { nextDueAt: dueAt } : {}),
+      ...(dueWasSupplied ? { nextDueAt: dueAt } : {}),
     },
   });
 
@@ -312,40 +311,72 @@ export async function updateTaskAction(formData: FormData) {
     }
   }
 
+  if (dueWasSupplied && !dueAt) {
+    await prisma.taskOccurrence.deleteMany({
+      where: {
+        taskId,
+        status: { in: ["pending", "overdue", "skipped"] },
+      },
+    });
+  }
+
   await prisma.taskAssignment.updateMany({
     where: { taskId, assignedTo: null },
     data: { assignedTo: new Date() },
   });
 
   if (assigneeUserId) {
-    await prisma.taskAssignment.create({
-      data: {
-        taskId,
-        userId: assigneeUserId,
-        assignedFrom: new Date(),
+    const assigneeMembership = await prisma.householdMember.findUnique({
+      where: {
+        householdId_userId: {
+          householdId,
+          userId: assigneeUserId,
+        },
       },
+      select: { userId: true },
     });
+
+    if (assigneeMembership) {
+      await prisma.taskAssignment.create({
+        data: {
+          taskId,
+          userId: assigneeUserId,
+          assignedFrom: new Date(),
+        },
+      });
+    }
   }
 
   refreshViews();
 }
 
 export async function deleteTaskAction(formData: FormData) {
-  await requireAdminAction();
+  const { householdId } = await requireAdminAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
   if (!taskId) {
     return;
   }
 
+  const task = await prisma.task.findFirst({
+    where: {
+      id: taskId,
+      room: { householdId },
+    },
+    select: { id: true },
+  });
+  if (!task) {
+    return;
+  }
+
   await prisma.task.update({
-    where: { id: taskId },
+    where: { id: task.id },
     data: { active: false },
   });
   refreshViews();
 }
 
 export async function createPersonAction(formData: FormData) {
-  await requireAdminAction();
+  const { householdId } = await requireAdminAction();
   const displayName = String(formData.get("displayName") ?? "").trim();
   const emailInput = String(formData.get("email") ?? "").trim();
   const passcodeInput = String(formData.get("passcode") ?? "").trim();
@@ -354,7 +385,6 @@ export async function createPersonAction(formData: FormData) {
     return;
   }
 
-  const householdId = await getOrCreateDefaultHouseholdId();
   const email =
     emailInput || `${displayName.toLowerCase().replace(/[^a-z0-9]+/g, ".").replace(/^\.|\.$/g, "")}@jobjar.local`;
 
@@ -390,47 +420,88 @@ export async function createPersonAction(formData: FormData) {
 }
 
 export async function removePersonAction(formData: FormData) {
-  await requireAdminAction();
+  const { householdId, userId: currentUserId } = await requireAdminAction();
   const userId = String(formData.get("userId") ?? "").trim();
   if (!userId) {
     return;
   }
 
-  const householdId = await getOrCreateDefaultHouseholdId();
+  if (userId === currentUserId) {
+    return;
+  }
 
   await prisma.householdMember.deleteMany({
     where: { householdId, userId },
   });
 
-  await prisma.taskAssignment.updateMany({
-    where: { userId, assignedTo: null },
-    data: { assignedTo: new Date() },
+  const openAssignmentIds = await prisma.taskAssignment.findMany({
+    where: {
+      userId,
+      assignedTo: null,
+      task: {
+        room: { householdId },
+      },
+    },
+    select: { id: true },
   });
+
+  if (openAssignmentIds.length > 0) {
+    await prisma.taskAssignment.updateMany({
+      where: { id: { in: openAssignmentIds.map((entry) => entry.id) } },
+      data: { assignedTo: new Date() },
+    });
+  }
 
   refreshViews();
 }
 
 export async function setPersonPasscodeAction(formData: FormData) {
-  await requireAdminAction();
+  const { householdId } = await requireAdminAction();
   const userId = String(formData.get("userId") ?? "").trim();
   const passcode = String(formData.get("passcode") ?? "").trim();
   if (!userId || passcode.length < 4) {
     return;
   }
+
+  const membership = await prisma.householdMember.findUnique({
+    where: {
+      householdId_userId: {
+        householdId,
+        userId,
+      },
+    },
+    select: { userId: true },
+  });
+  if (!membership) {
+    return;
+  }
+
   await setUserPasswordHash(userId, hashPassword(passcode));
   refreshViews();
 }
 
 export async function startTaskAction(formData: FormData) {
-  await requireSessionMemberAction();
+  const { householdId } = await requireSessionMemberAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
   if (!taskId) {
     return;
   }
 
+  const task = await prisma.task.findFirst({
+    where: {
+      id: taskId,
+      active: true,
+      room: { householdId },
+    },
+    select: { id: true },
+  });
+  if (!task) {
+    return;
+  }
+
   await prisma.taskLog.create({
     data: {
-      taskId,
+      taskId: task.id,
       action: "started",
       atTime: new Date(),
     },
@@ -440,7 +511,7 @@ export async function startTaskAction(formData: FormData) {
 }
 
 export async function completeTaskAction(formData: FormData) {
-  await requireSessionMemberAction();
+  const { userId: currentUserId, householdId } = await requireSessionMemberAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
   const note = String(formData.get("note") ?? "").trim();
   if (!taskId) {
@@ -448,9 +519,11 @@ export async function completeTaskAction(formData: FormData) {
   }
 
   const now = new Date();
-  const currentUserId = await getSessionUserId();
-  const task = await prisma.task.findUnique({
-    where: { id: taskId },
+  const task = await prisma.task.findFirst({
+    where: {
+      id: taskId,
+      room: { householdId },
+    },
     select: {
       id: true,
       description: true,
@@ -497,17 +570,17 @@ export async function completeTaskAction(formData: FormData) {
       data: {
         status: "done",
         completedAt: now,
-        ...(currentUserId ? { completedBy: currentUserId } : {}),
+        completedBy: currentUserId,
       },
     });
   } else {
     await prisma.taskOccurrence.create({
       data: {
-        taskId,
+        taskId: task.id,
         dueAt: now,
         status: "done",
         completedAt: now,
-        ...(currentUserId ? { completedBy: currentUserId } : {}),
+        completedBy: currentUserId,
       },
     });
   }
@@ -515,7 +588,7 @@ export async function completeTaskAction(formData: FormData) {
   const durationSeconds = lastStart ? Math.max(0, Math.floor((now.getTime() - lastStart.getTime()) / 1000)) : null;
   await prisma.taskLog.create({
     data: {
-      taskId,
+      taskId: task.id,
       action: "completed",
       atTime: now,
       note: note || null,
@@ -527,14 +600,25 @@ export async function completeTaskAction(formData: FormData) {
 }
 
 export async function reopenTaskAction(formData: FormData) {
-  await requireSessionMemberAction();
+  const { householdId } = await requireSessionMemberAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
   if (!taskId) {
     return;
   }
 
+  const task = await prisma.task.findFirst({
+    where: {
+      id: taskId,
+      room: { householdId },
+    },
+    select: { id: true },
+  });
+  if (!task) {
+    return;
+  }
+
   const latestOccurrence = await prisma.taskOccurrence.findFirst({
-    where: { taskId },
+    where: { taskId: task.id },
     orderBy: { dueAt: "desc" },
     select: { id: true, status: true },
   });
@@ -551,7 +635,7 @@ export async function reopenTaskAction(formData: FormData) {
 
   await prisma.taskLog.create({
     data: {
-      taskId,
+      taskId: task.id,
       action: "reopened",
       atTime: new Date(),
       note: "Marked not done",
@@ -559,6 +643,34 @@ export async function reopenTaskAction(formData: FormData) {
   });
 
   refreshViews();
+}
+
+export async function bootstrapOwnerAction(formData: FormData) {
+  const existingUsers = await prisma.user.count();
+  if (existingUsers > 0) {
+    redirect("/login");
+  }
+
+  const displayName = String(formData.get("displayName") ?? "").trim() || "House Admin";
+  const email = String(formData.get("email") ?? "").trim() || "owner@jobjar.app";
+  const passcode = String(formData.get("passcode") ?? "").trim();
+
+  if (passcode.length < 4) {
+    redirect("/login?error=setup");
+  }
+
+  const user = await prisma.user.create({
+    data: {
+      email,
+      displayName,
+    },
+    select: { id: true },
+  });
+
+  await setUserPasswordHash(user.id, hashPassword(passcode));
+  const householdId = await getOrCreateHouseholdForUser(user.id);
+  await setSessionUserId(user.id, householdId);
+  redirect("/");
 }
 
 export async function loginAction(formData: FormData) {
@@ -584,7 +696,8 @@ export async function loginAction(formData: FormData) {
     redirect(`/login?next=${encodeURIComponent(nextPath)}&error=invalid`);
   }
 
-  await setSessionUserId(user.id);
+  const householdId = await getOrCreateHouseholdForUser(user.id);
+  await setSessionUserId(user.id, householdId);
   redirect(nextPath.startsWith("/") ? nextPath : "/");
 }
 
@@ -662,19 +775,53 @@ function refreshViews() {
 }
 
 async function requireAdminAction() {
-  const userId = await getSessionUserId();
-  if (!userId) {
-    redirect("/login?next=/admin");
-  }
-  const role = await getSessionRole();
-  if (role !== "admin") {
+  const context = await requireSessionContext("/admin");
+  if (context.role !== "admin") {
     redirect("/");
   }
+  return context;
 }
 
 async function requireSessionMemberAction() {
-  const userId = await getSessionUserId();
-  if (!userId) {
-    redirect("/login?next=/");
+  const context = await requireSessionContext("/");
+  if (context.role === "viewer") {
+    redirect("/");
   }
+  return context;
+}
+
+async function getOrCreateCaptureRoomId(householdId: string) {
+  const existingRoom = await prisma.room.findFirst({
+    where: {
+      householdId,
+      active: true,
+      name: {
+        equals: "Inbox",
+        mode: "insensitive",
+      },
+    },
+    orderBy: { sortOrder: "asc" },
+    select: { id: true },
+  });
+
+  if (existingRoom) {
+    return existingRoom.id;
+  }
+
+  const maxSort = await prisma.room.aggregate({
+    where: { householdId },
+    _max: { sortOrder: true },
+  });
+
+  const room = await prisma.room.create({
+    data: {
+      householdId,
+      name: "Inbox",
+      designation: "Quick capture queue",
+      sortOrder: (maxSort._max.sortOrder ?? 0) + 1,
+    },
+    select: { id: true },
+  });
+
+  return room.id;
 }

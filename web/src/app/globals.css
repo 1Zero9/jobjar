@@ -291,12 +291,190 @@ body {
   animation: star-drift 28s linear infinite reverse;
 }
 
+.tv-daylight {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 12% 8%, rgba(255, 220, 126, 0.34), transparent 30%),
+    radial-gradient(circle at 88% 10%, rgba(128, 203, 255, 0.3), transparent 32%),
+    radial-gradient(circle at 58% 84%, rgba(186, 232, 170, 0.25), transparent 36%),
+    linear-gradient(180deg, #f8fcff 0%, #eef7ff 56%, #f7f4ff 100%);
+}
+
+.tv-daylight::before,
+.tv-daylight::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+.tv-daylight::before {
+  inset: 0;
+  background:
+    radial-gradient(14px 8px at 18% 20%, rgba(255, 255, 255, 0.74), transparent),
+    radial-gradient(16px 9px at 47% 16%, rgba(255, 255, 255, 0.65), transparent),
+    radial-gradient(14px 8px at 72% 22%, rgba(255, 255, 255, 0.72), transparent),
+    radial-gradient(15px 9px at 82% 42%, rgba(255, 255, 255, 0.62), transparent);
+  background-size: 380px 240px;
+  opacity: 0.65;
+  animation: cloud-drift 24s linear infinite;
+}
+
+.tv-daylight::after {
+  inset: 0;
+  background-image:
+    radial-gradient(2px 2px at 28px 35px, rgba(255, 191, 105, 0.45), transparent),
+    radial-gradient(2px 2px at 140px 90px, rgba(89, 163, 255, 0.35), transparent),
+    radial-gradient(2px 2px at 248px 58px, rgba(255, 116, 139, 0.3), transparent),
+    radial-gradient(2px 2px at 324px 146px, rgba(111, 215, 158, 0.35), transparent);
+  background-size: 360px 220px;
+  opacity: 0.35;
+}
+
+.tv-bowie-bg {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 12% 8%, rgba(245, 195, 68, 0.2), transparent 32%),
+    radial-gradient(circle at 86% 9%, rgba(212, 163, 115, 0.18), transparent 34%),
+    radial-gradient(circle at 58% 86%, rgba(102, 187, 106, 0.14), transparent 38%),
+    linear-gradient(180deg, #f9f7f2 0%, #fefcf8 100%);
+}
+
+.tv-bowie-bg::before,
+.tv-bowie-bg::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+.tv-bowie-bg::before {
+  inset: 0;
+  background:
+    radial-gradient(13px 8px at 16% 18%, rgba(255, 255, 255, 0.75), transparent),
+    radial-gradient(14px 9px at 41% 14%, rgba(255, 255, 255, 0.65), transparent),
+    radial-gradient(13px 8px at 69% 20%, rgba(255, 255, 255, 0.74), transparent),
+    radial-gradient(14px 8px at 84% 36%, rgba(255, 255, 255, 0.62), transparent);
+  background-size: 360px 220px;
+  opacity: 0.6;
+  animation: cloud-drift 26s linear infinite;
+}
+
+.tv-bowie-bg::after {
+  inset: 0;
+  background-image:
+    radial-gradient(2px 2px at 25px 32px, rgba(245, 195, 68, 0.45), transparent),
+    radial-gradient(2px 2px at 135px 95px, rgba(212, 163, 115, 0.35), transparent),
+    radial-gradient(2px 2px at 250px 58px, rgba(239, 83, 80, 0.3), transparent),
+    radial-gradient(2px 2px at 322px 144px, rgba(102, 187, 106, 0.34), transparent);
+  background-size: 340px 210px;
+  opacity: 0.32;
+}
+
+.tv-shell {
+  border-radius: 1.35rem;
+  border: 1px solid #e0e0e0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%);
+  box-shadow:
+    0 2px 0 rgba(61, 49, 42, 0.04),
+    0 14px 34px rgba(61, 49, 42, 0.08);
+}
+
+.tv-subpanel {
+  border-radius: 1rem;
+  border: 1px solid #e0e0e0;
+  background: linear-gradient(180deg, #ffffff 0%, #fcfaf7 100%);
+}
+
+.tv-nav-btn {
+  border-radius: 0.9rem;
+  border: 1px solid #d4a373;
+  background: linear-gradient(180deg, #ffffff 0%, #f9f1e8 100%);
+  color: #3d312a;
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 0.5rem 0.8rem;
+}
+
+.tv-dog-hero {
+  border-radius: 1.2rem;
+  border: 1px solid #e0e0e0;
+  min-height: 16rem;
+  background:
+    url("/images/bowie-tv-hero.png") center bottom / contain no-repeat,
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.88) 0%, rgba(249, 247, 242, 0.96) 70%),
+    linear-gradient(180deg, #fffefb 0%, #f9f7f2 100%);
+  box-shadow: inset 0 0 0 1px rgba(224, 224, 224, 0.65);
+}
+
+.tv-metric {
+  border-radius: 1rem;
+  border: 1px solid #e0e0e0;
+  padding: 0.75rem;
+  box-shadow: 0 8px 22px rgba(61, 49, 42, 0.1);
+}
+
+.tv-metric.gold {
+  background: linear-gradient(140deg, #fff8db 0%, #f9e4a8 52%, #f5c344 100%);
+}
+
+.tv-metric.cream {
+  background: linear-gradient(140deg, #ffffff 0%, #fdfbf8 48%, #f9f7f2 100%);
+}
+
+.tv-metric.tan {
+  background: linear-gradient(140deg, #f9efe3 0%, #edcfaa 56%, #d4a373 100%);
+}
+
+.tv-metric.green {
+  background: linear-gradient(140deg, #ecf8ed 0%, #caebcd 52%, #9ad89d 100%);
+}
+
+.tv-metric.red {
+  background: linear-gradient(140deg, #ffeceb 0%, #ffc8c7 52%, #ef9a98 100%);
+}
+
+.tv-star-grid span {
+  animation: star-bounce 3.4s ease-in-out infinite;
+}
+
+.tv-star-grid span:nth-child(2n) {
+  animation-delay: 0.25s;
+}
+
+.tv-star-grid span:nth-child(3n) {
+  animation-delay: 0.55s;
+}
+
+.tv-star-grid span:nth-child(5n) {
+  animation-delay: 0.85s;
+}
+
 @keyframes star-drift {
   0% {
     transform: translateY(0);
   }
   100% {
     transform: translateY(22px);
+  }
+}
+
+@keyframes cloud-drift {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(28px);
+  }
+}
+
+@keyframes star-bounce {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-2px) scale(1.06);
   }
 }
 
