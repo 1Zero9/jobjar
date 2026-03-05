@@ -1,4 +1,5 @@
 import { getTvData } from "@/lib/tv-data";
+import Image from "next/image";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -36,7 +37,17 @@ export default async function TvPage() {
                 <p className="text-sm text-[#6b5443]">{focusText}</p>
               </div>
             </div>
-            <div className="tv-dog-hero" role="img" aria-label="Bowie dog family hero artwork" />
+            <div className="tv-dog-hero">
+              <Image
+                src="/images/bowie-tv-hero.png"
+                alt="Bowie hero artwork"
+                fill
+                priority
+                sizes="(max-width: 1024px) 100vw, 38vw"
+                className="tv-dog-hero-img"
+              />
+              <div className="tv-dog-hero-glow" aria-hidden />
+            </div>
           </div>
         </header>
 

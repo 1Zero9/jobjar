@@ -1,22 +1,24 @@
 # Vercel + Database Setup
 
-## 1) Import project to Vercel
-1. In Vercel, import the GitHub repo `stiofancranpairc-source/jobjar`.
-2. Set **Root Directory** to `web`.
-3. Framework preset should detect **Next.js**.
+## 1) Import the project
+1. Import `stiofancranpairc-source/jobjar` into Vercel.
+2. Set the Root Directory to `web`.
+3. Confirm Vercel detects Next.js.
 
-## 2) Create Postgres
-1. In the Vercel project, open **Storage**.
-2. Create a **Postgres** database and connect it to this project.
-3. Vercel will add env vars automatically (`POSTGRES_URL`, `POSTGRES_URL_NON_POOLING`, etc).
+## 2) Create and attach Postgres
+1. In Vercel, open the project's Storage tab.
+2. Create a Postgres database and connect it to this project.
+3. Vercel will create `POSTGRES_URL`, `POSTGRES_URL_NON_POOLING`, and related variables.
 
-## 3) Map env vars for Prisma
-Add these project environment variables:
+## 3) Map Prisma env vars
+Add these project env vars in Vercel:
 - `DATABASE_URL` = `POSTGRES_URL`
 - `DIRECT_URL` = `POSTGRES_URL_NON_POOLING`
 
-## 4) Initialize schema
-Run once from local:
+Both are required by `web/prisma/schema.prisma`.
+
+## 4) Initialize the database once
+Run this locally against the attached database:
 
 ```bash
 cd web
@@ -24,16 +26,27 @@ npm run db:push
 npm run db:seed
 ```
 
-## 5) Verify DB in deployment
-After deploy, open:
+This creates the current schema and seed data for a fresh environment.
 
-`/api/health/db`
+## 5) Deploy safely after schema changes
+For any schema change after initial setup:
+1. Update `web/prisma/schema.prisma`.
+2. Create a migration locally with `npm run db:migrate -- --name <change-name>`.
+3. Commit the generated `web/prisma/migrations` files.
+4. In Vercel, set the Build Command to `npm run build:vercel`.
+5. Deploy normally.
+
+The Vercel build command runs `prisma migrate deploy` before `next build`, so committed migrations are applied during deployment without breaking ordinary local `npm run build`.
+
+## 6) Verify the deployment
+After deploy, open `/api/health/db`.
 
 Expected JSON:
 - `status: "ok"`
 - `db: "connected"`
 
-## 6) Ongoing workflow
-- Schema changes: update `web/prisma/schema.prisma`
-- Apply locally: `npm run db:migrate`
-- Push code to trigger Vercel deploy
+If `/login` shows a DB failure, check:
+- Vercel env vars
+- migration status
+- database permissions
+- server logs for the underlying Prisma error

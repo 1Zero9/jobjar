@@ -45,10 +45,18 @@ model User {
   email           String             @unique
   displayName     String
   createdAt       DateTime           @default(now())
+  authCredential  AuthCredential?
   ownedHouseholds Household[]        @relation("HouseholdOwner")
   memberships     HouseholdMember[]
   completions     TaskOccurrence[]   @relation("OccurrenceCompleter")
   assignments     TaskAssignment[]
+}
+
+model AuthCredential {
+  userId       String   @id @db.Uuid
+  passwordHash String
+  updatedAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Household {
