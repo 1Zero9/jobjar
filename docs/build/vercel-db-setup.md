@@ -33,7 +33,7 @@ For any schema change after initial setup:
 1. Update `web/prisma/schema.prisma`.
 2. Create a migration locally with `npm run db:migrate -- --name <change-name>`.
 3. Commit the generated `web/prisma/migrations` files.
-4. In Vercel, set the Build Command to `npm run build:vercel`.
+4. The repo includes `web/vercel.json`, which tells Vercel to use `npm run build:vercel`.
 5. Deploy normally.
 
 The Vercel build command runs `prisma migrate deploy` before `next build`, so committed migrations are applied during deployment without breaking ordinary local `npm run build`.

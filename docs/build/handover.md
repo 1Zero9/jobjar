@@ -36,7 +36,7 @@ Main models:
 - Prisma requires both `DATABASE_URL` and `DIRECT_URL`.
 - Fresh databases are initialized with `npm run db:push` and `npm run db:seed`.
 - Ongoing schema changes should use Prisma migrations committed under `web/prisma/migrations`.
-- Vercel should use `npm run build:vercel` so `prisma migrate deploy` runs before `next build`.
+- `web/vercel.json` points Vercel at `npm run build:vercel`, so `prisma migrate deploy` runs before `next build`.
 
 ## Operational checks
 - `/api/health/db` verifies Prisma can reach the database.
