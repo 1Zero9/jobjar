@@ -29,8 +29,8 @@ export default async function AdminPage() {
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#526071]">Admin Workspace</p>
-              <h1 className="mt-1 text-2xl font-bold text-[#111f33] sm:text-3xl">Household Setup Board</h1>
-              <p className="mt-1 text-sm text-[#5e6e80]">Create people, rooms, and tasks in a board-style flow.</p>
+              <h1 className="mt-1 text-2xl font-bold text-[#111f33] sm:text-3xl">Shape The Household Work</h1>
+              <p className="mt-1 text-sm text-[#5e6e80]">Turn raw captures into owned, roomed, scheduled household jobs.</p>
             </div>
             <form action={logoutAction}>
               <button className="action-btn warn">Log out</button>
@@ -48,10 +48,10 @@ export default async function AdminPage() {
               Step 1: People
             </a>
             <a href="#step-rooms" className="action-btn subtle text-center">
-              Step 2: Rooms
+              Step 2: Spaces
             </a>
             <a href="#step-tasks" className="action-btn subtle text-center sm:col-span-2">
-              Step 3: Tasks
+              Step 3: Jobs
             </a>
           </div>
 
@@ -64,7 +64,7 @@ export default async function AdminPage() {
 
         <section id="step-people" className="board-shell admin-step people p-4">
           <h2 className="text-lg font-semibold">Step 1: People</h2>
-          <p className="text-xs text-[#5e6e80]">Add each family member and set their personal login passcode.</p>
+          <p className="text-xs text-[#5e6e80]">Add the people who will notice, own, and complete jobs.</p>
 
           <form action={createPersonAction} className="mt-3 grid grid-cols-1 gap-2 rounded-xl border border-[#d7e3f4] bg-[#f2f8ff] p-3 md:grid-cols-4">
             <input name="displayName" type="text" required placeholder="Name" className="admin-input px-3 py-2 text-sm" />
@@ -111,13 +111,13 @@ export default async function AdminPage() {
         </section>
 
         <section id="step-rooms" className="board-shell admin-step rooms p-4">
-          <h2 className="text-lg font-semibold">Step 2: Rooms / Areas</h2>
-          <p className="text-xs text-[#5e6e80]">Define the spaces in the house where tasks happen.</p>
+          <h2 className="text-lg font-semibold">Step 2: Spaces / Areas</h2>
+          <p className="text-xs text-[#5e6e80]">Define the real-world spaces jobs belong to: rooms, garden zones, attic, car, outside.</p>
 
           <form action={createRoomAction} className="mt-3 grid grid-cols-1 gap-2 rounded-xl border border-[#d7e3f4] bg-[#f2f8ff] p-3 md:grid-cols-3">
-            <input name="name" type="text" required placeholder="Room name" className="admin-input px-3 py-2 text-sm" />
-            <input name="designation" type="text" placeholder="Purpose" className="admin-input px-3 py-2 text-sm" />
-            <button className="action-btn bright">Add room</button>
+            <input name="name" type="text" required placeholder="Space name" className="admin-input px-3 py-2 text-sm" />
+            <input name="designation" type="text" placeholder="What kind of work happens here?" className="admin-input px-3 py-2 text-sm" />
+            <button className="action-btn bright">Add space</button>
           </form>
 
           <div className="mt-3 grid grid-cols-1 gap-2 lg:grid-cols-2">
@@ -140,13 +140,13 @@ export default async function AdminPage() {
         </section>
 
         <section id="step-tasks" className="board-shell admin-step tasks p-4">
-          <h2 className="text-lg font-semibold">Step 3: Tasks</h2>
-          <p className="text-xs text-[#5e6e80]">Quick add first. Due date is optional. Open Advanced for schedule and validation settings.</p>
+          <h2 className="text-lg font-semibold">Step 3: Jobs</h2>
+          <p className="text-xs text-[#5e6e80]">Take captured jobs and give them structure. Quick add first. Open Advanced when the work needs rules or recurrence.</p>
 
           <form action={createTaskAction} className="mt-3 grid grid-cols-1 gap-2 rounded-xl border border-[#d7e3f4] bg-[#f2f8ff] p-3 md:grid-cols-4">
-            <input name="title" type="text" required placeholder="Task title" className="admin-input px-3 py-2 text-sm" />
+            <input name="title" type="text" required placeholder="Job title" className="admin-input px-3 py-2 text-sm" />
             <select name="roomId" required className="admin-input px-3 py-2 text-sm">
-              <option value="">Pick room</option>
+              <option value="">Pick space</option>
               {rooms.map((room) => (
                 <option key={room.id} value={room.id}>
                   {room.name}
@@ -181,19 +181,19 @@ export default async function AdminPage() {
                 <input type="checkbox" name="strictMode" /> Strict proof mode
               </label>
             </details>
-            <button className="action-btn bright md:col-span-4">Add task</button>
+              <button className="action-btn bright md:col-span-4">Add job</button>
           </form>
 
           <div className="mt-3 overflow-hidden rounded-xl border border-[#d7e3f4] bg-[#f4f9ff]">
             <div className="admin-grid-header hidden px-3 py-2 text-xs font-semibold uppercase tracking-wide text-[#5e6e80] md:grid md:grid-cols-[2fr_1fr_1fr_1fr_auto] md:gap-2">
-              <p>Task</p>
-              <p>Room</p>
+              <p>Job</p>
+              <p>Space</p>
               <p>Owner</p>
               <p>Due</p>
               <p>Actions</p>
             </div>
             <div className="space-y-2 p-2">
-              {tasks.length === 0 ? <p className="rounded-lg bg-[#f7f9ff] p-3 text-sm text-[#5e6e80]">No tasks yet. Add your first task above.</p> : null}
+              {tasks.length === 0 ? <p className="rounded-lg bg-[#f7f9ff] p-3 text-sm text-[#5e6e80]">No jobs yet. Start shaping the captures above.</p> : null}
               {tasks.map((task) => (
                 <article key={task.id} className="rounded-lg border border-[#e3ebf8] bg-[#fbfdff] p-2">
                   <form action={updateTaskAction} className="grid grid-cols-1 gap-2 md:grid-cols-[2fr_1fr_1fr_1fr_auto] md:items-center">
