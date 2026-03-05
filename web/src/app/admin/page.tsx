@@ -21,6 +21,7 @@ export default async function AdminPage() {
   const { rooms, tasks, people } = await getAdminData({ householdId });
   const peopleById = new Map(people.map((person) => [person.id, person.displayName]));
   const roomNameById = new Map(rooms.map((room) => [room.id, room.name]));
+  const projectOptions = tasks.filter((task) => task.jobKind === "project" || task.childCount > 0);
 
   return (
     <div className="workday-gradient min-h-screen px-3 py-4 sm:px-4 sm:py-6">
@@ -141,7 +142,7 @@ export default async function AdminPage() {
 
         <section id="step-tasks" className="board-shell admin-step tasks p-4">
           <h2 className="text-lg font-semibold">Step 3: Jobs</h2>
-          <p className="text-xs text-[#5e6e80]">Take captured jobs and give them structure. Quick add first. Open Advanced when the work needs rules or recurrence.</p>
+          <p className="text-xs text-[#5e6e80]">Take captured jobs and give them structure. Type them, stage them, locate them, and connect them into projects when needed.</p>
 
           <form action={createTaskAction} className="mt-3 grid grid-cols-1 gap-2 rounded-xl border border-[#d7e3f4] bg-[#f2f8ff] p-3 md:grid-cols-4">
             <input name="title" type="text" required placeholder="Job title" className="admin-input px-3 py-2 text-sm" />
@@ -162,6 +163,30 @@ export default async function AdminPage() {
               ))}
             </select>
             <input name="dueAt" type="datetime-local" className="admin-input px-3 py-2 text-sm" />
+            <select name="jobKind" defaultValue="upkeep" className="admin-input px-3 py-2 text-sm">
+              <option value="upkeep">Upkeep</option>
+              <option value="issue">Issue</option>
+              <option value="project">Project</option>
+              <option value="clear_out">Clear-out</option>
+              <option value="outdoor">Outdoor</option>
+              <option value="planning">Planning</option>
+            </select>
+            <select name="captureStage" defaultValue="shaped" className="admin-input px-3 py-2 text-sm">
+              <option value="captured">Captured</option>
+              <option value="shaped">Shaped</option>
+              <option value="active">Active</option>
+              <option value="done">Done</option>
+            </select>
+            <input name="locationDetails" type="text" placeholder="Specific location e.g. front garden / daughter's car" className="admin-input px-3 py-2 text-sm md:col-span-2" />
+            <input name="detailNotes" type="text" placeholder="Notes, next step, materials, or detail" className="admin-input px-3 py-2 text-sm md:col-span-3" />
+            <select name="projectParentId" defaultValue="" className="admin-input px-3 py-2 text-sm">
+              <option value="">No parent project</option>
+              {projectOptions.map((task) => (
+                <option key={task.id} value={task.id}>
+                  {task.title}
+                </option>
+              ))}
+            </select>
             <details className="rounded-lg border border-[#d3e2ee] bg-[#f8fbff] px-3 py-2 text-sm text-[#48637a] md:col-span-4">
               <summary className="cursor-pointer font-semibold">Advanced options</summary>
               <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-3">
@@ -216,19 +241,65 @@ export default async function AdminPage() {
                       ))}
                     </select>
                     <input name="dueAt" type="datetime-local" defaultValue={toDateTimeLocal(task.dueAt)} className="admin-input px-2 py-1.5 text-xs" />
-                    <div className="flex items-center gap-2">
-                      <button className="action-btn subtle">Save</button>
-                    </div>
+                      <div className="flex items-center gap-2">
+                        <button className="action-btn subtle">Save</button>
+                      </div>
                   </form>
+                  <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-2">
+                    <label className="text-[11px] text-[#5e6e80]">
+                      Type
+                      <form action={updateTaskAction} className="mt-1 flex gap-2">
+                        <input type="hidden" name="taskId" value={task.id} />
+                        <select name="jobKind" defaultValue={task.jobKind} className="admin-input w-full px-2 py-1.5 text-xs">
+                          <option value="upkeep">Upkeep</option>
+                          <option value="issue">Issue</option>
+                          <option value="project">Project</option>
+                          <option value="clear_out">Clear-out</option>
+                          <option value="outdoor">Outdoor</option>
+                          <option value="planning">Planning</option>
+                        </select>
+                        <button className="action-btn subtle">Save</button>
+                      </form>
+                    </label>
+                    <label className="text-[11px] text-[#5e6e80]">
+                      Stage
+                      <form action={updateTaskAction} className="mt-1 flex gap-2">
+                        <input type="hidden" name="taskId" value={task.id} />
+                        <select name="captureStage" defaultValue={task.captureStage} className="admin-input w-full px-2 py-1.5 text-xs">
+                          <option value="captured">Captured</option>
+                          <option value="shaped">Shaped</option>
+                          <option value="active">Active</option>
+                          <option value="done">Done</option>
+                        </select>
+                        <button className="action-btn subtle">Save</button>
+                      </form>
+                    </label>
+                  </div>
                   <form action={deleteTaskAction} className="mt-2">
                     <input type="hidden" name="taskId" value={task.id} />
                     <button className="action-btn warn">Archive</button>
                   </form>
                   <div className="mt-2">
                     <p className="text-[11px] text-[#5e6e80]">
-                      Room: {roomNameById.get(task.roomId) ?? "Unknown"} • Assigned: {peopleById.get(task.assigneeUserId) ?? "Unassigned"}
+                      Space: {roomNameById.get(task.roomId) ?? "Unknown"} • Assigned: {peopleById.get(task.assigneeUserId) ?? "Unassigned"} • Parent: {task.projectParentTitle || "None"}
                     </p>
                   </div>
+                  <form action={updateTaskAction} className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-3">
+                    <input type="hidden" name="taskId" value={task.id} />
+                    <input name="locationDetails" type="text" defaultValue={task.locationDetails} placeholder="Location detail" className="admin-input px-2 py-1.5 text-xs" />
+                    <input name="detailNotes" type="text" defaultValue={task.detailNotes} placeholder="Notes / materials / next step" className="admin-input px-2 py-1.5 text-xs md:col-span-2" />
+                    <select name="projectParentId" defaultValue={task.projectParentId} className="admin-input px-2 py-1.5 text-xs md:col-span-2">
+                      <option value="">No parent project</option>
+                      {projectOptions
+                        .filter((option) => option.id !== task.id)
+                        .map((option) => (
+                          <option key={option.id} value={option.id}>
+                            {option.title}
+                          </option>
+                        ))}
+                    </select>
+                    <button className="action-btn subtle">Save details</button>
+                  </form>
                   <details className="mt-2 rounded-lg border border-[#d3e2ee] bg-[#f8fbff] px-2 py-1.5 text-xs text-[#48637a]">
                     <summary className="cursor-pointer font-semibold">Advanced</summary>
                     <form action={updateTaskAction} className="mt-2 space-y-2">

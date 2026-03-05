@@ -20,6 +20,13 @@ export async function getDashboardData(options: { householdId?: string } = {}): 
             tasks: {
               where: { active: true },
               include: {
+                projectParent: {
+                  select: { id: true, title: true },
+                },
+                projectChildren: {
+                  where: { active: true },
+                  select: { id: true },
+                },
                 occurrences: {
                   orderBy: { dueAt: "desc" },
                   take: 5,
@@ -65,6 +72,13 @@ export async function getDashboardData(options: { householdId?: string } = {}): 
           id: task.id,
           roomId: room.id,
           title: task.title,
+          detailNotes: task.detailNotes,
+          locationDetails: task.locationDetails,
+          jobKind: task.jobKind,
+          captureStage: task.captureStage,
+          projectParentId: task.projectParentId,
+          projectParentTitle: task.projectParent?.title ?? null,
+          childCount: task.projectChildren.length,
           dueAt: pendingOccurrence?.dueAt?.toISOString() ?? null,
           graceHours: task.graceHours,
           estimatedMinutes: task.estimatedMinutes,

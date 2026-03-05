@@ -84,6 +84,11 @@ export async function createTaskAction(formData: FormData) {
   const { householdId } = await requireAdminAction();
   const title = String(formData.get("title") ?? "").trim();
   const requestedRoomId = String(formData.get("roomId") ?? "").trim();
+  const detailNotes = String(formData.get("detailNotes") ?? "").trim() || null;
+  const locationDetails = String(formData.get("locationDetails") ?? "").trim() || null;
+  const jobKind = parseJobKind(formData.get("jobKind"), inferJobKindFromText(title));
+  const captureStage = parseCaptureStage(formData.get("captureStage"), "shaped");
+  const projectParentIdInput = String(formData.get("projectParentId") ?? "").trim();
   const estimatedMinutes = toPositiveInt(formData.get("estimatedMinutes"), 15);
   const graceHours = toPositiveInt(formData.get("graceHours"), 12);
   const minimumMinutes = toNonNegativeInt(formData.get("minimumMinutes"), 0);
@@ -108,10 +113,17 @@ export async function createTaskAction(formData: FormData) {
     return;
   }
 
+  const projectParentId = await resolveProjectParentId(projectParentIdInput, householdId);
+
   const task = await prisma.task.create({
     data: {
       title,
       roomId: room.id,
+      detailNotes,
+      locationDetails,
+      jobKind,
+      captureStage,
+      projectParentId,
       estimatedMinutes,
       graceHours,
       description,
@@ -175,6 +187,8 @@ export async function createQuickTaskAction(formData: FormData) {
     data: {
       title,
       roomId,
+      jobKind: inferJobKindFromText(title),
+      captureStage: "captured",
       estimatedMinutes: 15,
       graceHours: 12,
       description: "validation=basic;min=0",
@@ -207,6 +221,9 @@ export async function updateTaskAction(formData: FormData) {
     },
     include: {
       schedule: true,
+      projectParent: {
+        select: { id: true },
+      },
       assignments: {
         where: { assignedTo: null },
         orderBy: { assignedFrom: "desc" },
@@ -220,6 +237,13 @@ export async function updateTaskAction(formData: FormData) {
 
   const title = String(formData.get("title") ?? existing.title).trim() || existing.title;
   const requestedRoomId = String(formData.get("roomId") ?? existing.roomId).trim() || existing.roomId;
+  const detailNotes = formData.has("detailNotes") ? String(formData.get("detailNotes") ?? "").trim() || null : existing.detailNotes;
+  const locationDetails = formData.has("locationDetails") ? String(formData.get("locationDetails") ?? "").trim() || null : existing.locationDetails;
+  const jobKind = formData.has("jobKind") ? parseJobKind(formData.get("jobKind"), existing.jobKind) : existing.jobKind;
+  const captureStage = formData.has("captureStage") ? parseCaptureStage(formData.get("captureStage"), existing.captureStage) : existing.captureStage;
+  const requestedProjectParentId = formData.has("projectParentId")
+    ? String(formData.get("projectParentId") ?? "").trim()
+    : (existing.projectParentId ?? "");
   const estimatedMinutes = toPositiveInt(formData.get("estimatedMinutes"), existing.estimatedMinutes);
   const graceHours = toPositiveInt(formData.get("graceHours"), existing.graceHours);
 
@@ -258,12 +282,18 @@ export async function updateTaskAction(formData: FormData) {
   const assigneeUserId = formData.has("assigneeUserId")
     ? String(formData.get("assigneeUserId") ?? "").trim()
     : currentAssigneeUserId;
+  const projectParentId = await resolveProjectParentId(requestedProjectParentId, householdId, taskId);
 
   await prisma.task.update({
     where: { id: taskId },
     data: {
       title,
       roomId,
+      detailNotes,
+      locationDetails,
+      jobKind,
+      captureStage,
+      projectParentId,
       estimatedMinutes,
       graceHours,
       description,
@@ -499,6 +529,11 @@ export async function startTaskAction(formData: FormData) {
     return;
   }
 
+  await prisma.task.update({
+    where: { id: task.id },
+    data: { captureStage: "active" },
+  });
+
   await prisma.taskLog.create({
     data: {
       taskId: task.id,
@@ -527,6 +562,7 @@ export async function completeTaskAction(formData: FormData) {
     select: {
       id: true,
       description: true,
+      captureStage: true,
       occurrences: {
         orderBy: { dueAt: "desc" },
         take: 1,
@@ -564,6 +600,10 @@ export async function completeTaskAction(formData: FormData) {
   }
 
   const lastOccurrenceId = task.occurrences[0]?.id;
+  await prisma.task.update({
+    where: { id: task.id },
+    data: { captureStage: "done" },
+  });
   if (lastOccurrenceId) {
     await prisma.taskOccurrence.update({
       where: { id: lastOccurrenceId },
@@ -616,6 +656,11 @@ export async function reopenTaskAction(formData: FormData) {
   if (!task) {
     return;
   }
+
+  await prisma.task.update({
+    where: { id: task.id },
+    data: { captureStage: "shaped" },
+  });
 
   const latestOccurrence = await prisma.taskOccurrence.findFirst({
     where: { taskId: task.id },
@@ -742,11 +787,64 @@ function parseRecurrenceType(value: FormDataEntryValue | null) {
   return "weekly";
 }
 
+function parseJobKind(value: FormDataEntryValue | null, fallback: "upkeep" | "issue" | "project" | "clear_out" | "outdoor" | "planning") {
+  const raw = String(value ?? "").trim();
+  if (raw === "upkeep" || raw === "issue" || raw === "project" || raw === "clear_out" || raw === "outdoor" || raw === "planning") {
+    return raw;
+  }
+  return fallback;
+}
+
+function parseCaptureStage(value: FormDataEntryValue | null, fallback: "captured" | "shaped" | "active" | "done") {
+  const raw = String(value ?? "").trim();
+  if (raw === "captured" || raw === "shaped" || raw === "active" || raw === "done") {
+    return raw;
+  }
+  return fallback;
+}
+
+function inferJobKindFromText(text: string): "upkeep" | "issue" | "project" | "clear_out" | "outdoor" | "planning" {
+  const value = text.toLowerCase();
+  if (value.includes("garden") || value.includes("hedge") || value.includes("grass") || value.includes("plants")) {
+    return "outdoor";
+  }
+  if (value.includes("attic") || value.includes("clear") || value.includes("dump") || value.includes("donat")) {
+    return "clear_out";
+  }
+  if (value.includes("decorate") || value.includes("paint") || value.includes("renovat") || value.includes("redo")) {
+    return "project";
+  }
+  if (value.includes("warning") || value.includes("tyre") || value.includes("repair") || value.includes("fix") || value.includes("car")) {
+    return "issue";
+  }
+  if (value.includes("plan") || value.includes("sort") || value.includes("organ")) {
+    return "planning";
+  }
+  return "upkeep";
+}
+
 function buildValidationMeta(mode: "basic" | "strict", minimumMinutes: number) {
   if (mode === "strict") {
     return `validation=strict;min=${minimumMinutes}`;
   }
   return `validation=basic;min=${minimumMinutes}`;
+}
+
+async function resolveProjectParentId(projectParentId: string, householdId: string, currentTaskId?: string) {
+  if (!projectParentId || projectParentId === currentTaskId) {
+    return null;
+  }
+
+  const parent = await prisma.task.findFirst({
+    where: {
+      id: projectParentId,
+      active: true,
+      room: { householdId },
+    },
+    select: { id: true },
+  });
+
+  return parent?.id ?? null;
 }
 
 function parseValidationMode(description: string | null) {

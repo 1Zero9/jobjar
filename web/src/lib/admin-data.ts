@@ -18,6 +18,13 @@ export type AdminTask = {
   id: string;
   title: string;
   roomId: string;
+  detailNotes: string;
+  locationDetails: string;
+  jobKind: "upkeep" | "issue" | "project" | "clear_out" | "outdoor" | "planning";
+  captureStage: "captured" | "shaped" | "active" | "done";
+  projectParentId: string;
+  projectParentTitle: string;
+  childCount: number;
   estimatedMinutes: number;
   graceHours: number;
   dueAt: string | null;
@@ -43,12 +50,19 @@ export async function getAdminData(options: { householdId: string }): Promise<Ad
         where: { active: true },
         orderBy: { sortOrder: "asc" },
         include: {
-          tasks: {
-            where: { active: true },
-            include: {
-              occurrences: {
-                orderBy: { dueAt: "desc" },
-                take: 5,
+            tasks: {
+              where: { active: true },
+              include: {
+                projectParent: {
+                  select: { id: true, title: true },
+                },
+                projectChildren: {
+                  where: { active: true },
+                  select: { id: true },
+                },
+                occurrences: {
+                  orderBy: { dueAt: "desc" },
+                  take: 5,
               },
               schedule: true,
               assignments: {
@@ -94,6 +108,13 @@ export async function getAdminData(options: { householdId: string }): Promise<Ad
         id: task.id,
         title: task.title,
         roomId: room.id,
+        detailNotes: task.detailNotes ?? "",
+        locationDetails: task.locationDetails ?? "",
+        jobKind: task.jobKind,
+        captureStage: task.captureStage,
+        projectParentId: task.projectParentId ?? "",
+        projectParentTitle: task.projectParent?.title ?? "",
+        childCount: task.projectChildren.length,
         estimatedMinutes: task.estimatedMinutes,
         graceHours: task.graceHours,
         dueAt: pendingOccurrence?.dueAt?.toISOString() ?? schedule?.nextDueAt?.toISOString() ?? null,

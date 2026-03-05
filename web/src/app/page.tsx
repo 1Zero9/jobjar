@@ -9,12 +9,10 @@ import { requireSessionContext } from "@/lib/auth";
 import { getDashboardData } from "@/lib/dashboard-data";
 import { prisma } from "@/lib/prisma";
 import { deriveTaskRag } from "@/lib/rag";
-import { RagStatus, TaskItem } from "@/lib/types";
+import { JobKind, RagStatus, TaskItem } from "@/lib/types";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
-
-type JobKind = "issue" | "upkeep" | "project" | "clear-out" | "outdoor" | "planning";
 
 type BoardEntry = {
   task: TaskItem;
@@ -37,16 +35,18 @@ export default async function Home() {
       task,
       rag: deriveTaskRag(task, now),
       roomName,
-      kind: inferJobKind(task.title, roomName),
+      kind: task.jobKind,
       isInbox: roomName.toLowerCase() === "inbox",
     } satisfies BoardEntry;
   });
 
-  const freshCaptures = entries.filter((entry) => entry.isInbox && entry.task.status !== "done" && !entry.task.startedAt);
-  const movingNow = entries.filter((entry) => entry.task.status !== "done" && (entry.task.startedAt || entry.rag !== "green"));
+  const freshCaptures = entries.filter((entry) => entry.task.captureStage === "captured" && entry.task.status !== "done");
+  const movingNow = entries.filter((entry) => entry.task.captureStage === "active" && entry.task.status !== "done");
   const projects = entries.filter((entry) => entry.task.status !== "done" && !entry.isInbox && isProjectLike(entry));
-  const readyToShape = entries.filter((entry) => entry.task.status !== "done" && !movingNow.includes(entry) && !projects.includes(entry));
-  const done = entries.filter((entry) => entry.task.status === "done");
+  const readyToShape = entries.filter(
+    (entry) => entry.task.status !== "done" && entry.task.captureStage === "shaped" && !movingNow.includes(entry) && !projects.includes(entry),
+  );
+  const done = entries.filter((entry) => entry.task.status === "done" || entry.task.captureStage === "done");
 
   const myEntries = entries.filter((entry) => entry.task.assigneeUserId === currentUserId);
   const myDone = myEntries.filter((entry) => entry.task.status === "done").length;
@@ -275,6 +275,8 @@ function ShapeCard({ entry }: { entry: BoardEntry }) {
         <span className={`status-pill ${entry.rag}`}>{entry.rag}</span>
       </div>
       <p className="mt-2 text-sm text-[#45596f]">{shapeAdvice(entry)}</p>
+      {entry.task.locationDetails ? <p className="mt-2 text-xs text-[#5e6e80]">Location: {entry.task.locationDetails}</p> : null}
+      {entry.task.detailNotes ? <p className="mt-1 text-xs text-[#5e6e80]">{entry.task.detailNotes}</p> : null}
     </article>
   );
 }
@@ -294,6 +296,7 @@ function ActionCard({ entry }: { entry: BoardEntry }) {
       <div className="mt-2 flex flex-wrap gap-2 text-xs text-[#5e6e80]">
         <span className="capture-meta-pill">{dueBadge(entry.task.dueAt, entry.task.status)}</span>
         {entry.task.startedAt ? <span className="capture-meta-pill">running {elapsedLabel(entry.task.startedAt)}</span> : null}
+        {entry.task.locationDetails ? <span className="capture-meta-pill">{entry.task.locationDetails}</span> : null}
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {entry.task.status !== "done" ? (
@@ -328,12 +331,13 @@ function ProjectCard({ entry }: { entry: BoardEntry }) {
         <div>
           <p className="text-sm font-semibold text-[#13233c]">{entry.task.title}</p>
           <p className="mt-1 text-xs text-[#5e6e80]">
-            {entry.roomName} • {entry.task.assigneeName ?? "Needs owner"} • {kindLabel(entry.kind)}
+            {entry.roomName} • {entry.task.assigneeName ?? "Needs owner"} • {kindLabel(entry.kind)} • {entry.task.childCount} child jobs
           </p>
         </div>
         <span className="kind-pill">Project</span>
       </div>
       <p className="mt-2 text-sm text-[#45596f]">{projectAdvice(entry)}</p>
+      {entry.task.detailNotes ? <p className="mt-2 text-xs text-[#5e6e80]">{entry.task.detailNotes}</p> : null}
       <div className="mt-3 flex flex-wrap gap-2">
         <Link href="/admin#step-tasks" className="action-btn subtle text-center">
           Break into smaller jobs
@@ -372,18 +376,8 @@ function StatChip({ label, value }: { label: string; value: string }) {
   );
 }
 
-function inferJobKind(title: string, roomName: string): JobKind {
-  const text = `${title} ${roomName}`.toLowerCase();
-  if (text.includes("garden") || text.includes("plant") || text.includes("hedge") || text.includes("grass")) return "outdoor";
-  if (text.includes("attic") || text.includes("clear") || text.includes("dump") || text.includes("donat")) return "clear-out";
-  if (text.includes("decorate") || text.includes("paint") || text.includes("project") || text.includes("redo")) return "project";
-  if (text.includes("warning") || text.includes("tyre") || text.includes("fix") || text.includes("repair") || text.includes("car")) return "issue";
-  if (text.includes("plan") || text.includes("sort") || text.includes("organ")) return "planning";
-  return "upkeep";
-}
-
 function isProjectLike(entry: BoardEntry) {
-  return entry.kind === "project" || entry.kind === "clear-out" || entry.kind === "outdoor" || entry.task.estimatedMinutes >= 30;
+  return entry.kind === "project" || entry.kind === "clear_out" || entry.kind === "outdoor" || entry.task.childCount > 0 || entry.task.estimatedMinutes >= 30;
 }
 
 function kindLabel(kind: JobKind) {
@@ -394,7 +388,7 @@ function kindLabel(kind: JobKind) {
       return "Upkeep";
     case "project":
       return "Project";
-    case "clear-out":
+    case "clear_out":
       return "Clear-out";
     case "outdoor":
       return "Outdoor";
@@ -411,7 +405,7 @@ function kindSentence(kind: JobKind) {
       return "Looks like repeatable upkeep or household maintenance.";
     case "project":
       return "Feels like a larger transformation rather than a one-step job.";
-    case "clear-out":
+    case "clear_out":
       return "Probably needs sorting, decisions, and disposal or donation.";
     case "outdoor":
       return "Likely outdoor work that can be split by zone or pass.";
@@ -423,14 +417,14 @@ function kindSentence(kind: JobKind) {
 function shapeAdvice(entry: BoardEntry) {
   if (entry.kind === "issue") return "Give it an owner, due date, and next action. Problems get heavier when they stay vague.";
   if (entry.kind === "project") return "Break the ambition into first moves: measure, choose, buy, prepare, then do.";
-  if (entry.kind === "clear-out") return "Split into keep, donate, and dump passes so the job becomes finishable.";
+  if (entry.kind === "clear_out") return "Split into keep, donate, and dump passes so the job becomes finishable.";
   if (entry.kind === "outdoor") return "Consider dividing it into front, back, bins, beds, or one weekend push per zone.";
   if (entry.kind === "planning") return "Decide whether this needs a schedule, an owner, or a room before it can move.";
   return "This can probably become a simple assigned household job with a realistic due date.";
 }
 
 function projectAdvice(entry: BoardEntry) {
-  if (entry.kind === "clear-out") return "Treat this as a disposal workflow: sort first, then book donation or dump runs.";
+  if (entry.kind === "clear_out") return "Treat this as a disposal workflow: sort first, then book donation or dump runs.";
   if (entry.kind === "outdoor") return "Split the space into visible sections so progress is obvious and family-sized.";
   if (entry.kind === "project") return "This wants stages, not one checkbox. Use Admin to create the first practical steps.";
   return "This is larger than a quick task. Turn it into a small stack of jobs with sequence and ownership.";

@@ -40,6 +40,22 @@ enum ShareScope {
   room_view
 }
 
+enum JobKind {
+  upkeep
+  issue
+  project
+  clear_out
+  outdoor
+  planning
+}
+
+enum CaptureStage {
+  captured
+  shaped
+  active
+  done
+}
+
 model User {
   id              String             @id @default(uuid()) @db.Uuid
   email           String             @unique
@@ -101,6 +117,11 @@ model Task {
   roomId           String           @db.Uuid
   title            String
   description      String?
+  detailNotes      String?
+  locationDetails  String?
+  jobKind          JobKind          @default(upkeep)
+  captureStage     CaptureStage     @default(captured)
+  projectParentId  String?          @db.Uuid
   priority         Int              @default(3)
   estimatedMinutes Int              @default(15)
   graceHours       Int              @default(12)
@@ -111,8 +132,11 @@ model Task {
   occurrences      TaskOccurrence[]
   logs             TaskLog[]
   assignments      TaskAssignment[]
+  projectParent    Task?            @relation("TaskProjectChildren", fields: [projectParentId], references: [id], onDelete: SetNull)
+  projectChildren  Task[]           @relation("TaskProjectChildren")
 
   @@index([roomId])
+  @@index([projectParentId])
 }
 
 model TaskSchedule {
