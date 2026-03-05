@@ -34,13 +34,15 @@ Main models:
 ## Deployment notes
 - Vercel root directory is `web`.
 - Prisma requires `DATABASE_URL`. `DIRECT_URL` is recommended and falls back to `DATABASE_URL` when unset in the repo scripts.
-- Fresh databases are initialized with `npm run db:push` and `npm run db:seed`.
+- Fresh production databases are initialized by committed Prisma migrations during deploy.
+- `npm run db:seed` is optional demo/local data, not required for production bootstrap.
 - Ongoing schema changes should use Prisma migrations committed under `web/prisma/migrations`.
 - `web/vercel.json` points Vercel at `npm run build:vercel`, so `prisma migrate deploy` runs before `next build`.
 
 ## Operational checks
 - `/api/health/db` verifies Prisma can reach the database.
 - `/login` now reports database failures more accurately and logs the underlying server error.
+- A brand-new production environment should land on `Create Admin`, not on pre-seeded demo data.
 
 ## Known cleanup outside this handover
 - `.DS_Store` is untracked in the repo root and should not be committed.

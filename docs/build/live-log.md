@@ -37,6 +37,15 @@
 - Validation completed:
   - `npm run lint` passed
   - `npm run build` passed
+- Stabilized Vercel + Prisma deployment for fresh databases:
+  - added repo-level `vercel.json` to force `npm run build:vercel`
+  - ensured Prisma client generation runs before local and Vercel builds
+  - added `DIRECT_URL` fallback to `DATABASE_URL` in Prisma scripts
+  - committed initial Prisma migration for empty production databases
+  - updated login DB error copy and deployment docs to reflect real first-run behavior
+- Validation completed:
+  - `env -u DIRECT_URL npm run db:generate` passed
+  - `env -u DIRECT_URL npm run build` passed
 - Simplified UX into clear sections:
   - Daily Jobs (primary usage)
   - Setup & Admin (collapsed)

@@ -18,7 +18,9 @@ Add these project env vars in Vercel:
 `DATABASE_URL` is required. If `DIRECT_URL` is not set, the build scripts fall back to `DATABASE_URL`.
 
 ## 4) Initialize the database once
-Run this locally against the attached database:
+For production, the committed Prisma migrations are the primary schema setup path.
+
+If you need local demo data, run this against a local or non-production database:
 
 ```bash
 cd web
@@ -26,7 +28,7 @@ npm run db:push
 npm run db:seed
 ```
 
-This creates the current schema and seed data for a fresh environment.
+This creates the current schema and demo seed data. It is optional for production.
 
 ## 5) Deploy safely after schema changes
 For any schema change after initial setup:
@@ -50,3 +52,8 @@ If `/login` shows a DB failure, check:
 - migration status
 - database permissions
 - server logs for the underlying Prisma error
+
+Expected first-run production state:
+- `/api/health/db` returns connected
+- `/login` shows `Create Admin`
+- no demo household data exists unless you explicitly ran `db:seed`
