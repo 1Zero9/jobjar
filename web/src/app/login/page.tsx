@@ -33,7 +33,7 @@ export default async function LoginPage({
       },
     });
   } catch (error) {
-    const missingEnvVars = ["DATABASE_URL", "DIRECT_URL"].filter((key) => !process.env[key]);
+    const missingEnvVars = ["DATABASE_URL"].filter((key) => !process.env[key]);
     const message = error instanceof Error ? error.message : "Unknown database error";
 
     console.error("Login page database check failed", error);
@@ -135,7 +135,7 @@ export default async function LoginPage({
             <div className="mt-4 space-y-2 rounded-xl border border-[#d7e3f4] bg-[#f6faff] p-3 text-sm text-[#4e657d]">
               <p>Check the database connection, migrations, and env vars before signing in.</p>
               <p className="font-mono text-xs">DATABASE_URL</p>
-              <p className="font-mono text-xs">DIRECT_URL</p>
+              <p className="font-mono text-xs">DIRECT_URL (optional, falls back to DATABASE_URL)</p>
             </div>
           )}
         </section>

@@ -33,7 +33,7 @@ Main models:
 
 ## Deployment notes
 - Vercel root directory is `web`.
-- Prisma requires both `DATABASE_URL` and `DIRECT_URL`.
+- Prisma requires `DATABASE_URL`. `DIRECT_URL` is recommended and falls back to `DATABASE_URL` when unset in the repo scripts.
 - Fresh databases are initialized with `npm run db:push` and `npm run db:seed`.
 - Ongoing schema changes should use Prisma migrations committed under `web/prisma/migrations`.
 - `web/vercel.json` points Vercel at `npm run build:vercel`, so `prisma migrate deploy` runs before `next build`.

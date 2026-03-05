@@ -13,9 +13,9 @@
 ## 3) Map Prisma env vars
 Add these project env vars in Vercel:
 - `DATABASE_URL` = `POSTGRES_URL`
-- `DIRECT_URL` = `POSTGRES_URL_NON_POOLING`
+- `DIRECT_URL` = `POSTGRES_URL_NON_POOLING` (recommended)
 
-Both are required by `web/prisma/schema.prisma`.
+`DATABASE_URL` is required. If `DIRECT_URL` is not set, the build scripts fall back to `DATABASE_URL`.
 
 ## 4) Initialize the database once
 Run this locally against the attached database:
