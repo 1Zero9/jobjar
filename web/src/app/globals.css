@@ -555,6 +555,106 @@ body {
   animation-delay: 0.85s;
 }
 
+.tv-board {
+  position: relative;
+  z-index: 1;
+}
+
+.tv-metric-value {
+  line-height: 1;
+}
+
+.tv-chart-wrap {
+  justify-content: space-between;
+}
+
+.tv-chart-svg {
+  width: 170px;
+  height: 170px;
+}
+
+@media (orientation: landscape) {
+  .tv-header-grid {
+    grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+    align-items: center;
+  }
+
+  .tv-metrics-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .tv-pulse-grid {
+    grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+  }
+
+  .tv-chart-grid,
+  .tv-room-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tv-dog-hero {
+    min-height: 15rem;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 900px) {
+  .tv-board {
+    gap: 1rem;
+  }
+
+  .tv-shell {
+    border-radius: 1.1rem;
+  }
+
+  .tv-dog-hero {
+    min-height: 12.5rem;
+  }
+
+  .tv-metric {
+    padding: 0.65rem;
+  }
+
+  .tv-metric-value {
+    font-size: 1.65rem;
+  }
+
+  .tv-chart-wrap {
+    gap: 0.75rem;
+  }
+
+  .tv-chart-svg {
+    width: 136px;
+    height: 136px;
+  }
+
+  .tv-star-grid {
+    font-size: 0.95rem;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 760px) {
+  .tv-board {
+    gap: 0.85rem;
+  }
+
+  .tv-dog-hero {
+    min-height: 10rem;
+  }
+
+  .tv-chart-svg {
+    width: 112px;
+    height: 112px;
+  }
+
+  .tv-chart-wrap ul {
+    font-size: 0.82rem;
+  }
+
+  .tv-metric-value {
+    font-size: 1.4rem;
+  }
+}
+
 @keyframes star-drift {
   0% {
     transform: translateY(0);

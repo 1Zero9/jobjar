@@ -15,9 +15,9 @@ export default async function TvPage() {
 
   return (
     <div className="tv-bowie-bg min-h-screen px-4 py-5 text-[#3D312A] sm:px-6 sm:py-6">
-      <main className="mx-auto flex w-full max-w-7xl flex-col gap-5">
+      <main className="tv-board mx-auto flex w-full max-w-7xl flex-col gap-5">
         <header className="tv-shell p-4 sm:p-5">
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.3fr_1fr] lg:items-center">
+          <div className="tv-header-grid grid grid-cols-1 gap-4 lg:grid-cols-[1.3fr_1fr] lg:items-center">
             <div>
               <p className="text-xs uppercase tracking-[0.24em] text-[#8d6742]">Family Big Screen</p>
               <h1 className="text-3xl font-bold text-[#3D312A] sm:text-4xl">Bowie House Board</h1>
@@ -51,7 +51,7 @@ export default async function TvPage() {
           </div>
         </header>
 
-        <section className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+        <section className="tv-metrics-grid grid grid-cols-2 gap-3 lg:grid-cols-5">
           <MetricCard label="Family Stars" value={`${data.starScore} ⭐`} tone="gold" />
           <MetricCard label="Done So Far" value={`${completion}%`} tone="cream" />
           <MetricCard label="All Jobs" value={String(data.totalTasks)} tone="tan" />
@@ -59,13 +59,13 @@ export default async function TvPage() {
           <MetricCard label="Need Help" value={String(data.rag.red)} tone="red" />
         </section>
 
-        <section className="grid grid-cols-1 gap-4 xl:grid-cols-[1.2fr_1fr]">
+        <section className="tv-pulse-grid grid grid-cols-1 gap-4 xl:grid-cols-[1.2fr_1fr]">
           <article className="tv-shell p-4">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-[#3D312A]">Family Pulse</h2>
               <p className="text-xs text-[#7b644f]">How things look right now</p>
             </div>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="tv-chart-grid grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="tv-subpanel p-3">
                 <p className="mb-2 text-sm font-semibold text-[#4d3b2f]">Red / Amber / Green</p>
                 <PieChart
@@ -113,7 +113,7 @@ export default async function TvPage() {
             <h2 className="text-lg font-semibold text-[#3D312A]">Room Progress</h2>
             <p className="text-xs text-[#7b644f]">Finished and waiting by room</p>
           </div>
-          <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
+          <div className="tv-room-grid grid grid-cols-1 gap-2 lg:grid-cols-2">
             {data.roomLoad.map((room) => (
               <article key={room.room} className="tv-subpanel p-3">
                 <div className="mb-2 flex items-center justify-between">
@@ -146,7 +146,7 @@ function MetricCard({
   return (
     <article className={`tv-metric ${tone}`}>
       <p className="text-[11px] uppercase tracking-wide text-[#5d4939]">{label}</p>
-      <p className="mt-1 text-3xl font-bold text-[#3D312A]">{value}</p>
+      <p className="tv-metric-value mt-1 text-3xl font-bold text-[#3D312A]">{value}</p>
     </article>
   );
 }
@@ -160,8 +160,8 @@ function PieChart({
   const slices = buildPieSlices(values, total);
 
   return (
-    <div className="flex items-center gap-4">
-      <svg width="170" height="170" viewBox="0 0 220 220" aria-label="Pie chart" className="shrink-0">
+    <div className="tv-chart-wrap flex items-center gap-4">
+      <svg width="170" height="170" viewBox="0 0 220 220" aria-label="Pie chart" className="tv-chart-svg shrink-0">
         <g transform="translate(110,110)">
           {slices.map((slice) => (
             <path key={slice.label} d={slice.path} fill={slice.color} stroke="#ffffff" strokeWidth="2" />
