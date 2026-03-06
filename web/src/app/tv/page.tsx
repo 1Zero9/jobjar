@@ -1,5 +1,4 @@
 import { getTvData } from "@/lib/tv-data";
-import Image from "next/image";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -38,14 +37,9 @@ export default async function TvPage() {
               </div>
             </div>
             <div className="tv-dog-hero">
-              <Image
-                src="/images/bowie-tv-hero.png"
-                alt="Bowie hero artwork"
-                fill
-                priority
-                sizes="(max-width: 1024px) 100vw, 38vw"
-                className="tv-dog-hero-img"
-              />
+              <video className="tv-dog-hero-img" autoPlay muted loop playsInline preload="auto" aria-label="Bowie hero video">
+                <source src="/images/bobovid.mp4" type="video/mp4" />
+              </video>
               <div className="tv-dog-hero-glow" aria-hidden />
             </div>
           </div>
