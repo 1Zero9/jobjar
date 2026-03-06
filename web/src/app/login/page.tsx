@@ -237,7 +237,7 @@ export default async function LoginPage({
           )}
 
           <div className="login-button-row" style={{ borderTop: "1px solid #d7e3f4", marginTop: "1rem", paddingTop: "1rem" }}>
-            <Link href="/tv" className="login-secondary-btn" style={secondaryButtonStyle}>
+            <Link href="/tv-lite" className="login-secondary-btn" style={secondaryButtonStyle}>
               Public TV View
             </Link>
           </div>
