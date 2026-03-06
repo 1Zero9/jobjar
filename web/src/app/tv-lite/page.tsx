@@ -15,42 +15,73 @@ export default async function TvLitePage() {
       <body
         style={{
           margin: 0,
-          background: "#f4efe6",
-          color: "#2b241f",
+          background: "#efe7da",
+          color: "#2c231d",
           fontFamily: "Arial, sans-serif",
         }}
       >
-        <div style={{ padding: "18px" }}>
+        <div style={{ padding: "14px" }}>
+          <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: "12px" }}>
+            <tbody>
+              <tr>
+                <td
+                  style={{
+                    width: "58%",
+                    verticalAlign: "top",
+                    background: "#fffaf1",
+                    border: "2px solid #d8c7af",
+                    padding: "14px",
+                  }}
+                >
+                  <div style={{ fontSize: "16px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7a624e" }}>
+                    JobJar TV Lite
+                  </div>
+                  <div style={{ fontSize: "34px", fontWeight: 700, marginTop: "6px" }}>Bowie House Board</div>
+                  <div style={{ fontSize: "20px", marginTop: "10px", lineHeight: 1.25 }}>{focusText}</div>
+
+                  <div style={{ marginTop: "14px" }}>
+                    <MetricBadge label="Stars" value={`${data.starScore}`} bg="#f4d25f" />
+                    <MetricBadge label="Done" value={`${completion}%`} bg="#dde7f2" />
+                    <MetricBadge label="Jobs" value={`${data.totalTasks}`} bg="#ead0b0" />
+                    <MetricBadge label="Finished" value={`${data.doneTasks}`} bg="#c8e6cb" />
+                    <MetricBadge label="Help" value={`${data.rag.red}`} bg="#efb4b3" />
+                  </div>
+                </td>
+
+                <td
+                  style={{
+                    width: "42%",
+                    verticalAlign: "top",
+                    background: "#fffaf1",
+                    border: "2px solid #d8c7af",
+                    padding: "8px",
+                  }}
+                >
+                  <video
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    preload="auto"
+                    style={{ display: "block", width: "100%", height: "240px", objectFit: "cover", background: "#eadfce" }}
+                  >
+                    <source src="/images/bobovid.mp4" type="video/mp4" />
+                  </video>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
           <div
             style={{
-              background: "#fffaf2",
+              marginTop: "2px",
+              background: "#fffaf1",
               border: "2px solid #d8c7af",
-              padding: "18px",
+              padding: "14px",
             }}
           >
-            <div style={{ fontSize: "18px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>JobJar TV Lite</div>
-            <div style={{ fontSize: "40px", fontWeight: 700, marginTop: "8px" }}>Bowie House Board</div>
-            <div style={{ fontSize: "24px", marginTop: "10px" }}>{focusText}</div>
-          </div>
-
-          <div style={{ marginTop: "18px" }}>
-            <MetricRow label="Family Stars" value={`${data.starScore}`} bg="#f5d164" />
-            <MetricRow label="Done So Far" value={`${completion}%`} bg="#e8eef6" />
-            <MetricRow label="All Jobs" value={`${data.totalTasks}`} bg="#edd0ad" />
-            <MetricRow label="Finished" value={`${data.doneTasks}`} bg="#bfe4c2" />
-            <MetricRow label="Need Help" value={`${data.rag.red}`} bg="#efb0ae" />
-          </div>
-
-          <div
-            style={{
-              marginTop: "18px",
-              background: "#fffaf2",
-              border: "2px solid #d8c7af",
-              padding: "18px",
-            }}
-          >
-            <div style={{ fontSize: "28px", fontWeight: 700, marginBottom: "12px" }}>Room Progress</div>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "24px" }}>
+            <div style={{ fontSize: "24px", fontWeight: 700, marginBottom: "10px" }}>Rooms</div>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "20px" }}>
               <thead>
                 <tr>
                   <th align="left" style={tableHeadStyle}>
@@ -66,7 +97,7 @@ export default async function TvLitePage() {
                     Waiting
                   </th>
                   <th align="right" style={tableHeadStyle}>
-                    Progress
+                    %
                   </th>
                 </tr>
               </thead>
@@ -91,17 +122,13 @@ export default async function TvLitePage() {
               </tbody>
             </table>
           </div>
-
-          <div style={{ marginTop: "14px", fontSize: "18px", color: "#5c4d41" }}>
-            Open <strong>/tv-lite</strong> on LG webOS. This page uses minimal styling for older TV browsers.
-          </div>
         </div>
       </body>
     </html>
   );
 }
 
-function MetricRow({
+function MetricBadge({
   label,
   value,
   bg,
@@ -113,24 +140,28 @@ function MetricRow({
   return (
     <div
       style={{
+        display: "inline-block",
+        verticalAlign: "top",
+        minWidth: "116px",
+        marginRight: "8px",
+        marginBottom: "8px",
+        padding: "10px 12px",
         background: bg,
         border: "2px solid #d8c7af",
-        marginBottom: "12px",
-        padding: "16px 18px",
       }}
     >
-      <div style={{ fontSize: "24px", fontWeight: 700 }}>{label}</div>
-      <div style={{ fontSize: "38px", fontWeight: 700, marginTop: "6px" }}>{value}</div>
+      <div style={{ fontSize: "14px", fontWeight: 700, textTransform: "uppercase", color: "#6b5645" }}>{label}</div>
+      <div style={{ fontSize: "28px", fontWeight: 700, marginTop: "4px" }}>{value}</div>
     </div>
   );
 }
 
 const tableHeadStyle = {
   borderBottom: "2px solid #d8c7af",
-  padding: "8px 4px 10px",
+  padding: "6px 4px 8px",
 } as const;
 
 const tableCellStyle = {
   borderBottom: "1px solid #e4d8c7",
-  padding: "10px 4px",
+  padding: "8px 4px",
 } as const;
