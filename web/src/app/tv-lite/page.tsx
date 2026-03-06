@@ -30,6 +30,8 @@ export default async function TvLitePage() {
                     verticalAlign: "top",
                     background: "#fffaf1",
                     border: "2px solid #d8c7af",
+                    borderRadius: "20px",
+                    boxShadow: "0 8px 22px rgba(98, 73, 46, 0.12)",
                     padding: "14px",
                   }}
                 >
@@ -54,6 +56,8 @@ export default async function TvLitePage() {
                     verticalAlign: "top",
                     background: "#fffaf1",
                     border: "2px solid #d8c7af",
+                    borderRadius: "20px",
+                    boxShadow: "0 8px 22px rgba(98, 73, 46, 0.12)",
                     padding: "8px",
                   }}
                 >
@@ -63,7 +67,7 @@ export default async function TvLitePage() {
                     loop
                     playsInline
                     preload="auto"
-                    style={{ display: "block", width: "100%", height: "240px", objectFit: "cover", background: "#eadfce" }}
+                    style={{ display: "block", width: "100%", height: "170px", objectFit: "cover", background: "#eadfce", borderRadius: "14px" }}
                   >
                     <source src="/images/bobovid.mp4" type="video/mp4" />
                   </video>
@@ -77,6 +81,8 @@ export default async function TvLitePage() {
               marginTop: "2px",
               background: "#fffaf1",
               border: "2px solid #d8c7af",
+              borderRadius: "20px",
+              boxShadow: "0 8px 22px rgba(98, 73, 46, 0.12)",
               padding: "14px",
             }}
           >
@@ -148,6 +154,8 @@ function MetricBadge({
         padding: "10px 12px",
         background: bg,
         border: "2px solid #d8c7af",
+        borderRadius: "16px",
+        boxShadow: "0 5px 14px rgba(98, 73, 46, 0.1)",
       }}
     >
       <div style={{ fontSize: "14px", fontWeight: 700, textTransform: "uppercase", color: "#6b5645" }}>{label}</div>
