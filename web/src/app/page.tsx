@@ -54,28 +54,25 @@ export default async function Home() {
 
   return (
     <div className="workday-gradient min-h-screen px-3 py-4 sm:px-4 sm:py-6">
-      <main className="mx-auto flex w-full max-w-7xl flex-col gap-4">
+      <main className="mx-auto flex w-full max-w-5xl flex-col gap-4">
         <header className="board-shell capture-hero p-4 sm:p-5">
           <div className="flex items-start justify-between gap-3">
-            <div className="max-w-3xl">
+            <div className="max-w-2xl">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#526071]">Household Job Jar</p>
-              <h1 className="mt-1 text-3xl font-bold text-[#13233c] sm:text-4xl">Catch it when you notice it.</h1>
-              <p className="mt-2 text-sm text-[#52657d] sm:text-base">
-                This is the family capture desk. Notice a problem, a clean-up, a fix, or a bigger ambition, drop it here first, then shape it into work when
-                you are ready.
-              </p>
+              <h1 className="mt-1 text-3xl font-bold text-[#13233c] sm:text-4xl">Catch it fast.</h1>
+              <p className="mt-2 text-sm text-[#52657d] sm:text-base">See a job? Type it here. Sort it out later.</p>
             </div>
             <form action={logoutAction}>
               <button className="action-btn warn">Log out</button>
             </form>
           </div>
 
-          <div className="mt-4 grid gap-3 lg:grid-cols-[1.25fr_0.75fr]">
+          <div className="mt-4 grid gap-3 lg:grid-cols-[1.2fr_0.8fr]">
             <section className="capture-panel rounded-[1.4rem] p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#5e6e80]">Quick Capture</p>
-                  <h2 className="mt-1 text-xl font-semibold text-[#13233c]">Record the raw job before it disappears</h2>
+                  <h2 className="mt-1 text-2xl font-semibold text-[#13233c]">Add a job</h2>
                 </div>
                 <span className="rounded-full bg-[#fff4cf] px-3 py-1 text-xs font-semibold text-[#7a5900]">{freshCaptures.length} waiting in inbox</span>
               </div>
@@ -91,70 +88,53 @@ export default async function Home() {
                 <button className="action-btn bright px-4">Capture Job</button>
               </form>
 
-              <div className="mt-4 flex flex-wrap gap-2">
-                {[
-                  "Stairs need hoovering",
-                  "Bedroom needs decorating",
-                  "Garden needs sorting front and back",
-                  "Attic clear-out and donation run",
-                ].map((example) => (
-                  <span key={example} className="capture-suggestion">
-                    {example}
-                  </span>
-                ))}
-              </div>
-
-              <div className="mt-4 grid gap-2 md:grid-cols-3">
-                <StageNote label="Capture" text="Get it out of your head fast." />
-                <StageNote label="Shape" text="Assign, room it, date it, or expand it." />
-                <StageNote label="Move" text="Start work or turn it into a larger project." />
-              </div>
+              <p className="mt-3 text-sm text-[#5e6e80]">Examples: hoover stairs, tyre warning, garden job, attic clear-out.</p>
             </section>
 
             <section className="rounded-[1.4rem] border border-[#d7e3f4] bg-[#f7fbff] p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#5e6e80]">House Pulse</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#5e6e80]">Today</p>
               <div className="mt-3 grid grid-cols-2 gap-2">
-                <StatChip label="All jobs" value={String(tasks.length)} />
-                <StatChip label="Completed" value={String(done.length)} />
-                <StatChip label="Needs shaping" value={String(freshCaptures.length + readyToShape.length)} />
-                <StatChip label="Live issues" value={String(movingNow.filter((entry) => entry.rag !== "green").length)} />
+                <StatChip label="Inbox" value={String(freshCaptures.length + readyToShape.length)} />
+                <StatChip label="Do now" value={String(movingNow.length)} />
+                <StatChip label="Big jobs" value={String(projects.length)} />
+                <StatChip label="Done" value={String(done.length)} />
               </div>
 
               <div className="mt-3 rounded-2xl border border-[#cfe1f7] bg-[#eef5ff] px-3 py-3">
-                <p className="text-sm font-semibold text-[#17263a]">
-                  {currentUser?.displayName ?? "Family Member"} owns {myEntries.length} jobs and has closed {myDone}.
-                </p>
-                <p className="mt-1 text-xs text-[#5e6e80]">Whole-house completion is {completionRate}%.</p>
+                <p className="text-sm font-semibold text-[#17263a]">{currentUser?.displayName ?? "You"}: {myDone}/{myEntries.length} done</p>
+                <p className="mt-1 text-xs text-[#5e6e80]">Whole house: {completionRate}% complete</p>
               </div>
 
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <Link href="/admin" className="action-btn subtle text-center">
-                  Shape in Admin
+                  Admin
                 </Link>
                 <Link href="/tv" className="action-btn subtle text-center">
-                  Family TV View
+                  TV
                 </Link>
               </div>
-              <p className="mt-2 text-xs text-[#5e6e80]">Source: {source === "database" ? "Live household data" : "Demo fallback"}</p>
+              <p className="mt-2 text-xs text-[#5e6e80]">{source === "database" ? "Live household data" : "Demo fallback"}</p>
             </section>
           </div>
         </header>
 
-        <section className="grid gap-4 xl:grid-cols-[1.08fr_0.92fr]">
+        <section className="grid gap-4 lg:grid-cols-2">
           <article className="board-shell p-4">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#5e6e80]">Capture Queue</p>
-                <h2 className="text-xl font-semibold text-[#13233c]">Freshly noticed</h2>
-                <p className="text-sm text-[#5e6e80]">These are raw captures. The point is speed, not precision.</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#5e6e80]">Inbox</p>
+                <h2 className="text-xl font-semibold text-[#13233c]">New jobs</h2>
+                <p className="text-sm text-[#5e6e80]">Captured jobs waiting to be sorted.</p>
               </div>
-              <span className="queue-count">{freshCaptures.length}</span>
+              <span className="queue-count">{freshCaptures.length + readyToShape.length}</span>
             </div>
             <div className="mt-3 space-y-3">
-              {freshCaptures.length === 0 ? (
-                <EmptyState text="Nothing sitting loose in the inbox. Capture the next thing you notice." />
+              {freshCaptures.length + readyToShape.length === 0 ? (
+                <EmptyState text="Inbox is clear." />
               ) : (
-                freshCaptures.map((entry) => <CaptureCard key={entry.task.id} entry={entry} />)
+                [...freshCaptures, ...readyToShape].map((entry) =>
+                  entry.task.captureStage === "captured" ? <CaptureCard key={entry.task.id} entry={entry} /> : <ShapeCard key={entry.task.id} entry={entry} />,
+                )
               )}
             </div>
           </article>
@@ -162,77 +142,48 @@ export default async function Home() {
           <article className="board-shell p-4">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#5e6e80]">Needs Shape</p>
-                <h2 className="text-xl font-semibold text-[#13233c]">Give the job a home</h2>
-                <p className="text-sm text-[#5e6e80]">Decide whether it is upkeep, a fix, a project, or something to schedule later.</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#5e6e80]">Do Now</p>
+                <h2 className="text-xl font-semibold text-[#13233c]">Active jobs</h2>
+                <p className="text-sm text-[#5e6e80]">Jobs already moving.</p>
               </div>
-              <Link href="/admin#step-tasks" className="action-btn subtle text-center">
-                Open Task Shaping
-              </Link>
+              <span className="queue-count">{movingNow.length}</span>
             </div>
-            <div className="mt-3 space-y-3">
-              {readyToShape.length === 0 ? (
-                <EmptyState text="Nothing half-defined right now. Inbox and active work are under control." />
-              ) : (
-                readyToShape.map((entry) => <ShapeCard key={entry.task.id} entry={entry} />)
-              )}
+            <div className="mt-3 grid gap-3">
+              {movingNow.length === 0 ? <EmptyState text="Nothing active right now." /> : movingNow.map((entry) => <ActionCard key={entry.task.id} entry={entry} />)}
             </div>
           </article>
         </section>
 
-        <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+        <section className="grid gap-4 lg:grid-cols-2">
           <article className="board-shell p-4">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#5e6e80]">Active Pressure</p>
-                <h2 className="text-xl font-semibold text-[#13233c]">Moving now</h2>
-                <p className="text-sm text-[#5e6e80]">Started work, urgent issues, and anything that needs family attention soon.</p>
-              </div>
-              <span className="queue-count">{movingNow.length}</span>
-            </div>
-            <div className="mt-3 grid gap-3 md:grid-cols-2">
-              {movingNow.length === 0 ? <EmptyState text="No live pressure right now. Good. Capture or shape the next job." /> : movingNow.map((entry) => <ActionCard key={entry.task.id} entry={entry} />)}
-            </div>
-          </article>
-
-          <article className="board-shell p-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#5e6e80]">Bigger Work</p>
-                <h2 className="text-xl font-semibold text-[#13233c]">Projects and clear-outs</h2>
-                <p className="text-sm text-[#5e6e80]">These need breaking down, planning, or carving into smaller jobs.</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#5e6e80]">Big Jobs</p>
+                <h2 className="text-xl font-semibold text-[#13233c]">Projects</h2>
+                <p className="text-sm text-[#5e6e80]">Large jobs to break into smaller steps.</p>
               </div>
               <span className="queue-count">{projects.length}</span>
             </div>
             <div className="mt-3 space-y-3">
-              {projects.length === 0 ? <EmptyState text="No big multi-step work flagged yet." /> : projects.map((entry) => <ProjectCard key={entry.task.id} entry={entry} />)}
+              {projects.length === 0 ? <EmptyState text="No big jobs yet." /> : projects.map((entry) => <ProjectCard key={entry.task.id} entry={entry} />)}
+            </div>
+          </article>
+
+          <article className="board-shell p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#5e6e80]">Done</p>
+                <h2 className="text-xl font-semibold text-[#13233c]">Finished</h2>
+                <p className="text-sm text-[#5e6e80]">Recently completed jobs.</p>
+              </div>
+              <span className="queue-count">{done.length}</span>
+            </div>
+            <div className="mt-3 grid gap-3">
+              {done.length === 0 ? <EmptyState text="Nothing finished yet." /> : done.slice(0, 4).map((entry) => <DoneCard key={entry.task.id} entry={entry} />)}
             </div>
           </article>
         </section>
-
-        <section className="board-shell p-4">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#5e6e80]">Closed Loop</p>
-              <h2 className="text-xl font-semibold text-[#13233c]">Done and parked</h2>
-              <p className="text-sm text-[#5e6e80]">Finished jobs stay visible long enough to prove the house is moving.</p>
-            </div>
-            <span className="queue-count">{done.length}</span>
-          </div>
-          <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {done.length === 0 ? <EmptyState text="Nothing closed yet. The first wins will show up here." /> : done.slice(0, 6).map((entry) => <DoneCard key={entry.task.id} entry={entry} />)}
-          </div>
-        </section>
       </main>
-    </div>
-  );
-}
-
-function StageNote({ label, text }: { label: string; text: string }) {
-  return (
-    <div className="rounded-2xl border border-[#d7e3f4] bg-[#f8fbff] px-3 py-3">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6a7b90]">{label}</p>
-      <p className="mt-1 text-sm text-[#41546a]">{text}</p>
     </div>
   );
 }
@@ -243,19 +194,17 @@ function CaptureCard({ entry }: { entry: BoardEntry }) {
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-base font-semibold text-[#13233c]">{entry.task.title}</p>
-          <p className="mt-1 text-sm text-[#5e6e80]">
-            Captured into {entry.roomName}. Suggested shape: <span className="font-semibold text-[#324964]">{kindLabel(entry.kind)}</span>
-          </p>
+          <p className="mt-1 text-sm text-[#5e6e80]">{entry.roomName} • {kindLabel(entry.kind)}</p>
         </div>
         <span className="kind-pill">{kindLabel(entry.kind)}</span>
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <form action={startTaskAction}>
           <input type="hidden" name="taskId" value={entry.task.id} />
-          <button className="action-btn subtle">Start anyway</button>
+          <button className="action-btn subtle">Start</button>
         </form>
         <Link href="/admin#step-tasks" className="action-btn bright text-center">
-          Shape this in Admin
+          Plan in Admin
         </Link>
       </div>
     </article>
@@ -268,13 +217,11 @@ function ShapeCard({ entry }: { entry: BoardEntry }) {
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-[#13233c]">{entry.task.title}</p>
-          <p className="mt-1 text-xs text-[#5e6e80]">
-            {entry.roomName} • {entry.task.assigneeName ?? "Unassigned"} • {kindSentence(entry.kind)}
-          </p>
+          <p className="mt-1 text-xs text-[#5e6e80]">{entry.roomName} • {entry.task.assigneeName ?? "Unassigned"}</p>
         </div>
         <span className={`status-pill ${entry.rag}`}>{entry.rag}</span>
       </div>
-      <p className="mt-2 text-sm text-[#45596f]">{shapeAdvice(entry)}</p>
+      <p className="mt-2 text-sm text-[#45596f]">Needs a person, a place, or a date.</p>
       {entry.task.locationDetails ? <p className="mt-2 text-xs text-[#5e6e80]">Location: {entry.task.locationDetails}</p> : null}
       {entry.task.detailNotes ? <p className="mt-1 text-xs text-[#5e6e80]">{entry.task.detailNotes}</p> : null}
     </article>
@@ -307,11 +254,11 @@ function ActionCard({ entry }: { entry: BoardEntry }) {
                 <button className="action-btn subtle">Start</button>
               </form>
             ) : null}
-            <form action={completeTaskAction} className="flex flex-1 items-center gap-2">
-              <input type="hidden" name="taskId" value={entry.task.id} />
-              <input name="note" type="text" placeholder="What happened?" className="min-w-0 flex-1 rounded-xl border border-[#d7e3f4] bg-[#f8fbff] px-2 py-2 text-xs" />
-              <button className="action-btn bright">Done</button>
-            </form>
+              <form action={completeTaskAction} className="flex flex-1 items-center gap-2">
+                <input type="hidden" name="taskId" value={entry.task.id} />
+                <input name="note" type="text" placeholder="Note" className="min-w-0 flex-1 rounded-xl border border-[#d7e3f4] bg-[#f8fbff] px-2 py-2 text-xs" />
+                <button className="action-btn bright">Done</button>
+              </form>
           </>
         ) : (
           <form action={reopenTaskAction}>
@@ -330,13 +277,11 @@ function ProjectCard({ entry }: { entry: BoardEntry }) {
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-[#13233c]">{entry.task.title}</p>
-          <p className="mt-1 text-xs text-[#5e6e80]">
-            {entry.roomName} • {entry.task.assigneeName ?? "Needs owner"} • {kindLabel(entry.kind)} • {entry.task.childCount} child jobs
-          </p>
+          <p className="mt-1 text-xs text-[#5e6e80]">{entry.roomName} • {entry.task.childCount} smaller jobs</p>
         </div>
         <span className="kind-pill">Project</span>
       </div>
-      <p className="mt-2 text-sm text-[#45596f]">{projectAdvice(entry)}</p>
+      <p className="mt-2 text-sm text-[#45596f]">Break this into smaller jobs.</p>
       {entry.task.detailNotes ? <p className="mt-2 text-xs text-[#5e6e80]">{entry.task.detailNotes}</p> : null}
       <div className="mt-3 flex flex-wrap gap-2">
         <Link href="/admin#step-tasks" className="action-btn subtle text-center">
@@ -395,39 +340,6 @@ function kindLabel(kind: JobKind) {
     case "planning":
       return "Planning";
   }
-}
-
-function kindSentence(kind: JobKind) {
-  switch (kind) {
-    case "issue":
-      return "Looks like a real-world problem that may need diagnosing or fixing.";
-    case "upkeep":
-      return "Looks like repeatable upkeep or household maintenance.";
-    case "project":
-      return "Feels like a larger transformation rather than a one-step job.";
-    case "clear_out":
-      return "Probably needs sorting, decisions, and disposal or donation.";
-    case "outdoor":
-      return "Likely outdoor work that can be split by zone or pass.";
-    case "planning":
-      return "Needs shaping and sequencing before it becomes active work.";
-  }
-}
-
-function shapeAdvice(entry: BoardEntry) {
-  if (entry.kind === "issue") return "Give it an owner, due date, and next action. Problems get heavier when they stay vague.";
-  if (entry.kind === "project") return "Break the ambition into first moves: measure, choose, buy, prepare, then do.";
-  if (entry.kind === "clear_out") return "Split into keep, donate, and dump passes so the job becomes finishable.";
-  if (entry.kind === "outdoor") return "Consider dividing it into front, back, bins, beds, or one weekend push per zone.";
-  if (entry.kind === "planning") return "Decide whether this needs a schedule, an owner, or a room before it can move.";
-  return "This can probably become a simple assigned household job with a realistic due date.";
-}
-
-function projectAdvice(entry: BoardEntry) {
-  if (entry.kind === "clear_out") return "Treat this as a disposal workflow: sort first, then book donation or dump runs.";
-  if (entry.kind === "outdoor") return "Split the space into visible sections so progress is obvious and family-sized.";
-  if (entry.kind === "project") return "This wants stages, not one checkbox. Use Admin to create the first practical steps.";
-  return "This is larger than a quick task. Turn it into a small stack of jobs with sequence and ownership.";
 }
 
 function elapsedLabel(startIso: string) {
