@@ -48,44 +48,46 @@ export default async function Home() {
     .filter((entry) => !isDueToday(entry.task.dueAt))
     .sort((a, b) => compareByDueDate(a.task, b.task));
   const completedToday = doneTasks.filter((entry) => isSameDayToday(entry.task.lastCompletedAt)).length;
+  const greeting = formatGreeting();
+  const dateLabel = formatDateLabel();
 
   return (
     <div className="task-shell min-h-screen px-4 py-4 sm:px-5 sm:py-5">
-      <main className="mx-auto flex w-full max-w-5xl flex-col gap-5">
+      <main className="mx-auto flex w-full max-w-[28rem] flex-col gap-5">
         <header className="task-topbar">
-          <div>
+          <div className="min-w-0">
             <p className="task-kicker">Task Jar</p>
-            <h1 className="task-app-title">Household tasks</h1>
-            <p className="task-app-subtitle">{currentUser?.displayName ?? "You"} • {openTasks.length} open tasks</p>
+            <p className="task-date-label">{dateLabel}</p>
+            <h1 className="task-app-title">{greeting}, {currentUser?.displayName ?? "there"}</h1>
+            <p className="task-app-subtitle">{openTasks.length} open tasks across the house</p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Link href="/settings" className="action-btn subtle">
+          <div className="task-header-actions">
+            <Link href="/settings" className="action-btn subtle quiet">
               Settings
             </Link>
             <form action={logoutAction}>
-              <button className="action-btn subtle">Log out</button>
+              <button className="action-btn subtle quiet">Log out</button>
             </form>
           </div>
         </header>
 
         <section className="task-toolbar">
+          <div className="task-summary-band">
+            <MetricPill label="Today" value={todayTasks.length} />
+            <MetricPill label="Mine" value={myTasks.length} />
+            <MetricPill label="Done" value={completedToday} />
+          </div>
+
           <form action={createQuickTaskAction} className="task-toolbar-form">
             <input
               name="title"
               type="text"
               required
-              placeholder="Add a task"
+              placeholder="What needs doing?"
               className="task-text-input"
             />
-            <button className="action-btn bright">Add</button>
+            <button className="action-btn bright">New task</button>
           </form>
-
-          <div className="task-metric-strip">
-            <MetricPill label="Today" value={todayTasks.length} />
-            <MetricPill label="Mine" value={myTasks.length} />
-            <MetricPill label="Open" value={openTasks.length} />
-            <MetricPill label="Done today" value={completedToday} />
-          </div>
         </section>
 
         <TaskSection
@@ -324,4 +326,23 @@ function elapsedLabel(startIso: string) {
   const hours = Math.floor(diffMin / 60);
   const mins = diffMin % 60;
   return `${hours}h ${mins}m`;
+}
+
+function formatGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) {
+    return "Good morning";
+  }
+  if (hour < 18) {
+    return "Good afternoon";
+  }
+  return "Good evening";
+}
+
+function formatDateLabel() {
+  return new Intl.DateTimeFormat("en-US", {
+    weekday: "long",
+    month: "short",
+    day: "numeric",
+  }).format(new Date());
 }
