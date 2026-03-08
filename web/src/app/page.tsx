@@ -102,13 +102,24 @@ export default async function Home() {
             {recordedTasks.length === 0 ? (
               <p className="recorded-empty">No tasks recorded yet.</p>
             ) : (
-              recordedTasks.map((task) => (
-                <article key={task.id} className="recorded-row">
-                  <div className="min-w-0">
-                    <p className="recorded-row-title">{task.title}</p>
+              recordedTasks.map((task, index) => (
+                <details key={task.id} className={`recorded-row recorded-row-${rowTone(index)}`}>
+                  <summary className="recorded-row-summary">
+                    <div className="min-w-0">
+                      <p className="recorded-row-title">{task.title}</p>
+                    </div>
+                    <div className="recorded-row-meta">
+                      <p className="recorded-row-room">{task.room.name}</p>
+                      <span className="recorded-row-chevron">+</span>
+                    </div>
+                  </summary>
+
+                  <div className="recorded-row-detail">
+                    <p><span>Room</span><strong>{task.room.name}</strong></p>
+                    <p><span>Recorded</span><strong>{formatRecordedAt(task.createdAt)}</strong></p>
+                    <p><span>Status</span><strong>{task.captureStage}</strong></p>
                   </div>
-                  <p className="recorded-row-room">{task.room.name}</p>
-                </article>
+                </details>
               ))
             )}
           </div>
@@ -120,4 +131,18 @@ export default async function Home() {
       </main>
     </div>
   );
+}
+
+function rowTone(index: number) {
+  const tones = ["blue", "green", "amber", "rose"] as const;
+  return tones[index % tones.length];
+}
+
+function formatRecordedAt(value: Date) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(value);
 }
