@@ -1,14 +1,16 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f6f4ef;
-  --foreground: #102219;
-  --card: #fffdf8;
-  --muted: #4d5b50;
-  --border: #d7d3c8;
-  --green: #2f8f51;
-  --amber: #c67a06;
-  --red: #c03221;
+  --background: #f3f5f8;
+  --foreground: #111827;
+  --card: #ffffff;
+  --muted: #667085;
+  --border: #d9dee7;
+  --green: #157347;
+  --amber: #b7791f;
+  --red: #b42318;
+  --accent: #2563eb;
+  --accent-soft: #eaf1ff;
 }
 
 @theme inline {
@@ -33,6 +35,200 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+}
+
+.task-shell {
+  background:
+    linear-gradient(180deg, #f7f8fb 0%, #f2f4f7 100%);
+}
+
+.task-hero {
+  border-radius: 1.25rem;
+  border: 1px solid #d9dee7;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 10px 24px rgba(16, 24, 40, 0.04);
+  padding: 1.5rem;
+}
+
+.task-kicker {
+  color: #667085;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.task-title {
+  margin-top: 0.4rem;
+  color: #101828;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.task-copy {
+  margin-top: 0.8rem;
+  max-width: 40rem;
+  color: #667085;
+  font-size: 0.98rem;
+  line-height: 1.6;
+}
+
+.task-capture-panel,
+.task-summary-panel,
+.task-column {
+  border-radius: 1rem;
+  border: 1px solid #d9dee7;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 20px rgba(16, 24, 40, 0.03);
+  padding: 1rem;
+}
+
+.task-capture-panel {
+  background: #ffffff;
+}
+
+.task-summary-panel {
+  background: #fcfcfd;
+}
+
+.task-column-done {
+  background: #fcfcfd;
+}
+
+.task-section-label {
+  color: #667085;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.task-badge,
+.task-count-pill {
+  border-radius: 999px;
+  border: 1px solid #d9dee7;
+  background: #f8f9fb;
+  color: #344054;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0.56rem 0.75rem;
+}
+
+.task-text-input,
+.task-note-input {
+  width: 100%;
+  border-radius: 0.85rem;
+  border: 1px solid #d0d5dd;
+  background: #ffffff;
+  color: #101828;
+  padding: 0.78rem 0.95rem;
+  transition: border-color 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
+}
+
+.task-text-input:focus,
+.task-note-input:focus,
+.login-input:focus,
+.admin-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+.task-note-input {
+  min-width: 0;
+  padding: 0.65rem 0.8rem;
+  font-size: 0.9rem;
+}
+
+.task-chip {
+  border-radius: 999px;
+  border: 1px solid #e4e7ec;
+  background: #f8f9fb;
+  color: #475467;
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 0.34rem 0.58rem;
+}
+
+.task-metric-card {
+  border-radius: 0.95rem;
+  border: 1px solid #e4e7ec;
+  background: #f8f9fb;
+  padding: 0.8rem;
+}
+
+.task-card {
+  border-radius: 0.95rem;
+  border: 1px solid #e4e7ec;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.03);
+  padding: 0.95rem;
+}
+
+.task-card.calm {
+  border-color: #e4e7ec;
+  background: #ffffff;
+}
+
+.task-card.soon {
+  border-color: #f5d9a8;
+  background: #fffaf0;
+}
+
+.task-card.late {
+  border-color: #f2b8b5;
+  background: #fef3f2;
+}
+
+.task-card-done {
+  border-color: #cde5d3;
+  background: #f6fef9;
+}
+
+.task-status-pill {
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 0.36rem 0.58rem;
+  text-transform: uppercase;
+}
+
+.task-status-pill.calm {
+  border-color: #dbe3f8;
+  background: var(--accent-soft);
+  color: #1d4ed8;
+}
+
+.task-status-pill.soon {
+  border-color: #f5ddb0;
+  background: #fff3db;
+  color: #9a6700;
+}
+
+.task-status-pill.late {
+  border-color: #f3c2bf;
+  background: #feeceb;
+  color: #b42318;
+}
+
+.task-status-pill-done {
+  border-color: #c7dfcf;
+  background: #eafaf0;
+  color: #157347;
+}
+
+.task-empty-state {
+  border-radius: 0.95rem;
+  border: 1px dashed #d0d5dd;
+  background: #fafbfc;
+  color: #667085;
+  font-size: 0.95rem;
+  padding: 1rem;
 }
 
 .soft-gradient {
@@ -68,12 +264,10 @@ body {
 }
 
 .board-shell {
-  border-radius: 1.2rem;
-  border: 1px solid #cfdef4;
-  background: linear-gradient(180deg, rgba(244, 250, 255, 0.95) 0%, rgba(235, 244, 255, 0.9) 100%);
-  box-shadow:
-    0 2px 0 rgba(23, 38, 58, 0.04),
-    0 14px 32px rgba(63, 109, 184, 0.09);
+  border-radius: 1rem;
+  border: 1px solid #d9dee7;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 12px 24px rgba(16, 24, 40, 0.04);
 }
 
 .capture-hero {
@@ -266,9 +460,10 @@ body {
 
 .action-btn {
   border-radius: 0.8rem;
-  padding: 0.45rem 0.8rem;
-  font-size: 0.85rem;
+  padding: 0.55rem 0.9rem;
+  font-size: 0.84rem;
   font-weight: 700;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
 }
 
 .action-btn.primary {
@@ -277,21 +472,25 @@ body {
 }
 
 .action-btn.subtle {
-  border: 1px solid #cfdcf2;
-  background: linear-gradient(180deg, #f8fbff 0%, #ecf3ff 100%);
-  color: #1a2c44;
+  border: 1px solid #d0d5dd;
+  background: #ffffff;
+  color: #344054;
 }
 
 .action-btn.warn {
-  border: 1px solid var(--red);
+  border: 1px solid #f1c0bd;
   color: var(--red);
-  background: linear-gradient(180deg, #fff7f7 0%, #ffecee 100%);
+  background: #fef3f2;
 }
 
 .action-btn.bright {
-  border: 1px solid #2058de;
-  background: linear-gradient(180deg, #4e8cff 0%, #3269de 100%);
+  border: 1px solid #1d4ed8;
+  background: #2563eb;
   color: #fff;
+}
+
+.action-btn:hover {
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
 }
 
 .admin-shell {

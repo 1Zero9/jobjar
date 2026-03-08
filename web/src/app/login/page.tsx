@@ -1,6 +1,5 @@
 import { bootstrapOwnerAction, loginAction } from "@/app/actions";
 import { prisma } from "@/lib/prisma";
-import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -15,20 +14,20 @@ type DbStatus =
 const loginCardStyle = {
   width: "100%",
   maxWidth: "28rem",
-  borderRadius: "1.2rem",
-  border: "1px solid #cfdef4",
-  background: "linear-gradient(180deg, rgba(244, 250, 255, 0.95) 0%, rgba(235, 244, 255, 0.9) 100%)",
-  boxShadow: "0 2px 0 rgba(23, 38, 58, 0.04), 0 14px 32px rgba(63, 109, 184, 0.09)",
-  padding: "1.25rem",
+  borderRadius: "1rem",
+  border: "1px solid #d9dee7",
+  background: "#ffffff",
+  boxShadow: "0 1px 2px rgba(16, 24, 40, 0.04), 0 12px 24px rgba(16, 24, 40, 0.04)",
+  padding: "1.5rem",
 } as const;
 
 const inputStyle = {
   width: "100%",
   display: "block",
-  borderRadius: "0.9rem",
-  border: "1px solid #d7e3f4",
-  background: "#f2f8ff",
-  color: "#13233c",
+  borderRadius: "0.85rem",
+  border: "1px solid #d0d5dd",
+  background: "#ffffff",
+  color: "#101828",
   fontSize: "1rem",
   lineHeight: "1.35",
   padding: "0.72rem 0.9rem",
@@ -41,32 +40,15 @@ const primaryButtonStyle = {
   width: "100%",
   display: "block",
   marginTop: "1rem",
-  borderRadius: "0.9rem",
-  border: "1px solid #13233c",
-  background: "#13233c",
+  borderRadius: "0.85rem",
+  border: "1px solid #1d4ed8",
+  background: "#2563eb",
   color: "#ffffff",
   fontSize: "0.95rem",
   fontWeight: 700,
   lineHeight: "1.2",
   padding: "0.8rem 1rem",
   textAlign: "center" as const,
-} as const;
-
-const secondaryButtonStyle = {
-  width: "100%",
-  display: "block",
-  marginTop: "1rem",
-  borderRadius: "0.9rem",
-  border: "1px solid #cfdcf2",
-  background: "linear-gradient(180deg, #f8fbff 0%, #ecf3ff 100%)",
-  color: "#1a2c44",
-  fontSize: "0.95rem",
-  fontWeight: 700,
-  lineHeight: "1.2",
-  padding: "0.8rem 1rem",
-  textAlign: "center" as const,
-  textDecoration: "none",
-  boxSizing: "border-box" as const,
 } as const;
 
 export default async function LoginPage({
@@ -108,24 +90,24 @@ export default async function LoginPage({
 
   return (
     <div
-      className="login-screen workday-gradient min-h-screen px-4 py-6"
+      className="login-screen task-shell min-h-screen px-4 py-6"
       style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem 1rem" }}
     >
       <main className="login-main" style={{ width: "100%", maxWidth: "28rem" }}>
         <section className="login-shell board-shell" style={loginCardStyle}>
-          <p className="login-kicker" style={{ color: "#526071", fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.16em", margin: 0, textTransform: "uppercase" }}>
-            Household Job Jar
+          <p className="login-kicker" style={{ color: "#667085", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em", margin: 0, textTransform: "uppercase" }}>
+            Task Jar
           </p>
-          <h1 className="login-heading" style={{ color: "#111f33", fontSize: "1.9rem", fontWeight: 800, lineHeight: 1.1, margin: "0.45rem 0 0" }}>
+          <h1 className="login-heading" style={{ color: "#101828", fontSize: "2rem", fontWeight: 800, lineHeight: 1.05, letterSpacing: "-0.04em", margin: "0.45rem 0 0" }}>
             {needsSetup ? "Create Admin" : "Sign In"}
           </h1>
-          <p className="login-copy" style={{ color: "#5e6e80", fontSize: "0.98rem", lineHeight: 1.5, margin: "0.45rem 0 0" }}>
-            {needsSetup ? "Set up the first admin account to start capturing jobs." : "Choose your name and enter your personal passcode."}
+          <p className="login-copy" style={{ color: "#667085", fontSize: "0.98rem", lineHeight: 1.6, margin: "0.55rem 0 0" }}>
+            {needsSetup ? "Set up the first admin account to start using the household task app." : "Choose your name and enter your personal passcode."}
           </p>
           {dbError ? (
             <div
               className="login-alert"
-              style={{ marginTop: "1rem", borderRadius: "0.9rem", border: "1px solid #efb5b5", background: "#fff2f2", color: "#a03b3b", padding: "0.85rem 0.95rem", fontSize: "0.92rem", lineHeight: 1.45 }}
+              style={{ marginTop: "1rem", borderRadius: "0.85rem", border: "1px solid #f1c0bd", background: "#fef3f2", color: "#b42318", padding: "0.85rem 0.95rem", fontSize: "0.92rem", lineHeight: 1.45 }}
             >
               <p className="login-alert-title" style={{ margin: "0 0 0.35rem", fontWeight: 700 }}>
                 Database check failed. Review server logs and database configuration.
@@ -144,7 +126,7 @@ export default async function LoginPage({
           {!dbUnavailable && needsSetup ? (
             <form action={bootstrapOwnerAction} className="login-form" style={{ marginTop: "1rem" }}>
               <label className="login-label" style={{ display: "block" }}>
-                <span className="login-label-text" style={{ color: "#526071", display: "block", fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.14em", marginBottom: "0.35rem", textTransform: "uppercase" }}>
+                <span className="login-label-text" style={{ color: "#667085", display: "block", fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.12em", marginBottom: "0.35rem", textTransform: "uppercase" }}>
                   Name
                 </span>
                 <input
@@ -157,7 +139,7 @@ export default async function LoginPage({
                 />
               </label>
               <label className="login-label" style={{ display: "block", marginTop: "0.9rem" }}>
-                <span className="login-label-text" style={{ color: "#526071", display: "block", fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.14em", marginBottom: "0.35rem", textTransform: "uppercase" }}>
+                <span className="login-label-text" style={{ color: "#667085", display: "block", fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.12em", marginBottom: "0.35rem", textTransform: "uppercase" }}>
                   Email (optional)
                 </span>
                 <input
@@ -169,7 +151,7 @@ export default async function LoginPage({
                 />
               </label>
               <label className="login-label" style={{ display: "block", marginTop: "0.9rem" }}>
-                <span className="login-label-text" style={{ color: "#526071", display: "block", fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.14em", marginBottom: "0.35rem", textTransform: "uppercase" }}>
+                <span className="login-label-text" style={{ color: "#667085", display: "block", fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.12em", marginBottom: "0.35rem", textTransform: "uppercase" }}>
                   Passcode
                 </span>
                 <input
@@ -193,7 +175,7 @@ export default async function LoginPage({
             <form action={loginAction} className="login-form" style={{ marginTop: "1rem" }}>
               <input type="hidden" name="next" value={nextPath} />
               <label className="login-label" style={{ display: "block" }}>
-                <span className="login-label-text" style={{ color: "#526071", display: "block", fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.14em", marginBottom: "0.35rem", textTransform: "uppercase" }}>
+                <span className="login-label-text" style={{ color: "#667085", display: "block", fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.12em", marginBottom: "0.35rem", textTransform: "uppercase" }}>
                   Person
                 </span>
                 <select name="userId" required className="login-input" style={inputStyle}>
@@ -206,7 +188,7 @@ export default async function LoginPage({
                 </select>
               </label>
               <label className="login-label" style={{ display: "block", marginTop: "0.9rem" }}>
-                <span className="login-label-text" style={{ color: "#526071", display: "block", fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.14em", marginBottom: "0.35rem", textTransform: "uppercase" }}>
+                <span className="login-label-text" style={{ color: "#667085", display: "block", fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.12em", marginBottom: "0.35rem", textTransform: "uppercase" }}>
                   Passcode
                 </span>
                 <input
@@ -228,19 +210,13 @@ export default async function LoginPage({
           ) : (
             <div
               className="login-info"
-              style={{ marginTop: "1rem", borderRadius: "0.9rem", border: "1px solid #d7e3f4", background: "#f6faff", color: "#4e657d", padding: "0.85rem 0.95rem", fontSize: "0.92rem", lineHeight: 1.45 }}
+              style={{ marginTop: "1rem", borderRadius: "0.85rem", border: "1px solid #d0d5dd", background: "#fafbfc", color: "#667085", padding: "0.85rem 0.95rem", fontSize: "0.92rem", lineHeight: 1.45 }}
             >
               <p>Check the database connection, migrations, and env vars before signing in.</p>
               <p className="login-mono" style={{ fontFamily: 'var(--font-mono)', fontSize: "0.75rem" }}>DATABASE_URL</p>
               <p className="login-mono" style={{ fontFamily: 'var(--font-mono)', fontSize: "0.75rem" }}>DIRECT_URL (optional, falls back to DATABASE_URL)</p>
             </div>
           )}
-
-          <div className="login-button-row" style={{ borderTop: "1px solid #d7e3f4", marginTop: "1rem", paddingTop: "1rem" }}>
-            <Link href="/tv-lite" className="login-secondary-btn" style={secondaryButtonStyle}>
-              Public TV View
-            </Link>
-          </div>
         </section>
       </main>
     </div>
