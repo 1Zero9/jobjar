@@ -178,11 +178,27 @@ export async function createTaskAction(formData: FormData) {
 export async function createQuickTaskAction(formData: FormData) {
   const { userId, householdId } = await requireSessionMemberAction();
   const title = String(formData.get("title") ?? "").trim();
+  const requestedRoomId = String(formData.get("roomId") ?? "").trim();
   if (!title) {
     return;
   }
 
-  const roomId = await getOrCreateCaptureRoomId(householdId);
+  let roomId = await getOrCreateCaptureRoomId(householdId);
+  if (requestedRoomId) {
+    const room = await prisma.room.findFirst({
+      where: {
+        id: requestedRoomId,
+        householdId,
+        active: true,
+      },
+      select: { id: true },
+    });
+
+    if (room) {
+      roomId = room.id;
+    }
+  }
+
   const task = await prisma.task.create({
     data: {
       title,
