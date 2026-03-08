@@ -293,10 +293,47 @@ body {
   text-transform: capitalize;
 }
 
+.recorded-edit-form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.recorded-field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.recorded-field span {
+  color: #667085;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.recorded-edit-input {
+  width: 100%;
+  border: 1px solid #d0d5dd;
+  border-radius: 0.9rem;
+  background: #ffffff;
+  color: #101828;
+  font-size: 0.94rem;
+  padding: 0.8rem 0.9rem;
+}
+
+.recorded-edit-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
 .recorded-row-actions {
   display: flex;
   justify-content: flex-end;
   padding-top: 0.2rem;
+}
+
+.recorded-row-actions.between {
+  justify-content: flex-start;
+  padding-top: 0;
 }
 
 .recorded-empty {

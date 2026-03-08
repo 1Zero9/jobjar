@@ -1,4 +1,4 @@
-import { createQuickTaskAction, deleteTaskAction, logoutAction } from "@/app/actions";
+import { createQuickTaskAction, deleteTaskAction, logoutAction, updateRecordedTaskAction } from "@/app/actions";
 import { requireSessionContext } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   const { householdId, userId } = await requireSessionContext("/");
 
-  const [currentUser, rooms, recordedTasks] = await Promise.all([
+  const [currentUser, rooms, people, recordedTasks] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       select: { displayName: true },
@@ -17,6 +17,18 @@ export default async function Home() {
       where: { householdId, active: true },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
       select: { id: true, name: true },
+    }),
+    prisma.householdMember.findMany({
+      where: { householdId },
+      orderBy: { joinedAt: "asc" },
+      select: {
+        user: {
+          select: {
+            id: true,
+            displayName: true,
+          },
+        },
+      },
     }),
     prisma.task.findMany({
       where: {
@@ -29,11 +41,25 @@ export default async function Home() {
         room: {
           select: { name: true },
         },
+        assignments: {
+          where: { assignedTo: null },
+          orderBy: { assignedFrom: "desc" },
+          take: 1,
+          include: {
+            user: {
+              select: {
+                id: true,
+                displayName: true,
+              },
+            },
+          },
+        },
       },
     }),
   ]);
 
   const roomOptions = rooms.filter((room) => room.name.toLowerCase() !== "unsorted");
+  const peopleOptions = people.map((member) => member.user);
 
   return (
     <div className="capture-shell min-h-screen px-4 py-5">
@@ -115,9 +141,52 @@ export default async function Home() {
                   </summary>
 
                   <div className="recorded-row-detail">
-                    <p><span>Room</span><strong>{displayRoomName(task.room.name)}</strong></p>
-                    <p><span>Recorded</span><strong>{formatRecordedAt(task.createdAt)}</strong></p>
-                    <p><span>Status</span><strong>Recorded</strong></p>
+                    <form action={updateRecordedTaskAction} className="recorded-edit-form">
+                      <input type="hidden" name="taskId" value={task.id} />
+
+                      <label className="recorded-field">
+                        <span>Task</span>
+                        <input
+                          name="title"
+                          type="text"
+                          defaultValue={task.title}
+                          className="recorded-edit-input"
+                        />
+                      </label>
+
+                      <label className="recorded-field">
+                        <span>Room</span>
+                        <select name="roomId" defaultValue={task.room.name.toLowerCase() === "unsorted" ? "" : task.roomId} className="recorded-edit-input">
+                          <option value="">No room</option>
+                          {roomOptions.map((room) => (
+                            <option key={room.id} value={room.id}>
+                              {room.name}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+
+                      <label className="recorded-field">
+                        <span>Person</span>
+                        <select
+                          name="assigneeUserId"
+                          defaultValue={task.assignments[0]?.userId ?? ""}
+                          className="recorded-edit-input"
+                        >
+                          <option value="">No person</option>
+                          {peopleOptions.map((person) => (
+                            <option key={person.id} value={person.id}>
+                              {person.displayName}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+
+                      <p><span>Recorded</span><strong>{formatRecordedAt(task.createdAt)}</strong></p>
+                      <div className="recorded-row-actions between">
+                        <button className="action-btn bright quiet">Save</button>
+                      </div>
+                    </form>
                     <form action={deleteTaskAction} className="recorded-row-actions">
                       <input type="hidden" name="taskId" value={task.id} />
                       <button className="action-btn warn quiet">Delete task</button>

@@ -211,6 +211,92 @@ export async function createQuickTaskAction(formData: FormData) {
   refreshViews();
 }
 
+export async function updateRecordedTaskAction(formData: FormData) {
+  const { householdId } = await requireSessionMemberAction();
+  const taskId = String(formData.get("taskId") ?? "").trim();
+  const title = String(formData.get("title") ?? "").trim();
+  const requestedRoomId = String(formData.get("roomId") ?? "").trim();
+  const assigneeUserId = String(formData.get("assigneeUserId") ?? "").trim();
+
+  if (!taskId || !title) {
+    return;
+  }
+
+  const existingTask = await prisma.task.findFirst({
+    where: {
+      id: taskId,
+      active: true,
+      room: { householdId },
+    },
+    select: {
+      id: true,
+      roomId: true,
+    },
+  });
+  if (!existingTask) {
+    return;
+  }
+
+  let roomId = existingTask.roomId;
+  if (requestedRoomId) {
+    const room = await prisma.room.findFirst({
+      where: {
+        id: requestedRoomId,
+        householdId,
+        active: true,
+      },
+      select: { id: true },
+    });
+    if (room) {
+      roomId = room.id;
+    }
+  } else {
+    roomId = await getOrCreateUnsortedRoomId(householdId);
+  }
+
+  await prisma.task.update({
+    where: { id: existingTask.id },
+    data: {
+      title,
+      roomId,
+    },
+  });
+
+  await prisma.taskAssignment.updateMany({
+    where: {
+      taskId: existingTask.id,
+      assignedTo: null,
+    },
+    data: {
+      assignedTo: new Date(),
+    },
+  });
+
+  if (assigneeUserId) {
+    const member = await prisma.householdMember.findUnique({
+      where: {
+        householdId_userId: {
+          householdId,
+          userId: assigneeUserId,
+        },
+      },
+      select: { userId: true },
+    });
+
+    if (member) {
+      await prisma.taskAssignment.create({
+        data: {
+          taskId: existingTask.id,
+          userId: assigneeUserId,
+          assignedFrom: new Date(),
+        },
+      });
+    }
+  }
+
+  refreshViews();
+}
+
 export async function updateTaskAction(formData: FormData) {
   const { householdId } = await requireAdminAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
