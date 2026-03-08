@@ -144,6 +144,10 @@ body {
   padding: 0.95rem 1.1rem;
 }
 
+.capture-submit-btn:hover {
+  box-shadow: 0 10px 18px rgba(37, 99, 235, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.24);
+}
+
 .recorded-header {
   display: flex;
   align-items: center;
@@ -234,6 +238,7 @@ body {
   color: #667085;
   font-size: 1rem;
   line-height: 1;
+  transition: transform 120ms ease;
 }
 
 .recorded-row[open] .recorded-row-chevron {
@@ -811,8 +816,9 @@ body {
 }
 
 .action-btn.quiet {
-  padding: 0.6rem 0.9rem;
+  padding: 0.58rem 0.82rem;
   font-size: 0.78rem;
+  font-weight: 650;
 }
 
 .action-btn.primary {

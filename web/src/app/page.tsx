@@ -33,7 +33,7 @@ export default async function Home() {
     }),
   ]);
 
-  const roomOptions = rooms.filter((room) => room.name.toLowerCase() !== "inbox");
+  const roomOptions = rooms.filter((room) => room.name.toLowerCase() !== "unsorted");
 
   return (
     <div className="capture-shell min-h-screen px-4 py-5">
@@ -48,7 +48,7 @@ export default async function Home() {
           </div>
           <div className="capture-topbar-actions">
             <Link href="#recorded" className="action-btn subtle quiet">
-              Tasks recorded
+              Recorded
             </Link>
             <Link href="/settings" className="action-btn subtle quiet">
               Settings
@@ -84,7 +84,7 @@ export default async function Home() {
                 </select>
               </div>
 
-              <button className="capture-submit-btn">Record task</button>
+              <button className="capture-submit-btn">Save task</button>
             </form>
           </div>
         </section>
@@ -109,15 +109,15 @@ export default async function Home() {
                       <p className="recorded-row-title">{task.title}</p>
                     </div>
                     <div className="recorded-row-meta">
-                      <p className="recorded-row-room">{task.room.name}</p>
+                      <p className="recorded-row-room">{displayRoomName(task.room.name)}</p>
                       <span className="recorded-row-chevron">+</span>
                     </div>
                   </summary>
 
                   <div className="recorded-row-detail">
-                    <p><span>Room</span><strong>{task.room.name}</strong></p>
+                    <p><span>Room</span><strong>{displayRoomName(task.room.name)}</strong></p>
                     <p><span>Recorded</span><strong>{formatRecordedAt(task.createdAt)}</strong></p>
-                    <p><span>Status</span><strong>{task.captureStage}</strong></p>
+                    <p><span>Status</span><strong>Recorded</strong></p>
                   </div>
                 </details>
               ))
@@ -145,4 +145,8 @@ function formatRecordedAt(value: Date) {
     hour: "numeric",
     minute: "2-digit",
   }).format(value);
+}
+
+function displayRoomName(roomName: string) {
+  return roomName.toLowerCase() === "unsorted" ? "No room" : roomName;
 }

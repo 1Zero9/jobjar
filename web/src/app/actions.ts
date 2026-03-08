@@ -176,14 +176,14 @@ export async function createTaskAction(formData: FormData) {
 }
 
 export async function createQuickTaskAction(formData: FormData) {
-  const { userId, householdId } = await requireSessionMemberAction();
+  const { householdId } = await requireSessionMemberAction();
   const title = String(formData.get("title") ?? "").trim();
   const requestedRoomId = String(formData.get("roomId") ?? "").trim();
   if (!title) {
     return;
   }
 
-  let roomId = await getOrCreateCaptureRoomId(householdId);
+  let roomId = await getOrCreateUnsortedRoomId(householdId);
   if (requestedRoomId) {
     const room = await prisma.room.findFirst({
       where: {
@@ -199,24 +199,12 @@ export async function createQuickTaskAction(formData: FormData) {
     }
   }
 
-  const task = await prisma.task.create({
+  await prisma.task.create({
     data: {
       title,
       roomId,
-      jobKind: inferJobKindFromText(title),
+      jobKind: "upkeep",
       captureStage: "captured",
-      estimatedMinutes: 15,
-      graceHours: 12,
-      description: "validation=basic;min=0",
-    },
-    select: { id: true },
-  });
-
-  await prisma.taskAssignment.create({
-    data: {
-      taskId: task.id,
-      userId,
-      assignedFrom: new Date(),
     },
   });
 
@@ -904,13 +892,13 @@ async function requireSessionMemberAction() {
   return context;
 }
 
-async function getOrCreateCaptureRoomId(householdId: string) {
+async function getOrCreateUnsortedRoomId(householdId: string) {
   const existingRoom = await prisma.room.findFirst({
     where: {
       householdId,
       active: true,
       name: {
-        equals: "Inbox",
+        equals: "Unsorted",
         mode: "insensitive",
       },
     },
@@ -930,8 +918,8 @@ async function getOrCreateCaptureRoomId(householdId: string) {
   const room = await prisma.room.create({
     data: {
       householdId,
-      name: "Inbox",
-      designation: "Quick capture queue",
+      name: "Unsorted",
+      designation: "Tasks recorded without a room",
       sortOrder: (maxSort._max.sortOrder ?? 0) + 1,
     },
     select: { id: true },
