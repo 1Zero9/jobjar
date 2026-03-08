@@ -1,4 +1,4 @@
-import { createQuickTaskAction, logoutAction } from "@/app/actions";
+import { createQuickTaskAction, deleteTaskAction, logoutAction } from "@/app/actions";
 import { requireSessionContext } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
@@ -48,10 +48,10 @@ export default async function Home() {
           </div>
           <div className="capture-topbar-actions">
             <Link href="#recorded" className="action-btn subtle quiet">
-              Recorded
+              View recorded
             </Link>
             <Link href="/settings" className="action-btn subtle quiet">
-              Settings
+              Rooms & people
             </Link>
             <form action={logoutAction}>
               <button className="action-btn subtle quiet">Log out</button>
@@ -118,6 +118,10 @@ export default async function Home() {
                     <p><span>Room</span><strong>{displayRoomName(task.room.name)}</strong></p>
                     <p><span>Recorded</span><strong>{formatRecordedAt(task.createdAt)}</strong></p>
                     <p><span>Status</span><strong>Recorded</strong></p>
+                    <form action={deleteTaskAction} className="recorded-row-actions">
+                      <input type="hidden" name="taskId" value={task.id} />
+                      <button className="action-btn warn quiet">Delete task</button>
+                    </form>
                   </div>
                 </details>
               ))

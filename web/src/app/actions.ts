@@ -385,7 +385,7 @@ export async function updateTaskAction(formData: FormData) {
 }
 
 export async function deleteTaskAction(formData: FormData) {
-  const { householdId } = await requireAdminAction();
+  const { householdId } = await requireSessionMemberAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
   if (!taskId) {
     return;
