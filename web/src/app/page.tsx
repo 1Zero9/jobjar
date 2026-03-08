@@ -47,157 +47,120 @@ export default async function Home() {
   const upcomingTasks = openTasks
     .filter((entry) => !isDueToday(entry.task.dueAt))
     .sort((a, b) => compareByDueDate(a.task, b.task));
-
   const completedToday = doneTasks.filter((entry) => isSameDayToday(entry.task.lastCompletedAt)).length;
 
   return (
-    <div className="task-shell min-h-screen px-4 py-5 sm:px-5 sm:py-6">
-      <main className="mx-auto flex w-full max-w-6xl flex-col gap-4">
-        <section className="task-hero">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="max-w-2xl">
-              <p className="task-kicker">Task Jar</p>
-              <h1 className="task-title">Simple household tasks, one screen.</h1>
-              <p className="task-copy">
-                Capture work fast, see what matters today, and mark it done without the extra workflow overhead.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Link href="/settings" className="action-btn subtle">
-                Settings
-              </Link>
-              <form action={logoutAction}>
-                <button className="action-btn warn">Log out</button>
-              </form>
-            </div>
+    <div className="task-shell min-h-screen px-4 py-4 sm:px-5 sm:py-5">
+      <main className="mx-auto flex w-full max-w-5xl flex-col gap-5">
+        <header className="task-topbar">
+          <div>
+            <p className="task-kicker">Task Jar</p>
+            <h1 className="task-app-title">Household tasks</h1>
+            <p className="task-app-subtitle">{currentUser?.displayName ?? "You"} • {openTasks.length} open tasks</p>
           </div>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/settings" className="action-btn subtle">
+              Settings
+            </Link>
+            <form action={logoutAction}>
+              <button className="action-btn subtle">Log out</button>
+            </form>
+          </div>
+        </header>
 
-          <div className="mt-5 grid gap-3 lg:grid-cols-[1.3fr_0.7fr]">
-            <section className="task-capture-panel">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="task-section-label">Quick Add</p>
-                  <h2 className="text-2xl font-semibold text-[#15263c]">Add a task</h2>
-                </div>
-                <span className="task-badge">{openTasks.length} open</span>
-              </div>
+        <section className="task-toolbar">
+          <form action={createQuickTaskAction} className="task-toolbar-form">
+            <input
+              name="title"
+              type="text"
+              required
+              placeholder="Add a task"
+              className="task-text-input"
+            />
+            <button className="action-btn bright">Add</button>
+          </form>
 
-              <form action={createQuickTaskAction} className="mt-4 grid gap-2 sm:grid-cols-[1fr_auto]">
-                <input
-                  name="title"
-                  type="text"
-                  required
-                  placeholder="Book car service"
-                  className="task-text-input"
-                />
-                <button className="action-btn bright px-4">Add</button>
-              </form>
-
-              <div className="mt-3 flex flex-wrap gap-2 text-xs text-[#596c85]">
-                <span className="task-chip">Examples</span>
-                <span className="task-chip">Change bed sheets</span>
-                <span className="task-chip">Fix kitchen light</span>
-                <span className="task-chip">Order school supplies</span>
-              </div>
-            </section>
-
-            <aside className="task-summary-panel">
-              <p className="task-section-label">Overview</p>
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                <MetricCard label="Today" value={String(todayTasks.length)} />
-                <MetricCard label="Mine" value={String(myTasks.length)} />
-                <MetricCard label="Open" value={String(openTasks.length)} />
-                <MetricCard label="Done today" value={String(completedToday)} />
-              </div>
-              <div className="mt-3 rounded-[1.1rem] border border-[#d4e0f2] bg-[#eef5ff] px-3 py-3">
-                <p className="text-sm font-semibold text-[#14253a]">{currentUser?.displayName ?? "You"}</p>
-                <p className="mt-1 text-sm text-[#5b6e86]">
-                  {myTasks.length === 0 ? "Nothing assigned to you right now." : `${myTasks.length} active tasks assigned to you.`}
-                </p>
-              </div>
-            </aside>
+          <div className="task-metric-strip">
+            <MetricPill label="Today" value={todayTasks.length} />
+            <MetricPill label="Mine" value={myTasks.length} />
+            <MetricPill label="Open" value={openTasks.length} />
+            <MetricPill label="Done today" value={completedToday} />
           </div>
         </section>
 
-        <section className="grid gap-4 xl:grid-cols-[1.1fr_1.1fr_0.9fr]">
-          <TaskColumn
-            title="Today"
-            subtitle="Tasks due today or overdue."
-            count={todayTasks.length}
-            emptyText="Nothing due today."
-            entries={todayTasks}
-          />
-          <TaskColumn
-            title="Upcoming"
-            subtitle="Everything else that is still open."
-            count={upcomingTasks.length}
-            emptyText="No upcoming tasks."
-            entries={upcomingTasks}
-          />
-          <DoneColumn entries={doneTasks.slice(0, 8)} />
-        </section>
+        <TaskSection
+          title="Today"
+          count={todayTasks.length}
+          emptyText="Nothing due today."
+          entries={todayTasks}
+        />
+
+        <TaskSection
+          title="Upcoming"
+          count={upcomingTasks.length}
+          emptyText="No upcoming tasks."
+          entries={upcomingTasks}
+        />
+
+        <DoneSection entries={doneTasks.slice(0, 8)} />
       </main>
     </div>
   );
 }
 
-function TaskColumn({
+function TaskSection({
   title,
-  subtitle,
   count,
   emptyText,
   entries,
 }: {
   title: string;
-  subtitle: string;
   count: number;
   emptyText: string;
   entries: TaskWithRoom[];
 }) {
   return (
-    <article className="task-column">
-      <div className="flex items-start justify-between gap-3">
+    <section className="task-section">
+      <div className="task-section-header">
         <div>
           <p className="task-section-label">{title}</p>
-          <h2 className="text-xl font-semibold text-[#15263c]">{title}</h2>
-          <p className="mt-1 text-sm text-[#5b6e86]">{subtitle}</p>
+          <h2 className="task-section-title">{title}</h2>
         </div>
         <span className="task-count-pill">{count}</span>
       </div>
 
-      <div className="mt-4 space-y-3">
+      <div className="mt-3 space-y-3">
         {entries.length === 0 ? (
           <EmptyState text={emptyText} />
         ) : (
           entries.map((entry) => <TaskCard key={entry.task.id} entry={entry} />)
         )}
       </div>
-    </article>
+    </section>
   );
 }
 
-function DoneColumn({ entries }: { entries: TaskWithRoom[] }) {
+function DoneSection({ entries }: { entries: TaskWithRoom[] }) {
   return (
-    <article className="task-column task-column-done">
-      <div className="flex items-start justify-between gap-3">
+    <section className="task-section">
+      <div className="task-section-header">
         <div>
           <p className="task-section-label">Done</p>
-          <h2 className="text-xl font-semibold text-[#15263c]">Recently finished</h2>
-          <p className="mt-1 text-sm text-[#5b6e86]">Completed tasks stay visible here for a short while.</p>
+          <h2 className="task-section-title">Done</h2>
         </div>
         <span className="task-count-pill">{entries.length}</span>
       </div>
 
-      <div className="mt-4 space-y-3">
+      <div className="mt-3 space-y-3">
         {entries.length === 0 ? (
           <EmptyState text="No completed tasks yet." />
         ) : (
           entries.map((entry) => (
             <article key={entry.task.id} className="task-card task-card-done">
-              <div className="flex items-start justify-between gap-3">
+              <div className="task-card-head">
                 <div>
-                  <p className="text-sm font-semibold text-[#163526]">{entry.task.title}</p>
-                  <p className="mt-1 text-xs text-[#4f6f5b]">
+                  <p className="task-card-title">{entry.task.title}</p>
+                  <p className="task-card-meta">
                     {entry.roomName} • {entry.task.assigneeName ?? "Unassigned"}
                   </p>
                 </div>
@@ -205,13 +168,13 @@ function DoneColumn({ entries }: { entries: TaskWithRoom[] }) {
               </div>
               <form action={reopenTaskAction} className="mt-3">
                 <input type="hidden" name="taskId" value={entry.task.id} />
-                <button className="action-btn subtle w-full">Reopen</button>
+                <button className="action-btn subtle">Reopen</button>
               </form>
             </article>
           ))
         )}
       </div>
-    </article>
+    </section>
   );
 }
 
@@ -221,32 +184,30 @@ function TaskCard({ entry }: { entry: TaskWithRoom }) {
 
   return (
     <article className={`task-card ${statusTone}`}>
-      <div className="flex items-start justify-between gap-3">
+      <div className="task-card-head">
         <div>
-          <p className="text-base font-semibold text-[#15263c]">{entry.task.title}</p>
-          <p className="mt-1 text-sm text-[#5b6e86]">
+          <p className="task-card-title">{entry.task.title}</p>
+          <p className="task-card-meta">
             {entry.roomName} • {entry.task.assigneeName ?? "Unassigned"}
           </p>
         </div>
         <span className={`task-status-pill ${statusTone}`}>{dueLabel}</span>
       </div>
 
-      {entry.task.detailNotes ? <p className="mt-3 text-sm text-[#435872]">{entry.task.detailNotes}</p> : null}
-
-      <div className="mt-3 flex flex-wrap gap-2 text-xs text-[#5b6e86]">
-        {entry.isMine ? <span className="task-chip">Assigned to me</span> : null}
+      <div className="mt-3 flex flex-wrap gap-2">
+        {entry.isMine ? <span className="task-chip">Mine</span> : null}
         {entry.task.locationDetails ? <span className="task-chip">{entry.task.locationDetails}</span> : null}
         {entry.task.startedAt ? <span className="task-chip">Started {elapsedLabel(entry.task.startedAt)} ago</span> : null}
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2">
+      <div className="task-actions-row">
         {!entry.task.startedAt ? (
           <form action={startTaskAction}>
             <input type="hidden" name="taskId" value={entry.task.id} />
             <button className="action-btn subtle">Start</button>
           </form>
         ) : null}
-        <form action={completeTaskAction} className="flex min-w-0 flex-1 items-center gap-2">
+        <form action={completeTaskAction} className="task-complete-form">
           <input type="hidden" name="taskId" value={entry.task.id} />
           <input name="note" type="text" placeholder="Optional note" className="task-note-input" />
           <button className="action-btn bright">Done</button>
@@ -256,11 +217,11 @@ function TaskCard({ entry }: { entry: TaskWithRoom }) {
   );
 }
 
-function MetricCard({ label, value }: { label: string; value: string }) {
+function MetricPill({ label, value }: { label: string; value: number }) {
   return (
-    <div className="task-metric-card">
-      <p className="text-[11px] uppercase tracking-[0.14em] text-[#5b6e86]">{label}</p>
-      <p className="mt-1 text-2xl font-bold leading-none text-[#15263c]">{value}</p>
+    <div className="task-metric-pill">
+      <span>{label}</span>
+      <strong>{value}</strong>
     </div>
   );
 }
