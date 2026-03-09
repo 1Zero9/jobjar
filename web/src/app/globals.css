@@ -173,6 +173,13 @@ body {
   margin-top: 0.55rem;
 }
 
+.room-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 1rem;
+}
+
 .recorded-header {
   display: flex;
   align-items: center;

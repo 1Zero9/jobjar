@@ -1,4 +1,4 @@
-import { createQuickTaskAction, deleteTaskAction, logoutAction, updateRecordedTaskAction } from "@/app/actions";
+import { createQuickTaskAction, createRoomAction, deleteTaskAction, logoutAction, updateRecordedTaskAction } from "@/app/actions";
 import { requireSessionContext } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
@@ -6,7 +6,7 @@ import Link from "next/link";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const { householdId, userId } = await requireSessionContext("/");
+  const { householdId, userId, role } = await requireSessionContext("/");
 
   const [currentUser, rooms, people, recordedTasks] = await Promise.all([
     prisma.user.findUnique({
@@ -77,7 +77,7 @@ export default async function Home() {
               View recorded
             </Link>
             <Link href="/settings" className="action-btn subtle quiet">
-              Rooms & people
+              Manage rooms
             </Link>
             <form action={logoutAction}>
               <button className="action-btn subtle quiet">Log out</button>
@@ -112,6 +112,40 @@ export default async function Home() {
 
               <button className="capture-submit-btn">Save task</button>
             </form>
+          </div>
+        </section>
+
+        <section className="capture-panel-simple">
+          <div className="room-setup-header">
+            <div>
+              <p className="capture-kicker">Rooms in recorder</p>
+              <h2 className="recorded-title">Available rooms</h2>
+            </div>
+            <span className="recorded-count">{roomOptions.length}</span>
+          </div>
+
+          {role === "admin" ? (
+            <form action={createRoomAction} className="capture-form-simple">
+              <div className="capture-step">
+                <p className="capture-step-label">Add a room</p>
+                <input name="name" type="text" required placeholder="Kitchen" className="capture-room-select" />
+                <input name="designation" type="hidden" value="General household tasks" />
+              </div>
+              <button className="action-btn bright">Add room</button>
+            </form>
+          ) : null}
+
+          <div className="room-chip-list">
+            {roomOptions.length === 0 ? <p className="recorded-empty">No rooms added yet.</p> : null}
+            {roomOptions.map((room) => (
+              <span key={room.id} className="task-chip">{room.name}</span>
+            ))}
+          </div>
+
+          <div className="recorded-row-actions between">
+            <Link href="/settings" className="action-btn subtle quiet">
+              Open full room setup
+            </Link>
           </div>
         </section>
 
