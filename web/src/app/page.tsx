@@ -85,7 +85,7 @@ export default async function Home({
 
   return (
     <div className="capture-shell min-h-screen px-4 py-5">
-      <main className="mx-auto flex w-full max-w-[28rem] flex-col gap-6">
+      <main className="capture-app-shell mx-auto flex w-full max-w-[28rem] flex-col gap-6">
         <header className="capture-topbar">
           <div>
             <p className="capture-kicker">Task Jar</p>
@@ -116,23 +116,62 @@ export default async function Home({
         {params.lucky === "empty" ? <ToastNotice message="No tasks available for lucky dip." tone="info" /> : null}
         {luckyTask ? <ToastNotice message={`Lucky dip: ${luckyTask.title}`} tone="info" /> : null}
 
-        <section className="capture-panel-simple">
-          <div className="capture-step">
-            <p className="capture-step-label">1. Task</p>
-            <form action={createQuickTaskAction} className="capture-form-simple">
-              <input
-                name="title"
-                type="text"
-                required
-                placeholder="Light bulb out"
-                className="capture-main-input"
-                autoFocus
-              />
+        <div className="capture-content-grid">
+          <section className="capture-panel-simple">
+            <div className="capture-step">
+              <p className="capture-step-label">1. Task</p>
+              <form action={createQuickTaskAction} className="capture-form-simple">
+                <input
+                  name="title"
+                  type="text"
+                  required
+                  placeholder="Light bulb out"
+                  className="capture-main-input"
+                  autoFocus
+                />
 
-              <div className="capture-step">
-                <p className="capture-step-label">2. Room (optional)</p>
-                <select name="roomId" defaultValue="" className="capture-room-select">
-                  <option value="">No room yet</option>
+                <div className="capture-step">
+                  <p className="capture-step-label">2. Room (optional)</p>
+                  <select name="roomId" defaultValue="" className="capture-room-select">
+                    <option value="">No room yet</option>
+                    {groupedRoomOptions.map(([group, groupedRooms]) => (
+                      <optgroup key={group} label={group}>
+                        {groupedRooms.map((room) => (
+                          <option key={room.id} value={room.id}>
+                            {room.name}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                </div>
+
+                <FormActionButton className="capture-submit-btn" pendingLabel="Saving task">
+                  Save task
+                </FormActionButton>
+              </form>
+              <form action={luckyDipAction}>
+                <FormActionButton className="action-btn subtle w-full" pendingLabel="Choosing task">
+                  Lucky dip
+                </FormActionButton>
+              </form>
+            </div>
+          </section>
+
+          <section id="recorded" className="recorded-panel">
+            <div className="recorded-header">
+              <div>
+                <p className="capture-kicker">Recorded</p>
+                <h2 className="recorded-title">Tasks recorded</h2>
+              </div>
+              <span className="recorded-count">{visibleTasks.length}</span>
+            </div>
+
+            <form method="get" action="/" className="recorded-filter-bar">
+              <label className="recorded-filter-field">
+                <span>Filter by room</span>
+                <select name="room" defaultValue={selectedRoomId} className="recorded-filter-select">
+                  <option value="">All rooms</option>
                   {groupedRoomOptions.map(([group, groupedRooms]) => (
                     <optgroup key={group} label={group}>
                       {groupedRooms.map((room) => (
@@ -143,166 +182,129 @@ export default async function Home({
                     </optgroup>
                   ))}
                 </select>
-              </div>
-
-              <FormActionButton className="capture-submit-btn" pendingLabel="Saving task">
-                Save task
+              </label>
+              <FormActionButton className="action-btn subtle quiet" pendingLabel="Applying">
+                Apply
               </FormActionButton>
+              {selectedRoomId ? (
+                <Link href="/#recorded" className="action-btn subtle quiet">
+                  Clear
+                </Link>
+              ) : null}
             </form>
-            <form action={luckyDipAction}>
-              <FormActionButton className="action-btn subtle w-full" pendingLabel="Choosing task">
-                Lucky dip
-              </FormActionButton>
-            </form>
-          </div>
-        </section>
 
-        <section id="recorded" className="recorded-panel">
-          <div className="recorded-header">
-            <div>
-              <p className="capture-kicker">Recorded</p>
-              <h2 className="recorded-title">Tasks recorded</h2>
-            </div>
-            <span className="recorded-count">{visibleTasks.length}</span>
-          </div>
-
-          <form method="get" action="/" className="recorded-filter-bar">
-            <label className="recorded-filter-field">
-              <span>Filter by room</span>
-              <select name="room" defaultValue={selectedRoomId} className="recorded-filter-select">
-                <option value="">All rooms</option>
-                {groupedRoomOptions.map(([group, groupedRooms]) => (
-                  <optgroup key={group} label={group}>
-                    {groupedRooms.map((room) => (
-                      <option key={room.id} value={room.id}>
-                        {room.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-            </label>
-            <FormActionButton className="action-btn subtle quiet" pendingLabel="Applying">
-              Apply
-            </FormActionButton>
-            {selectedRoomId ? (
-              <Link href="/#recorded" className="action-btn subtle quiet">
-                Clear
-              </Link>
-            ) : null}
-          </form>
-
-          <div className="recorded-list">
-            {visibleTasks.length === 0 ? (
-              <p className="recorded-empty">
-                {selectedRoomId ? "No tasks recorded for this room yet." : "No tasks recorded yet."}
-              </p>
-            ) : (
-              visibleTasks.map((task, index) => (
-                <details
-                  key={task.id}
-                  id={`task-${task.id}`}
-                  className={`recorded-row recorded-row-${rowTone(index)}`}
-                  open={task.id === params.lucky}
-                >
-                  <summary className="recorded-row-summary">
-                    <div className="min-w-0">
-                      <p className="recorded-row-title">{task.title}</p>
-                      <div className="recorded-summary-line">
-                        {task.projectParent ? <span className="task-chip">Sub-task of {task.projectParent.title}</span> : null}
-                        {task.projectChildren.length > 0 ? <span className="task-chip">{task.projectChildren.length} sub-tasks</span> : null}
+            <div className="recorded-list">
+              {visibleTasks.length === 0 ? (
+                <p className="recorded-empty">
+                  {selectedRoomId ? "No tasks recorded for this room yet." : "No tasks recorded yet."}
+                </p>
+              ) : (
+                visibleTasks.map((task, index) => (
+                  <details
+                    key={task.id}
+                    id={`task-${task.id}`}
+                    className={`recorded-row recorded-row-${rowTone(index)}`}
+                    open={task.id === params.lucky}
+                  >
+                    <summary className="recorded-row-summary">
+                      <div className="min-w-0">
+                        <p className="recorded-row-title">{task.title}</p>
+                        <div className="recorded-summary-line">
+                          {task.projectParent ? <span className="task-chip">Sub-task of {task.projectParent.title}</span> : null}
+                          {task.projectChildren.length > 0 ? <span className="task-chip">{task.projectChildren.length} sub-tasks</span> : null}
+                        </div>
                       </div>
-                    </div>
-                    <div className="recorded-row-meta">
-                      <span className="recorded-row-edit">Edit</span>
-                      <p className="recorded-row-room">{displayRoomName(task.room.name)}</p>
-                      <span className="recorded-row-chevron">+</span>
-                    </div>
-                  </summary>
+                      <div className="recorded-row-meta">
+                        <span className="recorded-row-edit">Edit</span>
+                        <p className="recorded-row-room">{displayRoomName(task.room.name)}</p>
+                        <span className="recorded-row-chevron">+</span>
+                      </div>
+                    </summary>
 
-                  <div className="recorded-row-detail">
-                    <form action={updateRecordedTaskAction} className="recorded-edit-form">
-                      <input type="hidden" name="taskId" value={task.id} />
+                    <div className="recorded-row-detail">
+                      <form action={updateRecordedTaskAction} className="recorded-edit-form">
+                        <input type="hidden" name="taskId" value={task.id} />
 
-                      <label className="recorded-field">
-                        <span>Task</span>
-                        <input
-                          name="title"
-                          type="text"
-                          defaultValue={task.title}
-                          className="recorded-edit-input"
-                        />
-                      </label>
+                        <label className="recorded-field">
+                          <span>Task</span>
+                          <input
+                            name="title"
+                            type="text"
+                            defaultValue={task.title}
+                            className="recorded-edit-input"
+                          />
+                        </label>
 
-                      <label className="recorded-field">
-                        <span>Room</span>
-                        <select name="roomId" defaultValue={task.room.name.toLowerCase() === "unsorted" ? "" : task.roomId} className="recorded-edit-input">
-                          <option value="">No room</option>
-                          {groupedRoomOptions.map(([group, groupedRooms]) => (
-                            <optgroup key={group} label={group}>
-                              {groupedRooms.map((room) => (
-                                <option key={room.id} value={room.id}>
-                                  {room.name}
-                                </option>
-                              ))}
-                            </optgroup>
-                          ))}
-                        </select>
-                      </label>
+                        <label className="recorded-field">
+                          <span>Room</span>
+                          <select name="roomId" defaultValue={task.room.name.toLowerCase() === "unsorted" ? "" : task.roomId} className="recorded-edit-input">
+                            <option value="">No room</option>
+                            {groupedRoomOptions.map(([group, groupedRooms]) => (
+                              <optgroup key={group} label={group}>
+                                {groupedRooms.map((room) => (
+                                  <option key={room.id} value={room.id}>
+                                    {room.name}
+                                  </option>
+                                ))}
+                              </optgroup>
+                            ))}
+                          </select>
+                        </label>
 
-                      <label className="recorded-field">
-                        <span>Person</span>
-                        <select
-                          name="assigneeUserId"
-                          defaultValue={task.assignments[0]?.userId ?? ""}
-                          className="recorded-edit-input"
-                        >
-                          <option value="">No person</option>
-                          {peopleOptions.map((person) => (
-                            <option key={person.id} value={person.id}>
-                              {person.displayName}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-
-                      <label className="recorded-field">
-                        <span>Sub-task of</span>
-                        <select
-                          name="parentTaskId"
-                          defaultValue={task.projectParent?.id ?? ""}
-                          className="recorded-edit-input"
-                        >
-                          <option value="">No parent task</option>
-                          {recordedTasks
-                            .filter((candidate) => candidate.id !== task.id)
-                            .map((candidate) => (
-                              <option key={candidate.id} value={candidate.id}>
-                                {candidate.title}
+                        <label className="recorded-field">
+                          <span>Person</span>
+                          <select
+                            name="assigneeUserId"
+                            defaultValue={task.assignments[0]?.userId ?? ""}
+                            className="recorded-edit-input"
+                          >
+                            <option value="">No person</option>
+                            {peopleOptions.map((person) => (
+                              <option key={person.id} value={person.id}>
+                                {person.displayName}
                               </option>
                             ))}
-                        </select>
-                      </label>
+                          </select>
+                        </label>
 
-                      <p><span>Recorded</span><strong>{formatRecordedAt(task.createdAt)}</strong></p>
-                      <div className="recorded-row-actions between">
-                        <FormActionButton className="action-btn bright quiet" pendingLabel="Saving">
-                          Save changes
+                        <label className="recorded-field">
+                          <span>Sub-task of</span>
+                          <select
+                            name="parentTaskId"
+                            defaultValue={task.projectParent?.id ?? ""}
+                            className="recorded-edit-input"
+                          >
+                            <option value="">No parent task</option>
+                            {recordedTasks
+                              .filter((candidate) => candidate.id !== task.id)
+                              .map((candidate) => (
+                                <option key={candidate.id} value={candidate.id}>
+                                  {candidate.title}
+                                </option>
+                              ))}
+                          </select>
+                        </label>
+
+                        <p><span>Recorded</span><strong>{formatRecordedAt(task.createdAt)}</strong></p>
+                        <div className="recorded-row-actions between">
+                          <FormActionButton className="action-btn bright quiet" pendingLabel="Saving">
+                            Save changes
+                          </FormActionButton>
+                        </div>
+                      </form>
+                      <form action={deleteTaskAction} className="recorded-row-actions">
+                        <input type="hidden" name="taskId" value={task.id} />
+                        <FormActionButton className="action-btn warn quiet" pendingLabel="Deleting">
+                          Delete task
                         </FormActionButton>
-                      </div>
-                    </form>
-                    <form action={deleteTaskAction} className="recorded-row-actions">
-                      <input type="hidden" name="taskId" value={task.id} />
-                      <FormActionButton className="action-btn warn quiet" pendingLabel="Deleting">
-                        Delete task
-                      </FormActionButton>
-                    </form>
-                  </div>
-                </details>
-              ))
-            )}
-          </div>
-        </section>
+                      </form>
+                    </div>
+                  </details>
+                ))
+              )}
+            </div>
+          </section>
+        </div>
 
         <footer className="capture-footer">
           Logged in as {currentUser?.displayName ?? "You"}
