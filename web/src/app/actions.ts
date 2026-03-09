@@ -500,10 +500,13 @@ export async function createPersonAction(formData: FormData) {
   const displayName = String(formData.get("displayName") ?? "").trim();
   const emailInput = String(formData.get("email") ?? "").trim();
   const passcodeInput = String(formData.get("passcode") ?? "").trim();
+  const requestedRole = String(formData.get("role") ?? "").trim();
 
   if (!displayName) {
     return;
   }
+
+  const role = requestedRole === "admin" ? "admin" : "member";
 
   const email =
     emailInput || `${displayName.toLowerCase().replace(/[^a-z0-9]+/g, ".").replace(/^\.|\.$/g, "")}@jobjar.local`;
@@ -524,11 +527,11 @@ export async function createPersonAction(formData: FormData) {
         userId: user.id,
       },
     },
-    update: { role: "member" },
+    update: { role },
     create: {
       householdId,
       userId: user.id,
-      role: "member",
+      role,
     },
   });
 

@@ -6,7 +6,7 @@ import Link from "next/link";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const { householdId, userId } = await requireSessionContext("/");
+  const { householdId, userId, role } = await requireSessionContext("/");
 
   const [currentUser, rooms, people, recordedTasks] = await Promise.all([
     prisma.user.findUnique({
@@ -76,9 +76,11 @@ export default async function Home() {
             <Link href="#recorded" className="action-btn subtle quiet">
               View recorded
             </Link>
-            <Link href="/settings" className="action-btn subtle quiet">
-              Manage rooms
-            </Link>
+            {role === "admin" ? (
+              <Link href="/settings" className="action-btn subtle quiet">
+                Manage rooms
+              </Link>
+            ) : null}
             <form action={logoutAction}>
               <button className="action-btn subtle quiet">Log out</button>
             </form>

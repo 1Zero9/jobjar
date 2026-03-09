@@ -135,6 +135,10 @@ export default async function SettingsPage() {
           <form action={createPersonAction} className="capture-form-simple">
             <input name="displayName" type="text" required placeholder="Name" className="capture-main-input" />
             <input name="email" type="email" placeholder="Email (optional)" className="capture-room-select" />
+            <select name="role" defaultValue="member" className="capture-room-select">
+              <option value="member">Member</option>
+              <option value="admin">Admin</option>
+            </select>
             <input name="passcode" type="password" minLength={4} placeholder="Passcode" className="capture-room-select" />
             <button className="capture-submit-btn">Add person</button>
           </form>
