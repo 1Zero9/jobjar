@@ -36,6 +36,7 @@ export default async function SettingsPage({
 
   const visibleRooms = rooms.filter((room) => room.name.toLowerCase() !== "unsorted");
   const systemRoom = rooms.find((room) => room.name.toLowerCase() === "unsorted");
+  const groupedRooms = groupRoomsByDesignation(visibleRooms);
 
   return (
     <div className="settings-shell min-h-screen px-4 py-5">
@@ -73,7 +74,7 @@ export default async function SettingsPage({
             <div className="capture-step">
               <p className="capture-step-label">Add a room</p>
               <input name="name" type="text" required placeholder="Utility room" className="capture-main-input" />
-              <input name="designation" type="hidden" value="General household tasks" />
+              <input name="designation" type="text" defaultValue="Inside" placeholder="Group e.g. Upstairs / Outside" className="capture-room-select" />
             </div>
             <button className="capture-submit-btn">Add room</button>
           </form>
@@ -92,40 +93,50 @@ export default async function SettingsPage({
           </div>
 
           <div className="recorded-list">
-            {visibleRooms.map((room) => (
-              <details key={room.id} className="recorded-row recorded-row-blue" open>
-                <summary className="recorded-row-summary">
-                  <div className="min-w-0">
-                    <p className="recorded-row-title">{room.name}</p>
-                  </div>
-                  <div className="recorded-row-meta">
-                    <span className="recorded-row-edit">Edit</span>
-                    <p className="recorded-row-room">{room.taskCount} tasks</p>
-                    <span className="recorded-row-chevron">+</span>
-                  </div>
-                </summary>
-                <div className="recorded-row-detail">
-                  <form action={updateRoomAction} className="recorded-edit-form">
-                    <input type="hidden" name="roomId" value={room.id} />
-                    <label className="recorded-field">
-                      <span>Room name</span>
-                      <input name="name" type="text" defaultValue={room.name} className="recorded-edit-input" />
-                    </label>
-                    <label className="recorded-field">
-                      <span>What belongs here</span>
-                      <input name="designation" type="text" defaultValue={room.designation} className="recorded-edit-input" />
-                    </label>
-                    <p><span>Tasks</span><strong>{room.taskCount}</strong></p>
-                    <div className="recorded-row-actions between">
-                      <button className="action-btn bright quiet">Save room</button>
-                    </div>
-                  </form>
-                  <form action={deleteRoomAction} className="recorded-row-actions">
-                    <input type="hidden" name="roomId" value={room.id} />
-                    <button className="action-btn warn quiet">Archive room</button>
-                  </form>
+            {groupedRooms.map(([group, groupRooms], groupIndex) => (
+              <section key={group} className="room-group-section">
+                <div className="room-group-header">
+                  <p className="room-group-title">{group}</p>
+                  <span className="recorded-count">{groupRooms.length}</span>
                 </div>
-              </details>
+                <div className="recorded-list room-group-list">
+                  {groupRooms.map((room) => (
+                    <details key={room.id} className={`recorded-row recorded-row-${rowTone(groupIndex)}`}>
+                      <summary className="recorded-row-summary">
+                        <div className="min-w-0">
+                          <p className="recorded-row-title">{room.name}</p>
+                        </div>
+                        <div className="recorded-row-meta">
+                          <span className="recorded-row-edit">Edit</span>
+                          <p className="recorded-row-room">{room.taskCount} tasks</p>
+                          <span className="recorded-row-chevron">+</span>
+                        </div>
+                      </summary>
+                      <div className="recorded-row-detail">
+                        <form action={updateRoomAction} className="recorded-edit-form">
+                          <input type="hidden" name="roomId" value={room.id} />
+                          <label className="recorded-field">
+                            <span>Room name</span>
+                            <input name="name" type="text" defaultValue={room.name} className="recorded-edit-input" />
+                          </label>
+                          <label className="recorded-field">
+                            <span>Group</span>
+                            <input name="designation" type="text" defaultValue={room.designation} className="recorded-edit-input" />
+                          </label>
+                          <p><span>Tasks</span><strong>{room.taskCount}</strong></p>
+                          <div className="recorded-row-actions between">
+                            <button className="action-btn bright quiet">Save room</button>
+                          </div>
+                        </form>
+                        <form action={deleteRoomAction} className="recorded-row-actions">
+                          <input type="hidden" name="roomId" value={room.id} />
+                          <button className="action-btn warn quiet">Archive room</button>
+                        </form>
+                      </div>
+                    </details>
+                  ))}
+                </div>
+              </section>
             ))}
 
             {visibleRooms.length === 0 ? (
@@ -192,6 +203,22 @@ export default async function SettingsPage({
       </main>
     </div>
   );
+}
+
+function groupRoomsByDesignation<T extends { designation: string }>(rooms: T[]) {
+  const grouped = new Map<string, T[]>();
+  for (const room of rooms) {
+    const key = room.designation?.trim() || "General";
+    const entries = grouped.get(key) ?? [];
+    entries.push(room);
+    grouped.set(key, entries);
+  }
+  return [...grouped.entries()];
+}
+
+function rowTone(index: number) {
+  const tones = ["blue", "green", "amber", "rose"] as const;
+  return tones[index % tones.length];
 }
 
 async function mergeDuplicateRooms(householdId: string) {

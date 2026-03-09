@@ -213,12 +213,33 @@ export async function createQuickTaskAction(formData: FormData) {
   redirect("/?added=task#recorded");
 }
 
+export async function luckyDipAction() {
+  const { householdId } = await requireSessionMemberAction();
+
+  const tasks = await prisma.task.findMany({
+    where: {
+      active: true,
+      room: { householdId },
+    },
+    orderBy: { createdAt: "desc" },
+    select: { id: true },
+  });
+
+  if (tasks.length === 0) {
+    redirect("/?lucky=empty#recorded");
+  }
+
+  const pick = tasks[Math.floor(Math.random() * tasks.length)];
+  redirect(`/?lucky=${pick.id}#task-${pick.id}`);
+}
+
 export async function updateRecordedTaskAction(formData: FormData) {
   const { householdId } = await requireSessionMemberAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
   const title = String(formData.get("title") ?? "").trim();
   const requestedRoomId = String(formData.get("roomId") ?? "").trim();
   const assigneeUserId = String(formData.get("assigneeUserId") ?? "").trim();
+  const requestedParentTaskId = String(formData.get("parentTaskId") ?? "").trim();
 
   if (!taskId || !title) {
     return;
@@ -256,11 +277,27 @@ export async function updateRecordedTaskAction(formData: FormData) {
     roomId = await getOrCreateUnsortedRoomId(householdId);
   }
 
+  let projectParentId: string | null = null;
+  if (requestedParentTaskId && requestedParentTaskId !== existingTask.id) {
+    const parent = await prisma.task.findFirst({
+      where: {
+        id: requestedParentTaskId,
+        active: true,
+        room: { householdId },
+      },
+      select: { id: true },
+    });
+    if (parent) {
+      projectParentId = parent.id;
+    }
+  }
+
   await prisma.task.update({
     where: { id: existingTask.id },
     data: {
       title,
       roomId,
+      projectParentId,
     },
   });
 
