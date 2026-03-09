@@ -1,4 +1,5 @@
 import { createQuickTaskAction, deleteTaskAction, logoutAction, luckyDipAction, updateRecordedTaskAction } from "@/app/actions";
+import { FormActionButton } from "@/app/components/FormActionButton";
 import { ToastNotice } from "@/app/components/ToastNotice";
 import { requireSessionContext } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -103,7 +104,9 @@ export default async function Home({
               </Link>
             ) : null}
             <form action={logoutAction}>
-              <button className="action-btn subtle quiet">Log out</button>
+              <FormActionButton className="action-btn subtle quiet" pendingLabel="Logging out">
+                Log out
+              </FormActionButton>
             </form>
           </div>
         </header>
@@ -142,10 +145,14 @@ export default async function Home({
                 </select>
               </div>
 
-              <button className="capture-submit-btn">Save task</button>
+              <FormActionButton className="capture-submit-btn" pendingLabel="Saving task">
+                Save task
+              </FormActionButton>
             </form>
             <form action={luckyDipAction}>
-              <button className="action-btn subtle w-full">Lucky dip</button>
+              <FormActionButton className="action-btn subtle w-full" pendingLabel="Choosing task">
+                Lucky dip
+              </FormActionButton>
             </form>
           </div>
         </section>
@@ -175,7 +182,9 @@ export default async function Home({
                 ))}
               </select>
             </label>
-            <button type="submit" className="action-btn subtle quiet">Apply</button>
+            <FormActionButton className="action-btn subtle quiet" pendingLabel="Applying">
+              Apply
+            </FormActionButton>
             {selectedRoomId ? (
               <Link href="/#recorded" className="action-btn subtle quiet">
                 Clear
@@ -277,12 +286,16 @@ export default async function Home({
 
                       <p><span>Recorded</span><strong>{formatRecordedAt(task.createdAt)}</strong></p>
                       <div className="recorded-row-actions between">
-                        <button type="submit" className="action-btn bright quiet">Save changes</button>
+                        <FormActionButton className="action-btn bright quiet" pendingLabel="Saving">
+                          Save changes
+                        </FormActionButton>
                       </div>
                     </form>
                     <form action={deleteTaskAction} className="recorded-row-actions">
                       <input type="hidden" name="taskId" value={task.id} />
-                      <button className="action-btn warn quiet">Delete task</button>
+                      <FormActionButton className="action-btn warn quiet" pendingLabel="Deleting">
+                        Delete task
+                      </FormActionButton>
                     </form>
                   </div>
                 </details>
