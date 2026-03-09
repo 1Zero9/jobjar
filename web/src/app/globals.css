@@ -37,7 +37,7 @@ body {
   font-family: var(--font-sans);
 }
 
-@media (max-width: 768px) {
+@media (hover: none) and (pointer: coarse) {
   input,
   select,
   textarea {
