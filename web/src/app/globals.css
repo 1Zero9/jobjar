@@ -37,6 +37,14 @@ body {
   font-family: var(--font-sans);
 }
 
+@media (max-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
 .capture-shell {
   background:
     radial-gradient(circle at top, rgba(255, 255, 255, 0.9), transparent 30%),
