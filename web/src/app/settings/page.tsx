@@ -1,6 +1,7 @@
 import {
   createPersonAction,
   createRoomAction,
+  deleteRoomAction,
   logoutAction,
   removePersonAction,
   setPersonPasscodeAction,
@@ -12,132 +13,156 @@ import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
+const roomPresets = [
+  "Kitchen",
+  "Living room",
+  "Main bedroom",
+  "Bathroom",
+  "Hall",
+  "Garden",
+];
+
 export default async function SettingsPage() {
   const { householdId } = await requireAdmin("/settings");
-  const { rooms, people, tasks } = await getAdminData({ householdId });
+  const { rooms, people } = await getAdminData({ householdId });
+
+  const visibleRooms = rooms.filter((room) => room.name.toLowerCase() !== "unsorted");
+  const systemRoom = rooms.find((room) => room.name.toLowerCase() === "unsorted");
 
   return (
-    <div className="task-shell min-h-screen px-4 py-5 sm:px-5 sm:py-6">
-      <main className="mx-auto flex w-full max-w-5xl flex-col gap-4">
-        <section className="task-hero">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="max-w-2xl">
-              <p className="task-kicker">Settings</p>
-              <h1 className="task-title">Keep the app light.</h1>
-              <p className="task-copy">
-                Manage people and spaces here. Tasks stay on the main dashboard.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Link href="/" className="action-btn subtle">
-                Back to tasks
-              </Link>
-              <form action={logoutAction}>
-                <button className="action-btn warn">Log out</button>
-              </form>
-            </div>
+    <div className="capture-shell min-h-screen px-4 py-5">
+      <main className="mx-auto flex w-full max-w-[32rem] flex-col gap-6">
+        <header className="capture-topbar">
+          <div>
+            <p className="capture-kicker">Setup</p>
+            <h1 className="capture-title">Rooms & people</h1>
+            <p className="capture-subtitle">
+              Rooms added here appear in the task recorder. Start with the spaces you actually use.
+            </p>
           </div>
-        </section>
-
-        <section className="grid gap-4 lg:grid-cols-2">
-          <article className="task-column">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="task-section-label">People</p>
-                <h2 className="text-xl font-semibold text-[#15263c]">Household members</h2>
-                <p className="mt-1 text-sm text-[#5b6e86]">Anyone who needs to see or complete tasks.</p>
-              </div>
-              <span className="task-count-pill">{people.length}</span>
-            </div>
-
-            <form action={createPersonAction} className="mt-4 grid gap-2 rounded-[1rem] border border-[#d6e3f4] bg-[#f7fbff] p-3">
-              <input name="displayName" type="text" required placeholder="Name" className="task-text-input" />
-              <input name="email" type="email" placeholder="Email (optional)" className="task-text-input" />
-              <div className="flex gap-2">
-                <input name="passcode" type="password" minLength={4} placeholder="Passcode" className="task-text-input" />
-                <button className="action-btn bright whitespace-nowrap">Add person</button>
-              </div>
+          <div className="capture-topbar-actions">
+            <Link href="/" className="action-btn subtle quiet">
+              Back to recorder
+            </Link>
+            <form action={logoutAction}>
+              <button className="action-btn subtle quiet">Log out</button>
             </form>
+          </div>
+        </header>
 
-            <div className="mt-4 space-y-3">
-              {people.map((person) => (
-                <article key={person.id} className="task-card calm">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-[#15263c]">{person.displayName}</p>
-                      <p className="mt-1 text-xs text-[#5b6e86]">
-                        {person.role} • {person.email}
-                      </p>
-                    </div>
-                    <form action={removePersonAction}>
-                      <input type="hidden" name="userId" value={person.id} />
-                      <button className="action-btn warn">Remove</button>
-                    </form>
-                  </div>
-                  <form action={setPersonPasscodeAction} className="mt-3 flex gap-2">
-                    <input type="hidden" name="userId" value={person.id} />
-                    <input name="passcode" type="password" minLength={4} placeholder="Reset passcode" className="task-note-input" />
-                    <button className="action-btn subtle whitespace-nowrap">Set passcode</button>
-                  </form>
-                </article>
-              ))}
-            </div>
-          </article>
-
-          <article className="task-column">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="task-section-label">Spaces</p>
-                <h2 className="text-xl font-semibold text-[#15263c]">Rooms and areas</h2>
-                <p className="mt-1 text-sm text-[#5b6e86]">Use these to group tasks in a way that makes sense at home.</p>
-              </div>
-              <span className="task-count-pill">{rooms.length}</span>
-            </div>
-
-            <form action={createRoomAction} className="mt-4 grid gap-2 rounded-[1rem] border border-[#d6e3f4] bg-[#f7fbff] p-3">
-              <input name="name" type="text" required placeholder="Space name" className="task-text-input" />
-              <input name="designation" type="text" placeholder="What belongs here?" className="task-text-input" />
-              <button className="action-btn bright">Add space</button>
-            </form>
-
-            <div className="mt-4 space-y-3">
-              {rooms.map((room) => (
-                <article key={room.id} className="task-card calm">
-                  <form action={updateRoomAction} className="grid gap-2">
-                    <input type="hidden" name="roomId" value={room.id} />
-                    <input name="name" type="text" defaultValue={room.name} className="task-text-input" />
-                    <div className="flex gap-2">
-                      <input name="designation" type="text" defaultValue={room.designation} className="task-text-input" />
-                      <button className="action-btn subtle whitespace-nowrap">Save</button>
-                    </div>
-                  </form>
-                  <p className="mt-3 text-xs text-[#5b6e86]">{room.taskCount} tasks in this space</p>
-                </article>
-              ))}
-            </div>
-          </article>
-        </section>
-
-        <section className="task-column">
-          <div className="flex items-start justify-between gap-3">
+        <section className="capture-panel-simple">
+          <div className="room-setup-header">
             <div>
-              <p className="task-section-label">Snapshot</p>
-              <h2 className="text-xl font-semibold text-[#15263c]">Current task load</h2>
-              <p className="mt-1 text-sm text-[#5b6e86]">Read-only for now. Editing tasks stays on the main screen.</p>
+              <p className="capture-kicker">Room setup</p>
+              <h2 className="recorded-title">Choose your spaces</h2>
             </div>
-            <span className="task-count-pill">{tasks.length}</span>
+            <span className="recorded-count">{visibleRooms.length}</span>
           </div>
 
-          <div className="mt-4 space-y-3">
-            {tasks.slice(0, 12).map((task) => (
-              <article key={task.id} className="task-card calm">
-                <p className="text-sm font-semibold text-[#15263c]">{task.title}</p>
-                <p className="mt-1 text-xs text-[#5b6e86]">
-                  {rooms.find((room) => room.id === task.roomId)?.name ?? "General"} • {task.assigneeUserId ? "Assigned" : "Unassigned"}
-                </p>
+          <form action={createRoomAction} className="capture-form-simple">
+            <div className="capture-step">
+              <p className="capture-step-label">Add a room</p>
+              <input name="name" type="text" required placeholder="Utility room" className="capture-main-input" />
+              <input name="designation" type="hidden" value="General household tasks" />
+            </div>
+            <button className="capture-submit-btn">Add room</button>
+          </form>
+
+          <div className="room-preset-wrap">
+            <p className="capture-step-label">Common rooms</p>
+            <div className="room-preset-grid">
+              {roomPresets.map((preset) => (
+                <form key={preset} action={createRoomAction}>
+                  <input type="hidden" name="name" value={preset} />
+                  <input type="hidden" name="designation" value="General household tasks" />
+                  <button className="action-btn subtle quiet w-full">{preset}</button>
+                </form>
+              ))}
+            </div>
+          </div>
+
+          <div className="recorded-list">
+            {visibleRooms.map((room) => (
+              <article key={room.id} className="recorded-row recorded-row-blue">
+                <div className="recorded-row-detail">
+                  <form action={updateRoomAction} className="recorded-edit-form">
+                    <input type="hidden" name="roomId" value={room.id} />
+                    <label className="recorded-field">
+                      <span>Room name</span>
+                      <input name="name" type="text" defaultValue={room.name} className="recorded-edit-input" />
+                    </label>
+                    <label className="recorded-field">
+                      <span>What belongs here</span>
+                      <input name="designation" type="text" defaultValue={room.designation} className="recorded-edit-input" />
+                    </label>
+                    <p><span>Tasks</span><strong>{room.taskCount}</strong></p>
+                    <div className="recorded-row-actions between">
+                      <button className="action-btn bright quiet">Save room</button>
+                    </div>
+                  </form>
+                  <form action={deleteRoomAction} className="recorded-row-actions">
+                    <input type="hidden" name="roomId" value={room.id} />
+                    <button className="action-btn warn quiet">Archive room</button>
+                  </form>
+                </div>
               </article>
             ))}
-            {tasks.length === 0 ? <p className="task-empty-state">No tasks yet.</p> : null}
+
+            {visibleRooms.length === 0 ? (
+              <p className="recorded-empty">No rooms yet. Add the spaces you want in the task dropdown.</p>
+            ) : null}
+
+            {systemRoom ? (
+              <article className="recorded-row recorded-row-amber">
+                <div className="recorded-row-detail">
+                  <p><span>System room</span><strong>No room</strong></p>
+                  <p><span>Used for</span><strong>Tasks saved without a room</strong></p>
+                </div>
+              </article>
+            ) : null}
+          </div>
+        </section>
+
+        <section className="capture-panel-simple">
+          <div className="room-setup-header">
+            <div>
+              <p className="capture-kicker">People</p>
+              <h2 className="recorded-title">Who can own tasks</h2>
+            </div>
+            <span className="recorded-count">{people.length}</span>
+          </div>
+
+          <form action={createPersonAction} className="capture-form-simple">
+            <input name="displayName" type="text" required placeholder="Name" className="capture-main-input" />
+            <input name="email" type="email" placeholder="Email (optional)" className="capture-room-select" />
+            <input name="passcode" type="password" minLength={4} placeholder="Passcode" className="capture-room-select" />
+            <button className="capture-submit-btn">Add person</button>
+          </form>
+
+          <div className="recorded-list">
+            {people.map((person) => (
+              <article key={person.id} className="recorded-row recorded-row-green">
+                <div className="recorded-row-detail">
+                  <p><span>Name</span><strong>{person.displayName}</strong></p>
+                  <p><span>Role</span><strong>{person.role}</strong></p>
+                  <p><span>Email</span><strong>{person.email}</strong></p>
+                  <form action={setPersonPasscodeAction} className="recorded-edit-form">
+                    <input type="hidden" name="userId" value={person.id} />
+                    <label className="recorded-field">
+                      <span>Reset passcode</span>
+                      <input name="passcode" type="password" minLength={4} placeholder="New passcode" className="recorded-edit-input" />
+                    </label>
+                    <div className="recorded-row-actions between">
+                      <button className="action-btn bright quiet">Save passcode</button>
+                    </div>
+                  </form>
+                  <form action={removePersonAction} className="recorded-row-actions">
+                    <input type="hidden" name="userId" value={person.id} />
+                    <button className="action-btn warn quiet">Remove person</button>
+                  </form>
+                </div>
+              </article>
+            ))}
           </div>
         </section>
       </main>
