@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ added?: string; updated?: string; lucky?: string }>;
+  searchParams: Promise<{ added?: string; updated?: string; lucky?: string; room?: string }>;
 }) {
   const params = await searchParams;
   const { householdId, userId, role } = await requireSessionContext("/");
@@ -74,8 +74,12 @@ export default async function Home({
   const roomOptions = uniqueRoomsByName(rooms).filter((room) => room.name.toLowerCase() !== "unsorted");
   const peopleOptions = people.map((member) => member.user);
   const groupedRoomOptions = groupRoomsByDesignation(roomOptions);
+  const selectedRoomId = roomOptions.some((room) => room.id === params.room) ? params.room : "";
+  const visibleTasks = selectedRoomId
+    ? recordedTasks.filter((task) => task.roomId === selectedRoomId)
+    : recordedTasks;
   const luckyTask = params.lucky && params.lucky !== "empty"
-    ? recordedTasks.find((task) => task.id === params.lucky)
+    ? visibleTasks.find((task) => task.id === params.lucky) ?? recordedTasks.find((task) => task.id === params.lucky)
     : null;
 
   return (
@@ -152,14 +156,40 @@ export default async function Home({
               <p className="capture-kicker">Recorded</p>
               <h2 className="recorded-title">Tasks recorded</h2>
             </div>
-            <span className="recorded-count">{recordedTasks.length}</span>
+            <span className="recorded-count">{visibleTasks.length}</span>
           </div>
 
+          <form method="get" action="/" className="recorded-filter-bar">
+            <label className="recorded-filter-field">
+              <span>Filter by room</span>
+              <select name="room" defaultValue={selectedRoomId} className="recorded-filter-select">
+                <option value="">All rooms</option>
+                {groupedRoomOptions.map(([group, groupedRooms]) => (
+                  <optgroup key={group} label={group}>
+                    {groupedRooms.map((room) => (
+                      <option key={room.id} value={room.id}>
+                        {room.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </label>
+            <button type="submit" className="action-btn subtle quiet">Apply</button>
+            {selectedRoomId ? (
+              <Link href="/#recorded" className="action-btn subtle quiet">
+                Clear
+              </Link>
+            ) : null}
+          </form>
+
           <div className="recorded-list">
-            {recordedTasks.length === 0 ? (
-              <p className="recorded-empty">No tasks recorded yet.</p>
+            {visibleTasks.length === 0 ? (
+              <p className="recorded-empty">
+                {selectedRoomId ? "No tasks recorded for this room yet." : "No tasks recorded yet."}
+              </p>
             ) : (
-              recordedTasks.map((task, index) => (
+              visibleTasks.map((task, index) => (
                 <details
                   key={task.id}
                   id={`task-${task.id}`}

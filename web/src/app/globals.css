@@ -307,6 +307,42 @@ body {
   gap: 0.7rem;
 }
 
+.recorded-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.recorded-filter-field {
+  flex: 1 1 12rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.recorded-filter-field span {
+  color: #667085;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.recorded-filter-select {
+  width: 100%;
+  border: 1px solid #d0d5dd;
+  border-radius: 0.9rem;
+  background: #ffffff;
+  color: #101828;
+  font-size: 0.94rem;
+  padding: 0.8rem 0.9rem;
+}
+
+.recorded-filter-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
 .recorded-row {
   border: 1px solid #e6eaf0;
   border-radius: 1.1rem;
