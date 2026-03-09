@@ -180,6 +180,7 @@ export async function createQuickTaskAction(formData: FormData) {
   const { householdId } = await requireSessionMemberAction();
   const title = String(formData.get("title") ?? "").trim();
   const requestedRoomId = String(formData.get("roomId") ?? "").trim();
+  const returnTo = getReturnPath(formData.get("returnTo"), "/log");
   if (!title) {
     return;
   }
@@ -210,11 +211,12 @@ export async function createQuickTaskAction(formData: FormData) {
   });
 
   refreshViews();
-  redirect("/?added=task#recorded");
+  redirect(`${returnTo}?added=task#recorded`);
 }
 
-export async function luckyDipAction() {
+export async function luckyDipAction(formData?: FormData) {
   const { householdId } = await requireSessionMemberAction();
+  const returnTo = getReturnPath(formData?.get("returnTo"), "/tasks");
 
   const tasks = await prisma.task.findMany({
     where: {
@@ -226,11 +228,11 @@ export async function luckyDipAction() {
   });
 
   if (tasks.length === 0) {
-    redirect("/?lucky=empty#recorded");
+    redirect(`${returnTo}?lucky=empty#recorded`);
   }
 
   const pick = tasks[Math.floor(Math.random() * tasks.length)];
-  redirect(`/?lucky=${pick.id}#task-${pick.id}`);
+  redirect(`${returnTo}?lucky=${pick.id}#task-${pick.id}`);
 }
 
 export async function updateRecordedTaskAction(formData: FormData) {
@@ -240,6 +242,7 @@ export async function updateRecordedTaskAction(formData: FormData) {
   const requestedRoomId = String(formData.get("roomId") ?? "").trim();
   const assigneeUserId = String(formData.get("assigneeUserId") ?? "").trim();
   const requestedParentTaskId = String(formData.get("parentTaskId") ?? "").trim();
+  const returnTo = getReturnPath(formData.get("returnTo"), "/tasks");
 
   if (!taskId || !title) {
     return;
@@ -334,7 +337,7 @@ export async function updateRecordedTaskAction(formData: FormData) {
   }
 
   refreshViews();
-  redirect("/?updated=task#recorded");
+  redirect(`${returnTo}?updated=task#recorded`);
 }
 
 export async function updateTaskAction(formData: FormData) {
@@ -1000,9 +1003,19 @@ function parseMinimumMinutes(description: string | null) {
 
 function refreshViews() {
   revalidatePath("/");
+  revalidatePath("/log");
+  revalidatePath("/tasks");
   revalidatePath("/admin");
   revalidatePath("/tv");
   revalidatePath("/login");
+}
+
+function getReturnPath(value: FormDataEntryValue | null | undefined, fallback: string) {
+  const raw = String(value ?? "").trim();
+  if (!raw.startsWith("/")) {
+    return fallback;
+  }
+  return raw;
 }
 
 async function requireAdminAction() {
