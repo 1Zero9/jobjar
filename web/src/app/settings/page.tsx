@@ -30,13 +30,13 @@ export default async function SettingsPage() {
   const systemRoom = rooms.find((room) => room.name.toLowerCase() === "unsorted");
 
   return (
-    <div className="capture-shell min-h-screen px-4 py-5">
+    <div className="settings-shell min-h-screen px-4 py-5">
       <main className="mx-auto flex w-full max-w-[32rem] flex-col gap-6">
-        <header className="capture-topbar">
+        <header className="settings-hero">
           <div>
-            <p className="capture-kicker">Setup</p>
-            <h1 className="capture-title">Rooms & people</h1>
-            <p className="capture-subtitle">
+            <p className="settings-kicker">Room Setup</p>
+            <h1 className="settings-title">Manage rooms and people</h1>
+            <p className="settings-copy">
               Rooms added here appear in the task recorder. Start with the spaces you actually use.
             </p>
           </div>
@@ -50,10 +50,10 @@ export default async function SettingsPage() {
           </div>
         </header>
 
-        <section className="capture-panel-simple">
+        <section className="settings-panel">
           <div className="room-setup-header">
             <div>
-              <p className="capture-kicker">Room setup</p>
+              <p className="settings-kicker">Room setup</p>
               <h2 className="recorded-title">Choose your spaces</h2>
             </div>
             <span className="recorded-count">{visibleRooms.length}</span>
@@ -123,10 +123,10 @@ export default async function SettingsPage() {
           </div>
         </section>
 
-        <section className="capture-panel-simple">
+        <section className="settings-panel">
           <div className="room-setup-header">
             <div>
-              <p className="capture-kicker">People</p>
+              <p className="settings-kicker">People</p>
               <h2 className="recorded-title">Who can own tasks</h2>
             </div>
             <span className="recorded-count">{people.length}</span>

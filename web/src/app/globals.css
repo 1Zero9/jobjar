@@ -43,10 +43,27 @@ body {
     linear-gradient(180deg, #f4f6f8 0%, #eef2f6 100%);
 }
 
+.settings-shell {
+  background:
+    radial-gradient(circle at top left, rgba(232, 239, 252, 0.95), transparent 30%),
+    linear-gradient(180deg, #e8eef6 0%, #dde6f1 100%);
+}
+
 .capture-topbar {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+
+.settings-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  border: 1px solid rgba(147, 165, 189, 0.45);
+  border-radius: 1.5rem;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(241, 246, 252, 0.94) 100%);
+  box-shadow: 0 16px 28px rgba(32, 51, 84, 0.08);
+  padding: 1rem;
 }
 
 .capture-topbar-actions {
@@ -69,6 +86,14 @@ body {
   text-transform: uppercase;
 }
 
+.settings-kicker {
+  color: #607087;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
 .capture-title {
   margin-top: 0.45rem;
   color: #101828;
@@ -78,9 +103,25 @@ body {
   line-height: 0.98;
 }
 
+.settings-title {
+  margin-top: 0.45rem;
+  color: #15263c;
+  font-size: clamp(1.95rem, 5vw, 2.4rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
 .capture-subtitle {
   margin-top: 0.55rem;
   color: #667085;
+  font-size: 0.98rem;
+  line-height: 1.5;
+}
+
+.settings-copy {
+  margin-top: 0.55rem;
+  color: #5d6f87;
   font-size: 0.98rem;
   line-height: 1.5;
 }
@@ -91,6 +132,14 @@ body {
   border-radius: 1.5rem;
   background: rgba(255, 255, 255, 0.92);
   box-shadow: 0 12px 24px rgba(16, 24, 40, 0.04);
+  padding: 1rem;
+}
+
+.settings-panel {
+  border: 1px solid rgba(147, 165, 189, 0.4);
+  border-radius: 1.5rem;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 14px 24px rgba(32, 51, 84, 0.06);
   padding: 1rem;
 }
 
