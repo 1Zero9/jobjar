@@ -147,25 +147,50 @@ body {
 
 .landing-grid {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.85rem;
 }
 
 .landing-action-form {
-  display: block;
+  display: grid;
 }
 
 .landing-action-card {
+  position: relative;
   display: grid;
   gap: 0.35rem;
   width: 100%;
   min-height: 7.75rem;
-  border: 1px solid #dbe3ef;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.48);
   border-radius: 1.35rem;
-  background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.54) 0%, rgba(232, 241, 255, 0.28) 100%),
+    rgba(255, 255, 255, 0.32);
   color: #101828;
   padding: 1rem;
   text-align: left;
-  box-shadow: 0 8px 20px rgba(16, 24, 40, 0.04);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.72),
+    0 14px 30px rgba(95, 122, 170, 0.14);
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+}
+
+.landing-action-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.55) 0%, transparent 45%, rgba(160, 196, 255, 0.18) 100%);
+  pointer-events: none;
+}
+
+.landing-action-card:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.76),
+    0 18px 34px rgba(95, 122, 170, 0.18);
 }
 
 .landing-action-button {
@@ -193,7 +218,9 @@ body {
 }
 
 .landing-action-card.muted {
-  background: linear-gradient(180deg, #f9fafb 0%, #f3f4f6 100%);
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.5) 0%, rgba(243, 244, 246, 0.4) 100%),
+    rgba(255, 255, 255, 0.28);
 }
 
 .landing-action-card.muted .landing-action-kicker {

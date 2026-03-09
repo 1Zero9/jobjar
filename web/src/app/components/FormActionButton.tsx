@@ -3,7 +3,7 @@
 import { useFormStatus } from "react-dom";
 
 type FormActionButtonProps = {
-  children: string;
+  children: React.ReactNode;
   pendingLabel?: string;
   className?: string;
   type?: "button" | "submit" | "reset";

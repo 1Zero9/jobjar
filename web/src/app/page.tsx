@@ -65,7 +65,11 @@ export default async function HomePage() {
             <form action={luckyDipAction} className="landing-action-form">
               <input type="hidden" name="returnTo" value="/tasks" />
               <FormActionButton className="landing-action-card landing-action-button" pendingLabel="Picking task">
-                Lucky dip
+                <>
+                  <span className="landing-action-kicker">Lucky</span>
+                  <strong>Lucky dip</strong>
+                  <span>Pick something at random and get moving.</span>
+                </>
               </FormActionButton>
             </form>
 
