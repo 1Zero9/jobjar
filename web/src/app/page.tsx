@@ -58,7 +58,7 @@ export default async function Home() {
     }),
   ]);
 
-  const roomOptions = rooms.filter((room) => room.name.toLowerCase() !== "unsorted");
+  const roomOptions = uniqueRoomsByName(rooms).filter((room) => room.name.toLowerCase() !== "unsorted");
   const peopleOptions = people.map((member) => member.user);
 
   return (
@@ -224,4 +224,16 @@ function formatRecordedAt(value: Date) {
 
 function displayRoomName(roomName: string) {
   return roomName.toLowerCase() === "unsorted" ? "No room" : roomName;
+}
+
+function uniqueRoomsByName<T extends { id: string; name: string }>(rooms: T[]) {
+  const seen = new Set<string>();
+  return rooms.filter((room) => {
+    const key = room.name.trim().toLowerCase();
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
 }

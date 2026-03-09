@@ -9,6 +9,7 @@ import {
 } from "@/app/actions";
 import { requireAdmin } from "@/lib/auth";
 import { getAdminData } from "@/lib/admin-data";
+import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -24,6 +25,7 @@ const roomPresets = [
 
 export default async function SettingsPage() {
   const { householdId } = await requireAdmin("/settings");
+  await mergeDuplicateRooms(householdId);
   const { rooms, people } = await getAdminData({ householdId });
 
   const visibleRooms = rooms.filter((room) => room.name.toLowerCase() !== "unsorted");
@@ -172,4 +174,52 @@ export default async function SettingsPage() {
       </main>
     </div>
   );
+}
+
+async function mergeDuplicateRooms(householdId: string) {
+  const rooms = await prisma.room.findMany({
+    where: {
+      householdId,
+      active: true,
+    },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+    select: {
+      id: true,
+      name: true,
+    },
+  });
+
+  const grouped = new Map<string, string[]>();
+  for (const room of rooms) {
+    const key = room.name.trim().toLowerCase();
+    const entries = grouped.get(key) ?? [];
+    entries.push(room.id);
+    grouped.set(key, entries);
+  }
+
+  for (const roomIds of grouped.values()) {
+    if (roomIds.length < 2) {
+      continue;
+    }
+
+    const [canonicalRoomId, ...duplicateRoomIds] = roomIds;
+    await prisma.$transaction([
+      prisma.task.updateMany({
+        where: {
+          roomId: { in: duplicateRoomIds },
+        },
+        data: {
+          roomId: canonicalRoomId,
+        },
+      }),
+      prisma.room.updateMany({
+        where: {
+          id: { in: duplicateRoomIds },
+        },
+        data: {
+          active: false,
+        },
+      }),
+    ]);
+  }
 }
