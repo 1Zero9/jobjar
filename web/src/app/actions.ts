@@ -297,6 +297,7 @@ export async function updateRecordedTaskAction(formData: FormData) {
   }
 
   refreshViews();
+  redirect("/?updated=task#recorded");
 }
 
 export async function updateTaskAction(formData: FormData) {

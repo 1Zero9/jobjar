@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ added?: string }>;
+  searchParams: Promise<{ added?: string; updated?: string }>;
 }) {
   const params = await searchParams;
   const { householdId, userId, role } = await requireSessionContext("/");
@@ -94,6 +94,9 @@ export default async function Home({
 
         {params.added === "task" ? (
           <div className="capture-confirmation success">Task recorded.</div>
+        ) : null}
+        {params.updated === "task" ? (
+          <div className="capture-confirmation info">Task updated.</div>
         ) : null}
 
         <section className="capture-panel-simple">
@@ -196,7 +199,7 @@ export default async function Home({
 
                       <p><span>Recorded</span><strong>{formatRecordedAt(task.createdAt)}</strong></p>
                       <div className="recorded-row-actions between">
-                        <button className="action-btn bright quiet">Save</button>
+                        <button type="submit" className="action-btn bright quiet">Save changes</button>
                       </div>
                     </form>
                     <form action={deleteTaskAction} className="recorded-row-actions">
