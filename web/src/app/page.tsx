@@ -1,4 +1,5 @@
 import { createQuickTaskAction, deleteTaskAction, logoutAction, updateRecordedTaskAction } from "@/app/actions";
+import { ToastNotice } from "@/app/components/ToastNotice";
 import { requireSessionContext } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
@@ -92,12 +93,8 @@ export default async function Home({
           </div>
         </header>
 
-        {params.added === "task" ? (
-          <div className="capture-confirmation success">Task recorded.</div>
-        ) : null}
-        {params.updated === "task" ? (
-          <div className="capture-confirmation info">Task updated.</div>
-        ) : null}
+        {params.added === "task" ? <ToastNotice message="Task recorded." tone="success" /> : null}
+        {params.updated === "task" ? <ToastNotice message="Task updated." tone="info" /> : null}
 
         <section className="capture-panel-simple">
           <div className="capture-step">

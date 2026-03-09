@@ -7,6 +7,7 @@ import {
   setPersonPasscodeAction,
   updateRoomAction,
 } from "@/app/actions";
+import { ToastNotice } from "@/app/components/ToastNotice";
 import { requireAdmin } from "@/lib/auth";
 import { getAdminData } from "@/lib/admin-data";
 import { prisma } from "@/lib/prisma";
@@ -57,9 +58,7 @@ export default async function SettingsPage({
           </div>
         </header>
 
-        {params.added === "room" ? (
-          <div className="capture-confirmation info">Room added.</div>
-        ) : null}
+        {params.added === "room" ? <ToastNotice message="Room added." tone="info" /> : null}
 
         <section className="settings-panel">
           <div className="room-setup-header">

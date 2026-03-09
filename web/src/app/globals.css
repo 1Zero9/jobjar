@@ -223,6 +223,33 @@ body {
   color: #1d4ed8;
 }
 
+.toast-notice {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  z-index: 50;
+  width: min(calc(100vw - 2rem), 24rem);
+  transform: translateX(-50%);
+  border-radius: 1rem;
+  border: 1px solid transparent;
+  box-shadow: 0 14px 30px rgba(16, 24, 40, 0.12);
+  font-size: 0.92rem;
+  font-weight: 700;
+  padding: 0.9rem 1rem;
+}
+
+.toast-notice.success {
+  border-color: #b7e3ca;
+  background: #eafaf0;
+  color: #157347;
+}
+
+.toast-notice.info {
+  border-color: #cfe0ff;
+  background: #eef4ff;
+  color: #1d4ed8;
+}
+
 .room-setup-header {
   display: flex;
   align-items: center;
