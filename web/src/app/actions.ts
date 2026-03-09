@@ -32,6 +32,7 @@ export async function createRoomAction(formData: FormData) {
   });
 
   refreshViews();
+  redirect("/settings?added=room");
 }
 
 export async function updateRoomAction(formData: FormData) {
@@ -209,6 +210,7 @@ export async function createQuickTaskAction(formData: FormData) {
   });
 
   refreshViews();
+  redirect("/?added=task#recorded");
 }
 
 export async function updateRecordedTaskAction(formData: FormData) {

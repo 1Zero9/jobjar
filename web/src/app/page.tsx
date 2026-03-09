@@ -5,7 +5,12 @@ import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
-export default async function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ added?: string }>;
+}) {
+  const params = await searchParams;
   const { householdId, userId, role } = await requireSessionContext("/");
 
   const [currentUser, rooms, people, recordedTasks] = await Promise.all([
@@ -87,6 +92,10 @@ export default async function Home() {
           </div>
         </header>
 
+        {params.added === "task" ? (
+          <div className="capture-confirmation success">Task recorded.</div>
+        ) : null}
+
         <section className="capture-panel-simple">
           <div className="capture-step">
             <p className="capture-step-label">1. Task</p>
@@ -137,6 +146,7 @@ export default async function Home() {
                       <p className="recorded-row-title">{task.title}</p>
                     </div>
                     <div className="recorded-row-meta">
+                      <span className="recorded-row-edit">Edit</span>
                       <p className="recorded-row-room">{displayRoomName(task.room.name)}</p>
                       <span className="recorded-row-chevron">+</span>
                     </div>

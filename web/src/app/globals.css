@@ -203,6 +203,26 @@ body {
   box-shadow: 0 10px 18px rgba(37, 99, 235, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.24);
 }
 
+.capture-confirmation {
+  border-radius: 1rem;
+  border: 1px solid transparent;
+  font-size: 0.92rem;
+  font-weight: 700;
+  padding: 0.85rem 1rem;
+}
+
+.capture-confirmation.success {
+  border-color: #b7e3ca;
+  background: #eafaf0;
+  color: #157347;
+}
+
+.capture-confirmation.info {
+  border-color: #cfe0ff;
+  background: #eef4ff;
+  color: #1d4ed8;
+}
+
 .room-setup-header {
   display: flex;
   align-items: center;
@@ -272,19 +292,19 @@ body {
 }
 
 .recorded-row-blue {
-  background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+  background: linear-gradient(180deg, #eef5ff 0%, #ffffff 100%);
 }
 
 .recorded-row-green {
-  background: linear-gradient(180deg, #f7fcf8 0%, #ffffff 100%);
+  background: linear-gradient(180deg, #eefcf2 0%, #ffffff 100%);
 }
 
 .recorded-row-amber {
-  background: linear-gradient(180deg, #fffaf3 0%, #ffffff 100%);
+  background: linear-gradient(180deg, #fff4df 0%, #ffffff 100%);
 }
 
 .recorded-row-rose {
-  background: linear-gradient(180deg, #fff7f8 0%, #ffffff 100%);
+  background: linear-gradient(180deg, #ffedf1 0%, #ffffff 100%);
 }
 
 .recorded-row-summary {
@@ -305,6 +325,18 @@ body {
   display: flex;
   align-items: center;
   gap: 0.55rem;
+}
+
+.recorded-row-edit {
+  border: 1px solid #d7dce5;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #475467;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.28rem 0.5rem;
+  text-transform: uppercase;
 }
 
 .recorded-row-chevron {

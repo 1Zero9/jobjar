@@ -23,7 +23,12 @@ const roomPresets = [
   "Garden",
 ];
 
-export default async function SettingsPage() {
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ added?: string }>;
+}) {
+  const params = await searchParams;
   const { householdId } = await requireAdmin("/settings");
   await mergeDuplicateRooms(householdId);
   const { rooms, people } = await getAdminData({ householdId });
@@ -51,6 +56,10 @@ export default async function SettingsPage() {
             </form>
           </div>
         </header>
+
+        {params.added === "room" ? (
+          <div className="capture-confirmation info">Room added.</div>
+        ) : null}
 
         <section className="settings-panel">
           <div className="room-setup-header">
@@ -85,7 +94,17 @@ export default async function SettingsPage() {
 
           <div className="recorded-list">
             {visibleRooms.map((room) => (
-              <article key={room.id} className="recorded-row recorded-row-blue">
+              <details key={room.id} className="recorded-row recorded-row-blue" open>
+                <summary className="recorded-row-summary">
+                  <div className="min-w-0">
+                    <p className="recorded-row-title">{room.name}</p>
+                  </div>
+                  <div className="recorded-row-meta">
+                    <span className="recorded-row-edit">Edit</span>
+                    <p className="recorded-row-room">{room.taskCount} tasks</p>
+                    <span className="recorded-row-chevron">+</span>
+                  </div>
+                </summary>
                 <div className="recorded-row-detail">
                   <form action={updateRoomAction} className="recorded-edit-form">
                     <input type="hidden" name="roomId" value={room.id} />
@@ -107,7 +126,7 @@ export default async function SettingsPage() {
                     <button className="action-btn warn quiet">Archive room</button>
                   </form>
                 </div>
-              </article>
+              </details>
             ))}
 
             {visibleRooms.length === 0 ? (
