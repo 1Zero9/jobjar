@@ -82,7 +82,7 @@ export async function deleteRoomAction(formData: FormData) {
 }
 
 export async function createTaskAction(formData: FormData) {
-  const { householdId } = await requireAdminAction();
+  const { householdId, userId } = await requireAdminAction();
   const title = String(formData.get("title") ?? "").trim();
   const requestedRoomId = String(formData.get("roomId") ?? "").trim();
   const detailNotes = String(formData.get("detailNotes") ?? "").trim() || null;
@@ -120,6 +120,7 @@ export async function createTaskAction(formData: FormData) {
     data: {
       title,
       roomId: room.id,
+      createdByUserId: userId,
       detailNotes,
       locationDetails,
       jobKind,
@@ -177,7 +178,7 @@ export async function createTaskAction(formData: FormData) {
 }
 
 export async function createQuickTaskAction(formData: FormData) {
-  const { householdId } = await requireSessionMemberAction();
+  const { householdId, userId } = await requireSessionMemberAction();
   const title = String(formData.get("title") ?? "").trim();
   const requestedRoomId = String(formData.get("roomId") ?? "").trim();
   const requestedPriority = toPositiveIntOrNull(formData.get("priority"));
@@ -210,6 +211,7 @@ export async function createQuickTaskAction(formData: FormData) {
     data: {
       title,
       roomId,
+      createdByUserId: userId,
       jobKind: "upkeep",
       captureStage: recordStatus === "done" ? "done" : "captured",
       detailNotes,

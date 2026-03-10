@@ -61,6 +61,11 @@ export async function TaskWorkspace({
         room: {
           select: { name: true, designation: true },
         },
+        logger: {
+          select: {
+            displayName: true,
+          },
+        },
         projectParent: {
           select: { id: true, title: true },
         },
@@ -318,6 +323,7 @@ export async function TaskWorkspace({
                           {task.projectParent ? <span className="task-chip">Sub-task of {task.projectParent.title}</span> : null}
                           {task.projectChildren.length > 0 ? <span className="task-chip">{task.projectChildren.length} sub-tasks</span> : null}
                         </div>
+                        <p className="recorded-row-placeholder">Logged by {task.logger?.displayName ?? "Unknown"}</p>
                       </div>
                       <div className="recorded-row-meta">
                         <span className="recorded-row-edit">Edit</span>

@@ -682,6 +682,12 @@ body {
   white-space: nowrap;
 }
 
+.recorded-row-placeholder {
+  margin-top: 0.3rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
 .recorded-row-room {
   color: var(--muted);
   font-size: 0.88rem;
