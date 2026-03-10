@@ -180,6 +180,10 @@ export async function createQuickTaskAction(formData: FormData) {
   const { householdId } = await requireSessionMemberAction();
   const title = String(formData.get("title") ?? "").trim();
   const requestedRoomId = String(formData.get("roomId") ?? "").trim();
+  const detailNotes = String(formData.get("detailNotes") ?? "").trim() || null;
+  const recordStatus = String(formData.get("recordStatus") ?? "open").trim();
+  const completedByUserId = String(formData.get("completedByUserId") ?? "").trim();
+  const resolvedAt = toDate(formData.get("resolvedAt")) ?? new Date();
   const returnTo = getReturnPath(formData.get("returnTo"), "/log");
   if (!title) {
     return;
@@ -201,17 +205,43 @@ export async function createQuickTaskAction(formData: FormData) {
     }
   }
 
-  await prisma.task.create({
+  const task = await prisma.task.create({
     data: {
       title,
       roomId,
       jobKind: "upkeep",
-      captureStage: "captured",
+      captureStage: recordStatus === "done" ? "done" : "captured",
+      detailNotes,
     },
+    select: { id: true },
   });
 
+  if (recordStatus === "done") {
+    const completedBy = await resolveMemberUserId(householdId, completedByUserId);
+    const occurrence = await prisma.taskOccurrence.create({
+      data: {
+        taskId: task.id,
+        dueAt: resolvedAt,
+        status: "done",
+        completedAt: resolvedAt,
+        completedBy,
+      },
+      select: { id: true },
+    });
+
+    await prisma.taskLog.create({
+      data: {
+        taskId: task.id,
+        occurrenceId: occurrence.id,
+        action: "completed",
+        atTime: resolvedAt,
+        note: detailNotes,
+      },
+    });
+  }
+
   refreshViews();
-  redirect(`${returnTo}?added=task#recorded`);
+  redirect(`${returnTo}?added=${recordStatus === "done" ? "done" : "task"}#recorded`);
 }
 
 export async function luckyDipAction(formData?: FormData) {
@@ -221,6 +251,7 @@ export async function luckyDipAction(formData?: FormData) {
   const tasks = await prisma.task.findMany({
     where: {
       active: true,
+      captureStage: { not: "done" },
       room: { householdId },
     },
     orderBy: { createdAt: "desc" },
@@ -242,6 +273,10 @@ export async function updateRecordedTaskAction(formData: FormData) {
   const requestedRoomId = String(formData.get("roomId") ?? "").trim();
   const assigneeUserId = String(formData.get("assigneeUserId") ?? "").trim();
   const requestedParentTaskId = String(formData.get("parentTaskId") ?? "").trim();
+  const detailNotes = String(formData.get("detailNotes") ?? "").trim() || null;
+  const recordStatus = String(formData.get("recordStatus") ?? "open").trim();
+  const completedByUserId = String(formData.get("completedByUserId") ?? "").trim();
+  const resolvedAt = toDate(formData.get("resolvedAt")) ?? new Date();
   const returnTo = getReturnPath(formData.get("returnTo"), "/tasks");
 
   if (!taskId || !title) {
@@ -257,6 +292,12 @@ export async function updateRecordedTaskAction(formData: FormData) {
     select: {
       id: true,
       roomId: true,
+      captureStage: true,
+      occurrences: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        select: { id: true, status: true },
+      },
     },
   });
   if (!existingTask) {
@@ -301,6 +342,8 @@ export async function updateRecordedTaskAction(formData: FormData) {
       title,
       roomId,
       projectParentId,
+      detailNotes,
+      captureStage: recordStatus === "done" ? "done" : "captured",
     },
   });
 
@@ -336,8 +379,54 @@ export async function updateRecordedTaskAction(formData: FormData) {
     }
   }
 
+  const latestOccurrence = existingTask.occurrences[0] ?? null;
+  if (recordStatus === "done") {
+    const completedBy = await resolveMemberUserId(householdId, completedByUserId);
+    if (latestOccurrence) {
+      await prisma.taskOccurrence.update({
+        where: { id: latestOccurrence.id },
+        data: {
+          dueAt: resolvedAt,
+          status: "done",
+          completedAt: resolvedAt,
+          completedBy,
+        },
+      });
+    } else {
+      const occurrence = await prisma.taskOccurrence.create({
+        data: {
+          taskId: existingTask.id,
+          dueAt: resolvedAt,
+          status: "done",
+          completedAt: resolvedAt,
+          completedBy,
+        },
+        select: { id: true },
+      });
+
+      await prisma.taskLog.create({
+        data: {
+          taskId: existingTask.id,
+          occurrenceId: occurrence.id,
+          action: "completed",
+          atTime: resolvedAt,
+          note: detailNotes,
+        },
+      });
+    }
+  } else if (latestOccurrence && latestOccurrence.status === "done") {
+    await prisma.taskOccurrence.update({
+      where: { id: latestOccurrence.id },
+      data: {
+        status: "pending",
+        completedAt: null,
+        completedBy: null,
+      },
+    });
+  }
+
   refreshViews();
-  redirect(`${returnTo}?updated=task#recorded`);
+  redirect(`${returnTo}?updated=${recordStatus === "done" ? "done" : "task"}#recorded`);
 }
 
 export async function updateTaskAction(formData: FormData) {
@@ -1016,6 +1105,24 @@ function getReturnPath(value: FormDataEntryValue | null | undefined, fallback: s
     return fallback;
   }
   return raw;
+}
+
+async function resolveMemberUserId(householdId: string, userId: string) {
+  if (!userId) {
+    return null;
+  }
+
+  const member = await prisma.householdMember.findUnique({
+    where: {
+      householdId_userId: {
+        householdId,
+        userId,
+      },
+    },
+    select: { userId: true },
+  });
+
+  return member?.userId ?? null;
 }
 
 async function requireAdminAction() {

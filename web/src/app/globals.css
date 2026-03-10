@@ -370,6 +370,11 @@ body {
   gap: 0.45rem;
 }
 
+.capture-meta-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
 .capture-step-label {
   color: var(--muted);
   font-size: 0.72rem;
@@ -528,6 +533,13 @@ body {
   margin-top: 1rem;
   display: grid;
   gap: 0.7rem;
+}
+
+.recorded-summary-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.35rem;
 }
 
 .recorded-filter-bar {
@@ -710,6 +722,11 @@ body {
   color: var(--text-primary);
   font-size: 0.94rem;
   padding: 0.8rem 0.9rem;
+}
+
+.recorded-edit-textarea {
+  min-height: 5.75rem;
+  resize: vertical;
 }
 
 .recorded-edit-input:focus {
@@ -997,6 +1014,12 @@ body {
   font-size: 0.72rem;
   font-weight: 600;
   padding: 0.3rem 0.56rem;
+}
+
+.task-chip-done {
+  border-color: color-mix(in srgb, var(--success) 45%, transparent);
+  background: var(--success-bg);
+  color: var(--success);
 }
 
 .task-card {
@@ -1417,6 +1440,10 @@ body {
 }
 
 @media (min-width: 640px) {
+  .capture-meta-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .task-toolbar-form {
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;

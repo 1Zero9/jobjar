@@ -10,6 +10,7 @@ type SearchParams = {
   updated?: string;
   lucky?: string;
   room?: string;
+  state?: string;
 };
 
 export async function TaskWorkspace({
@@ -30,7 +31,7 @@ export async function TaskWorkspace({
   const [currentUser, rooms, people, recordedTasks] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
-      select: { displayName: true },
+      select: { id: true, displayName: true },
     }),
     prisma.room.findMany({
       where: { householdId, active: true },
@@ -80,6 +81,18 @@ export async function TaskWorkspace({
             },
           },
         },
+        occurrences: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          include: {
+            completer: {
+              select: {
+                id: true,
+                displayName: true,
+              },
+            },
+          },
+        },
       },
     }),
   ]);
@@ -88,9 +101,13 @@ export async function TaskWorkspace({
   const peopleOptions = people.map((member) => member.user);
   const groupedRoomOptions = groupRoomsByDesignation(roomOptions);
   const selectedRoomId = roomOptions.some((room) => room.id === params.room) ? params.room : "";
-  const visibleTasks = selectedRoomId
-    ? recordedTasks.filter((task) => task.roomId === selectedRoomId)
-    : recordedTasks;
+  const selectedState = params.state === "done" || params.state === "open" ? params.state : "all";
+  const visibleTasks = recordedTasks.filter((task) => {
+    const matchesRoom = selectedRoomId ? task.roomId === selectedRoomId : true;
+    const taskState = getTaskState(task);
+    const matchesState = selectedState === "all" ? true : taskState === selectedState;
+    return matchesRoom && matchesState;
+  });
   const luckyTask = params.lucky && params.lucky !== "empty"
     ? visibleTasks.find((task) => task.id === params.lucky) ?? recordedTasks.find((task) => task.id === params.lucky)
     : null;
@@ -131,7 +148,9 @@ export async function TaskWorkspace({
         </header>
 
         {params.added === "task" ? <ToastNotice message="Task recorded." tone="success" /> : null}
+        {params.added === "done" ? <ToastNotice message="Completed job recorded." tone="success" /> : null}
         {params.updated === "task" ? <ToastNotice message="Task updated." tone="info" /> : null}
+        {params.updated === "done" ? <ToastNotice message="Task marked completed." tone="success" /> : null}
         {params.lucky === "empty" ? <ToastNotice message="No tasks available for lucky dip." tone="info" /> : null}
         {luckyTask ? <ToastNotice message={`Lucky dip: ${luckyTask.title}`} tone="info" /> : null}
 
@@ -165,6 +184,48 @@ export async function TaskWorkspace({
                     ))}
                   </select>
                 </div>
+
+                <label className="recorded-field">
+                  <span>Notes</span>
+                  <textarea
+                    name="detailNotes"
+                    rows={3}
+                    placeholder="Optional note"
+                    className="recorded-edit-input recorded-edit-textarea"
+                  />
+                </label>
+
+                <div className="capture-meta-grid">
+                  <label className="recorded-field">
+                    <span>Status</span>
+                    <select name="recordStatus" defaultValue="open" className="recorded-edit-input">
+                      <option value="open">Open</option>
+                      <option value="done">Completed</option>
+                    </select>
+                  </label>
+
+                  <label className="recorded-field">
+                    <span>Completed by</span>
+                    <select name="completedByUserId" defaultValue={currentUser?.id ?? ""} className="recorded-edit-input">
+                      <option value="">Not set</option>
+                      {peopleOptions.map((person) => (
+                        <option key={person.id} value={person.id}>
+                          {person.displayName}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
+                <label className="recorded-field">
+                  <span>Resolved date</span>
+                  <input
+                    name="resolvedAt"
+                    type="datetime-local"
+                    defaultValue={toDateTimeInputValue(new Date())}
+                    className="recorded-edit-input"
+                  />
+                </label>
 
                 <FormActionButton className="capture-submit-btn" pendingLabel="Saving task">
                   Save task
@@ -204,10 +265,18 @@ export async function TaskWorkspace({
                   ))}
                 </select>
               </label>
+              <label className="recorded-filter-field">
+                <span>State</span>
+                <select name="state" defaultValue={selectedState} className="recorded-filter-select">
+                  <option value="all">All states</option>
+                  <option value="open">Open</option>
+                  <option value="done">Completed</option>
+                </select>
+              </label>
               <FormActionButton className="action-btn subtle quiet" pendingLabel="Applying">
                 Apply
               </FormActionButton>
-              {selectedRoomId ? (
+              {selectedRoomId || selectedState !== "all" ? (
                 <Link href={`${basePath}#recorded`} className="action-btn subtle quiet">
                   Clear
                 </Link>
@@ -231,6 +300,9 @@ export async function TaskWorkspace({
                       <div className="min-w-0">
                         <p className="recorded-row-title">{task.title}</p>
                         <div className="recorded-summary-line">
+                          <span className={`task-chip ${getTaskState(task) === "done" ? "task-chip-done" : ""}`}>
+                            {getTaskState(task) === "done" ? "Completed" : "Open"}
+                          </span>
                           {task.projectParent ? <span className="task-chip">Sub-task of {task.projectParent.title}</span> : null}
                           {task.projectChildren.length > 0 ? <span className="task-chip">{task.projectChildren.length} sub-tasks</span> : null}
                         </div>
@@ -307,7 +379,63 @@ export async function TaskWorkspace({
                           </select>
                         </label>
 
+                        <label className="recorded-field">
+                          <span>Notes</span>
+                          <textarea
+                            name="detailNotes"
+                            rows={3}
+                            defaultValue={task.detailNotes ?? ""}
+                            className="recorded-edit-input recorded-edit-textarea"
+                          />
+                        </label>
+
+                        <div className="capture-meta-grid">
+                          <label className="recorded-field">
+                            <span>Status</span>
+                            <select
+                              name="recordStatus"
+                              defaultValue={getTaskState(task) === "done" ? "done" : "open"}
+                              className="recorded-edit-input"
+                            >
+                              <option value="open">Open</option>
+                              <option value="done">Completed</option>
+                            </select>
+                          </label>
+
+                          <label className="recorded-field">
+                            <span>Completed by</span>
+                            <select
+                              name="completedByUserId"
+                              defaultValue={task.occurrences[0]?.completedBy ?? ""}
+                              className="recorded-edit-input"
+                            >
+                              <option value="">Not set</option>
+                              {peopleOptions.map((person) => (
+                                <option key={person.id} value={person.id}>
+                                  {person.displayName}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                        </div>
+
+                        <label className="recorded-field">
+                          <span>Resolved date</span>
+                          <input
+                            name="resolvedAt"
+                            type="datetime-local"
+                            defaultValue={toDateTimeInputValue(task.occurrences[0]?.completedAt ?? task.createdAt)}
+                            className="recorded-edit-input"
+                          />
+                        </label>
+
                         <p><span>Recorded</span><strong>{formatRecordedAt(task.createdAt)}</strong></p>
+                        {task.occurrences[0]?.completedAt ? (
+                          <p><span>Resolved</span><strong>{formatRecordedAt(task.occurrences[0].completedAt)}</strong></p>
+                        ) : null}
+                        {task.occurrences[0]?.completer?.displayName ? (
+                          <p><span>Completed by</span><strong>{task.occurrences[0].completer.displayName}</strong></p>
+                        ) : null}
                         <div className="recorded-row-actions between">
                           <FormActionButton className="action-btn bright quiet" pendingLabel="Saving">
                             Save changes
@@ -348,6 +476,25 @@ function formatRecordedAt(value: Date) {
     hour: "numeric",
     minute: "2-digit",
   }).format(value);
+}
+
+function toDateTimeInputValue(value: Date) {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  const hours = String(value.getHours()).padStart(2, "0");
+  const minutes = String(value.getMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+function getTaskState(task: {
+  captureStage: string;
+  occurrences: Array<{ status: string }>;
+}) {
+  if (task.captureStage === "done" || task.occurrences[0]?.status === "done") {
+    return "done";
+  }
+  return "open";
 }
 
 function displayRoomName(roomName: string) {
