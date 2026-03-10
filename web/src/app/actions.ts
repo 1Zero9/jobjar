@@ -180,6 +180,7 @@ export async function createQuickTaskAction(formData: FormData) {
   const { householdId } = await requireSessionMemberAction();
   const title = String(formData.get("title") ?? "").trim();
   const requestedRoomId = String(formData.get("roomId") ?? "").trim();
+  const requestedPriority = toPositiveIntOrNull(formData.get("priority"));
   const detailNotes = String(formData.get("detailNotes") ?? "").trim() || null;
   const recordStatus = String(formData.get("recordStatus") ?? "open").trim();
   const completedByUserId = String(formData.get("completedByUserId") ?? "").trim();
@@ -212,9 +213,14 @@ export async function createQuickTaskAction(formData: FormData) {
       jobKind: "upkeep",
       captureStage: recordStatus === "done" ? "done" : "captured",
       detailNotes,
+      priority: recordStatus === "done" ? 999 : 1,
     },
     select: { id: true },
   });
+
+  if (recordStatus !== "done") {
+    await moveOpenTaskToPriority(task.id, roomId, requestedPriority);
+  }
 
   if (recordStatus === "done") {
     const completedBy = await resolveMemberUserId(householdId, completedByUserId);
@@ -271,6 +277,7 @@ export async function updateRecordedTaskAction(formData: FormData) {
   const taskId = String(formData.get("taskId") ?? "").trim();
   const title = String(formData.get("title") ?? "").trim();
   const requestedRoomId = String(formData.get("roomId") ?? "").trim();
+  const requestedPriority = toPositiveIntOrNull(formData.get("priority"));
   const assigneeUserId = String(formData.get("assigneeUserId") ?? "").trim();
   const requestedParentTaskId = String(formData.get("parentTaskId") ?? "").trim();
   const detailNotes = String(formData.get("detailNotes") ?? "").trim() || null;
@@ -292,6 +299,7 @@ export async function updateRecordedTaskAction(formData: FormData) {
     select: {
       id: true,
       roomId: true,
+      priority: true,
       captureStage: true,
       occurrences: {
         orderBy: { createdAt: "desc" },
@@ -344,6 +352,7 @@ export async function updateRecordedTaskAction(formData: FormData) {
       projectParentId,
       detailNotes,
       captureStage: recordStatus === "done" ? "done" : "captured",
+      priority: recordStatus === "done" ? existingTask.priority : 1,
     },
   });
 
@@ -423,6 +432,18 @@ export async function updateRecordedTaskAction(formData: FormData) {
         completedBy: null,
       },
     });
+  }
+
+  if (recordStatus === "done") {
+    await compactOpenTaskPriorities(existingTask.roomId);
+    if (roomId !== existingTask.roomId) {
+      await compactOpenTaskPriorities(roomId);
+    }
+  } else {
+    await moveOpenTaskToPriority(existingTask.id, roomId, requestedPriority);
+    if (roomId !== existingTask.roomId) {
+      await compactOpenTaskPriorities(existingTask.roomId);
+    }
   }
 
   refreshViews();
@@ -614,7 +635,7 @@ export async function deleteTaskAction(formData: FormData) {
       id: taskId,
       room: { householdId },
     },
-    select: { id: true },
+    select: { id: true, roomId: true },
   });
   if (!task) {
     return;
@@ -624,6 +645,7 @@ export async function deleteTaskAction(formData: FormData) {
     where: { id: task.id },
     data: { active: false },
   });
+  await compactOpenTaskPriorities(task.roomId);
   refreshViews();
 }
 
@@ -984,6 +1006,18 @@ function toPositiveInt(value: FormDataEntryValue | null, fallback: number) {
   return num;
 }
 
+function toPositiveIntOrNull(value: FormDataEntryValue | null) {
+  const raw = String(value ?? "").trim();
+  if (!raw) {
+    return null;
+  }
+  const num = Number(raw);
+  if (!Number.isInteger(num) || num <= 0) {
+    return null;
+  }
+  return num;
+}
+
 function toNonNegativeInt(value: FormDataEntryValue | null, fallback: number) {
   const num = Number(value);
   if (!Number.isInteger(num) || num < 0) {
@@ -1123,6 +1157,52 @@ async function resolveMemberUserId(householdId: string, userId: string) {
   });
 
   return member?.userId ?? null;
+}
+
+async function moveOpenTaskToPriority(taskId: string, roomId: string, desiredPriority: number | null) {
+  const openTasks = await prisma.task.findMany({
+    where: {
+      active: true,
+      roomId,
+      captureStage: { not: "done" },
+    },
+    orderBy: [{ priority: "asc" }, { createdAt: "asc" }],
+    select: { id: true },
+  });
+
+  const orderedIds = openTasks.map((task) => task.id).filter((id) => id !== taskId);
+  const targetIndex = desiredPriority ? Math.min(Math.max(desiredPriority - 1, 0), orderedIds.length) : orderedIds.length;
+  orderedIds.splice(targetIndex, 0, taskId);
+
+  await prisma.$transaction(
+    orderedIds.map((id, index) =>
+      prisma.task.update({
+        where: { id },
+        data: { priority: index + 1 },
+      }),
+    ),
+  );
+}
+
+async function compactOpenTaskPriorities(roomId: string) {
+  const openTasks = await prisma.task.findMany({
+    where: {
+      active: true,
+      roomId,
+      captureStage: { not: "done" },
+    },
+    orderBy: [{ priority: "asc" }, { createdAt: "asc" }],
+    select: { id: true },
+  });
+
+  await prisma.$transaction(
+    openTasks.map((task, index) =>
+      prisma.task.update({
+        where: { id: task.id },
+        data: { priority: index + 1 },
+      }),
+    ),
+  );
 }
 
 async function requireAdminAction() {

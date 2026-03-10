@@ -55,7 +55,7 @@ export async function TaskWorkspace({
         active: true,
         room: { householdId },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ room: { sortOrder: "asc" } }, { priority: "asc" }, { createdAt: "desc" }],
       take: 30,
       include: {
         room: {
@@ -197,6 +197,17 @@ export async function TaskWorkspace({
 
                 <div className="capture-meta-grid">
                   <label className="recorded-field">
+                    <span>Priority in room</span>
+                    <input
+                      name="priority"
+                      type="number"
+                      min={1}
+                      placeholder="Auto"
+                      className="recorded-edit-input"
+                    />
+                  </label>
+
+                  <label className="recorded-field">
                     <span>Status</span>
                     <select name="recordStatus" defaultValue="open" className="recorded-edit-input">
                       <option value="open">Open</option>
@@ -300,6 +311,7 @@ export async function TaskWorkspace({
                       <div className="min-w-0">
                         <p className="recorded-row-title">{task.title}</p>
                         <div className="recorded-summary-line">
+                          {getTaskState(task) !== "done" ? <span className="task-chip">Priority {task.priority}</span> : null}
                           <span className={`task-chip ${getTaskState(task) === "done" ? "task-chip-done" : ""}`}>
                             {getTaskState(task) === "done" ? "Completed" : "Open"}
                           </span>
@@ -390,6 +402,17 @@ export async function TaskWorkspace({
                         </label>
 
                         <div className="capture-meta-grid">
+                          <label className="recorded-field">
+                            <span>Priority in room</span>
+                            <input
+                              name="priority"
+                              type="number"
+                              min={1}
+                              defaultValue={getTaskState(task) === "done" ? "" : task.priority}
+                              className="recorded-edit-input"
+                            />
+                          </label>
+
                           <label className="recorded-field">
                             <span>Status</span>
                             <select
