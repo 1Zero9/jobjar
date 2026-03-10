@@ -12,8 +12,27 @@ export async function createRoomAction(formData: FormData) {
   const { householdId } = await requireAdminAction();
   const name = String(formData.get("name") ?? "").trim();
   const designation = String(formData.get("designation") ?? "").trim() || "General";
+  const returnTo = getReturnPath(formData.get("returnTo"), "");
 
   if (!name) {
+    return;
+  }
+
+  const duplicateRoom = await prisma.room.findFirst({
+    where: {
+      householdId,
+      active: true,
+      name: {
+        equals: name,
+        mode: "insensitive",
+      },
+    },
+    select: { id: true },
+  });
+  if (duplicateRoom) {
+    if (returnTo) {
+      redirect(`${returnTo}?duplicate=room`);
+    }
     return;
   }
 
@@ -32,7 +51,9 @@ export async function createRoomAction(formData: FormData) {
   });
 
   refreshViews();
-  redirect("/settings?added=room");
+  if (returnTo) {
+    redirect(`${returnTo}?added=room`);
+  }
 }
 
 export async function updateRoomAction(formData: FormData) {
@@ -40,8 +61,28 @@ export async function updateRoomAction(formData: FormData) {
   const roomId = String(formData.get("roomId") ?? "").trim();
   const name = String(formData.get("name") ?? "").trim();
   const designation = String(formData.get("designation") ?? "").trim() || "General";
+  const returnTo = getReturnPath(formData.get("returnTo"), "");
 
   if (!roomId || !name) {
+    return;
+  }
+
+  const duplicateRoom = await prisma.room.findFirst({
+    where: {
+      householdId,
+      active: true,
+      id: { not: roomId },
+      name: {
+        equals: name,
+        mode: "insensitive",
+      },
+    },
+    select: { id: true },
+  });
+  if (duplicateRoom) {
+    if (returnTo) {
+      redirect(`${returnTo}?duplicate=room`);
+    }
     return;
   }
 
@@ -657,6 +698,7 @@ export async function createPersonAction(formData: FormData) {
   const emailInput = String(formData.get("email") ?? "").trim();
   const passcodeInput = String(formData.get("passcode") ?? "").trim();
   const requestedRole = String(formData.get("role") ?? "").trim();
+  const returnTo = getReturnPath(formData.get("returnTo"), "");
 
   if (!displayName) {
     return;
@@ -696,6 +738,9 @@ export async function createPersonAction(formData: FormData) {
   }
 
   refreshViews();
+  if (returnTo) {
+    redirect(`${returnTo}?added=person`);
+  }
 }
 
 export async function removePersonAction(formData: FormData) {
@@ -1131,6 +1176,9 @@ function refreshViews() {
   revalidatePath("/log");
   revalidatePath("/tasks");
   revalidatePath("/admin");
+  revalidatePath("/settings");
+  revalidatePath("/settings/rooms");
+  revalidatePath("/settings/people");
   revalidatePath("/tv");
   revalidatePath("/login");
 }

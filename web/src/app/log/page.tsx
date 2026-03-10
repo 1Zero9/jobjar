@@ -1,19 +1,11 @@
-import { TaskWorkspace } from "@/app/components/TaskWorkspace";
+import { LogWorkspace } from "@/app/components/TaskWorkspace";
 
 export const dynamic = "force-dynamic";
 
 export default async function LogPage({
   searchParams,
 }: {
-  searchParams: Promise<{ added?: string; updated?: string; lucky?: string; room?: string }>;
+  searchParams: Promise<{ added?: string; updated?: string }>;
 }) {
-  return (
-    <TaskWorkspace
-      params={await searchParams}
-      basePath="/log"
-      primaryPanel="capture"
-      pageTitle="Record a task"
-      pageSubtitle="Walk into a room, note the job, move on."
-    />
-  );
+  return <LogWorkspace params={await searchParams} />;
 }

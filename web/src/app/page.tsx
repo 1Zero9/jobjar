@@ -1,6 +1,7 @@
 import { luckyDipAction, logoutAction } from "@/app/actions";
 import { FormActionButton } from "@/app/components/FormActionButton";
 import { requireSessionContext } from "@/lib/auth";
+import { APP_VERSION } from "@/lib/app-version";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 
@@ -27,7 +28,10 @@ export default async function HomePage() {
       <main className="landing-shell mx-auto flex w-full max-w-[28rem] flex-col gap-6">
         <header className="landing-hero">
           <div>
-            <p className="capture-kicker">Task Jar</p>
+            <div className="capture-topline">
+              <p className="capture-kicker">Task Jar</p>
+              <span className="version-chip">{APP_VERSION}</span>
+            </div>
             <h1 className="landing-title">Choose what you want to do.</h1>
             <p className="landing-copy">
               Keep the main actions obvious: log a task, view what is recorded, pull a lucky dip, or manage the setup.
