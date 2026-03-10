@@ -98,8 +98,10 @@ export default async function PeoplePage({
                   </div>
                   <div className="recorded-row-meta">
                     <span className="recorded-row-room">{person.role}</span>
-                    <span className="recorded-row-edit">Edit</span>
-                    <span className="recorded-row-chevron">+</span>
+                    <div className="recorded-row-summary-actions">
+                      <span className="recorded-row-edit">Edit</span>
+                      <span className="recorded-row-chevron">+</span>
+                    </div>
                   </div>
                 </summary>
                 <div className="recorded-row-detail">

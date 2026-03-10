@@ -674,7 +674,20 @@ body {
   width: 100%;
 }
 
+.recorded-row-summary-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  margin-left: auto;
+}
+
 .recorded-row-edit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2rem;
+  min-width: 5.2rem;
   border: 1px solid var(--neutral-300);
   border-radius: 999px;
   background: color-mix(in srgb, var(--card) 95%, transparent);
@@ -690,8 +703,9 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.6rem;
-  height: 1.6rem;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 2rem;
   border-radius: 999px;
   background: color-mix(in srgb, var(--card) 90%, transparent);
   border: 1px solid var(--border);

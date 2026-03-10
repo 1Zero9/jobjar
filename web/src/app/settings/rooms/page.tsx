@@ -126,8 +126,10 @@ export default async function RoomsPage({
                         </div>
                         <div className="recorded-row-meta">
                           <span className="recorded-row-room">{room.tasks.length} tasks</span>
-                          <span className="recorded-row-edit">Edit</span>
-                          <span className="recorded-row-chevron">+</span>
+                          <div className="recorded-row-summary-actions">
+                            <span className="recorded-row-edit">Edit</span>
+                            <span className="recorded-row-chevron">+</span>
+                          </div>
                         </div>
                       </summary>
                       <div className="recorded-row-detail">
