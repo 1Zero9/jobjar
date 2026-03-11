@@ -186,8 +186,9 @@ body {
 }
 
 .session-user {
-  color: var(--accent);
+  color: #ec4899;
   font-weight: 800;
+  text-shadow: 0 0 10px rgba(236, 72, 153, 0.18);
 }
 
 .landing-stat-row {
