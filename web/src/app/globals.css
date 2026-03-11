@@ -588,8 +588,8 @@ body {
 
 .recorded-filter-bar {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.65rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
 }
 
 .recorded-toolbar {
@@ -622,8 +622,8 @@ body {
   border-radius: 0.85rem;
   background: var(--card);
   color: var(--text-primary);
-  font-size: 0.88rem;
-  padding: 0.68rem 0.8rem;
+  font-size: 0.82rem;
+  padding: 0.62rem 0.72rem;
 }
 
 .recorded-filter-select:focus {
@@ -1067,10 +1067,6 @@ body {
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: end;
     gap: 0.8rem;
-  }
-
-  .recorded-filter-bar {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .recorded-row-summary {
