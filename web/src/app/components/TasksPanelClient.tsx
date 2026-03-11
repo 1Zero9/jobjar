@@ -207,7 +207,16 @@ export function TasksPanelClient({
                     {task.loggerName ? `Logged by ${task.loggerName}` : "Earlier task"}
                   </p>
                   <p className="recorded-row-assignee">
-                    Assigned to {task.assignmentUserName ?? "no one"}
+                    {task.assignmentUserName ? (
+                      <>
+                        <span className="assignee-avatar" style={nameToAvatarStyle(task.assignmentUserName)}>
+                          {nameInitials(task.assignmentUserName)}
+                        </span>
+                        {task.assignmentUserName}
+                      </>
+                    ) : (
+                      <span className="assignee-unset">Unassigned</span>
+                    )}
                   </p>
                   <div className="recorded-summary-line">
                     {getTaskState(task) !== "done" ? <span className="task-chip">Priority {task.priority}</span> : null}
@@ -224,7 +233,7 @@ export function TasksPanelClient({
                   <span className="recorded-row-room">{displayRoomName(task.roomName)}</span>
                   <div className="recorded-row-summary-actions">
                     <span className="recorded-row-edit">Edit</span>
-                    <span className="recorded-row-chevron">+</span>
+                    <span className="recorded-row-chevron">▾</span>
                   </div>
                 </div>
               </summary>
@@ -417,6 +426,32 @@ export function TasksPanelClient({
 function rowTone(index: number) {
   const tones = ["blue", "green", "amber", "rose"] as const;
   return tones[index % tones.length];
+}
+
+const AVATAR_PALETTE = [
+  { bg: "#dbeafe", fg: "#1d4ed8" },
+  { bg: "#dcfce7", fg: "#15803d" },
+  { bg: "#fef3c7", fg: "#92400e" },
+  { bg: "#fce7f3", fg: "#be185d" },
+  { bg: "#ede9fe", fg: "#6d28d9" },
+  { bg: "#ffedd5", fg: "#c2410c" },
+  { bg: "#e0f2fe", fg: "#0369a1" },
+  { bg: "#f3e8ff", fg: "#7e22ce" },
+];
+
+function nameInitials(name: string) {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  return name.slice(0, 2).toUpperCase();
+}
+
+function nameToAvatarStyle(name: string): { background: string; color: string } {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = (hash * 31 + name.charCodeAt(i)) | 0;
+  }
+  const entry = AVATAR_PALETTE[Math.abs(hash) % AVATAR_PALETTE.length];
+  return { background: entry.bg, color: entry.fg };
 }
 
 function formatRecordedAt(value: string) {

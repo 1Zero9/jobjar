@@ -1,30 +1,30 @@
 @import "tailwindcss";
 
 :root {
-  /* Neutrals (slate) */
-  --neutral-50: #f8fafc;
-  --neutral-100: #f1f5f9;
-  --neutral-200: #e2e8f0;
-  --neutral-300: #cbd5e1;
-  --neutral-400: #94a3b8;
-  --neutral-500: #64748b;
-  --neutral-600: #475569;
-  --neutral-700: #334155;
-  --neutral-800: #1e293b;
-  --neutral-900: #0f172a;
+  /* Neutrals (warm stone) */
+  --neutral-50: #faf9f7;
+  --neutral-100: #f5f2ee;
+  --neutral-200: #e8e3dc;
+  --neutral-300: #d4cdc5;
+  --neutral-400: #a89f96;
+  --neutral-500: #78716b;
+  --neutral-600: #57524d;
+  --neutral-700: #44403b;
+  --neutral-800: #2b2723;
+  --neutral-900: #1c1917;
 
-  /* Core (map to existing names for compatibility) */
-  --background: #f1f5f9;
-  --foreground: #0f172a;
+  /* Core */
+  --background: #f5f2ee;
+  --foreground: #1c1917;
   --card: #ffffff;
-  --surface: #f8fafc;
-  --muted: #64748b;
-  --border: #e2e8f0;
-  --text-primary: #0f172a;
-  --text-secondary: #334155;
-  --text-tertiary: #64748b;
+  --surface: #faf9f7;
+  --muted: #78716b;
+  --border: #e8e3dc;
+  --text-primary: #1c1917;
+  --text-secondary: #44403b;
+  --text-tertiary: #78716b;
 
-  /* Accent (teal – cool, modern, fresh) */
+  /* Accent (teal – pops against the warm base) */
   --accent: #0d9488;
   --accent-hover: #0f766e;
   --accent-soft: #ccfbf1;
@@ -32,20 +32,20 @@
 
   /* Semantic */
   --green: #157347;
-  --amber: #b7791f;
+  --amber: #92400e;
   --red: #b42318;
   --success: #157347;
   --success-bg: #ecfdf5;
-  --warning: #b7791f;
+  --warning: #92400e;
   --warning-bg: #fffbeb;
   --error: #b42318;
   --error-bg: #fef2f2;
 
   /* Shadow & border helpers */
-  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
-  --shadow-md: 0 12px 24px rgba(15, 23, 42, 0.04);
-  --shadow-lg: 0 16px 28px rgba(15, 23, 42, 0.08);
-  --border-subtle: rgba(226, 232, 240, 0.9);
+  --shadow-sm: 0 1px 2px rgba(28, 25, 23, 0.05);
+  --shadow-md: 0 12px 24px rgba(28, 25, 23, 0.05);
+  --shadow-lg: 0 16px 28px rgba(28, 25, 23, 0.09);
+  --border-subtle: rgba(232, 227, 220, 0.9);
 }
 
 @theme inline {
@@ -85,6 +85,19 @@ body {
   textarea {
     font-size: 16px;
   }
+}
+
+/* Custom select arrow across all form selects */
+select.capture-room-select,
+select.recorded-edit-input,
+select.recorded-filter-select,
+select.admin-input {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2378716b' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.82rem center;
+  padding-right: 2.25rem;
 }
 
 .capture-shell {
@@ -348,9 +361,9 @@ body {
 }
 
 .capture-topbar-actions .action-btn.subtle {
-  border-color: var(--accent-muted);
-  background: var(--accent-soft);
-  color: var(--accent);
+  border-color: var(--border);
+  background: color-mix(in srgb, var(--accent-soft) 55%, var(--card));
+  color: var(--accent-hover);
 }
 
 .capture-kicker {
@@ -446,7 +459,7 @@ body {
   width: 100%;
   border: 1px solid var(--neutral-300);
   border-radius: 1rem;
-  background: var(--card);
+  background: var(--surface);
   color: var(--text-primary);
   padding: 0.95rem 1rem;
 }
@@ -651,7 +664,7 @@ body {
   width: 100%;
   border: 1px solid var(--neutral-300);
   border-radius: 0.85rem;
-  background: var(--card);
+  background: var(--surface);
   color: var(--text-primary);
   font-size: 0.82rem;
   padding: 0.62rem 0.72rem;
@@ -684,7 +697,9 @@ body {
 }
 
 .recorded-row[open] {
-  box-shadow: 0 10px 18px color-mix(in srgb, var(--foreground) 5%, transparent);
+  box-shadow:
+    inset 3px 0 0 var(--accent),
+    0 12px 22px color-mix(in srgb, var(--foreground) 7%, transparent);
 }
 
 .recorded-row-blue {
@@ -777,7 +792,9 @@ body {
 }
 
 .recorded-row[open] .recorded-row-chevron {
-  transform: rotate(45deg);
+  transform: rotate(180deg);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  color: var(--accent);
 }
 
 .recorded-row-title {
@@ -796,14 +813,44 @@ body {
 }
 
 .recorded-row-assignee {
-  margin-top: 0.22rem;
-  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 0.42rem;
+  margin-top: 0.3rem;
+  color: var(--text-secondary);
   font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.assignee-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.assignee-unset {
+  color: var(--muted);
+  font-style: italic;
+  font-weight: 400;
 }
 
 .recorded-row-room {
-  color: var(--muted);
-  font-size: 0.88rem;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 0.18rem 0.58rem;
   white-space: nowrap;
 }
 
@@ -946,13 +993,17 @@ body {
 }
 
 .recorded-more-summary::after {
-  content: "+";
-  float: right;
+  content: "▾";
+  display: inline-block;
+  margin-left: 0.35rem;
   color: var(--muted);
+  font-size: 0.75rem;
+  transition: transform 120ms ease;
+  vertical-align: middle;
 }
 
 .recorded-more-details[open] .recorded-more-summary::after {
-  content: "×";
+  transform: rotate(180deg);
 }
 
 .recorded-field {
@@ -970,7 +1021,7 @@ body {
   width: 100%;
   border: 1px solid var(--neutral-300);
   border-radius: 0.9rem;
-  background: var(--card);
+  background: var(--surface);
   color: var(--text-primary);
   font-size: 0.94rem;
   padding: 0.8rem 0.9rem;
@@ -1299,10 +1350,19 @@ body {
   color: var(--success);
 }
 
+.task-chip-done::before {
+  content: "✓ ";
+  font-weight: 800;
+}
+
 .task-chip-recurring {
   border-color: color-mix(in srgb, var(--accent) 35%, transparent);
   background: color-mix(in srgb, var(--accent-soft) 75%, var(--card));
   color: var(--accent);
+}
+
+.task-chip-recurring::before {
+  content: "↻ ";
 }
 
 .task-chip-due {
@@ -1311,10 +1371,19 @@ body {
   color: var(--amber);
 }
 
+.task-chip-due::before {
+  content: "◷ ";
+}
+
 .task-chip-lapsed {
   border-color: color-mix(in srgb, var(--error) 40%, transparent);
   background: var(--error-bg);
   color: var(--error);
+}
+
+.task-chip-lapsed::before {
+  content: "! ";
+  font-weight: 800;
 }
 
 .task-card {
@@ -1673,10 +1742,16 @@ body {
 }
 
 .action-btn.subtle {
-  border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--card));
-  background: linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 92%, var(--card)) 0%, color-mix(in srgb, var(--accent-soft) 78%, var(--card)) 100%);
-  color: var(--accent-hover);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--card) 60%, transparent);
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text-secondary);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), var(--shadow-sm);
+}
+
+.action-btn.subtle:hover {
+  border-color: var(--neutral-300);
+  background: var(--surface);
+  color: var(--text-primary);
 }
 
 .action-btn.warn {
@@ -1706,6 +1781,19 @@ body {
 
 .action-btn:hover {
   box-shadow: 0 8px 16px color-mix(in srgb, var(--foreground) 8%, transparent);
+}
+
+.action-btn.bright:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.06);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--card) 36%, transparent),
+    0 16px 28px color-mix(in srgb, var(--accent) 32%, transparent);
+}
+
+.action-btn.warn:hover {
+  background: color-mix(in srgb, var(--error-bg) 85%, var(--error));
+  border-color: color-mix(in srgb, var(--error) 72%, transparent);
 }
 
 .action-btn:active {
