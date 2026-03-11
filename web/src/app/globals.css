@@ -1146,6 +1146,24 @@ body {
   color: var(--success);
 }
 
+.task-chip-recurring {
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  background: color-mix(in srgb, var(--accent-soft) 75%, var(--card));
+  color: var(--accent);
+}
+
+.task-chip-due {
+  border-color: color-mix(in srgb, var(--amber) 40%, transparent);
+  background: var(--warning-bg);
+  color: var(--amber);
+}
+
+.task-chip-lapsed {
+  border-color: color-mix(in srgb, var(--error) 40%, transparent);
+  background: var(--error-bg);
+  color: var(--error);
+}
+
 .task-card {
   border-radius: 1.35rem;
   border: 1px solid var(--border-subtle);

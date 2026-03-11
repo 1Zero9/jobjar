@@ -429,6 +429,7 @@ export async function updateRecordedTaskAction(formData: FormData) {
   const latestOccurrence = existingTask.occurrences[0] ?? null;
   if (recordStatus === "done") {
     const completedBy = await resolveMemberUserId(householdId, completedByUserId);
+    let completedOccurrenceId = latestOccurrence?.id ?? null;
     if (latestOccurrence) {
       await prisma.taskOccurrence.update({
         where: { id: latestOccurrence.id },
@@ -450,17 +451,18 @@ export async function updateRecordedTaskAction(formData: FormData) {
         },
         select: { id: true },
       });
-
-      await prisma.taskLog.create({
-        data: {
-          taskId: existingTask.id,
-          occurrenceId: occurrence.id,
-          action: "completed",
-          atTime: resolvedAt,
-          note: detailNotes,
-        },
-      });
+      completedOccurrenceId = occurrence.id;
     }
+
+    await prisma.taskLog.create({
+      data: {
+        taskId: existingTask.id,
+        occurrenceId: completedOccurrenceId,
+        action: "completed",
+        atTime: resolvedAt,
+        note: detailNotes,
+      },
+    });
   } else if (latestOccurrence && latestOccurrence.status === "done") {
     await prisma.taskOccurrence.update({
       where: { id: latestOccurrence.id },

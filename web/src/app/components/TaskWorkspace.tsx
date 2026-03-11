@@ -433,6 +433,7 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
                         </span>
                         {task.schedule ? <span className="task-chip">{formatRecurrenceChip(task.schedule)}</span> : null}
                         {task.schedule?.nextDueAt ? <span className="task-chip">Due {formatShortDate(task.schedule.nextDueAt)}</span> : null}
+                        {task.schedule ? <span className={`task-chip ${recurrenceStateClassName(task)}`}>{getRecurrenceStateLabel(task)}</span> : null}
                       </div>
                     </div>
                     <div className="recorded-row-meta">
@@ -593,8 +594,26 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
                       </details>
 
                       <p><span>Recorded</span><strong>{formatRecordedAt(task.createdAt)}</strong></p>
+                      {task.schedule ? (
+                        <p><span>Recurring</span><strong>{formatRecurrenceChip(task.schedule)}</strong></p>
+                      ) : null}
+                      {task.schedule?.nextDueAt ? (
+                        <p><span>Next due</span><strong>{formatRecordedAt(task.schedule.nextDueAt)}</strong></p>
+                      ) : null}
+                      {task.schedule ? (
+                        <p><span>Status</span><strong>{getRecurrenceStateLabel(task)}</strong></p>
+                      ) : null}
                       {getLatestCompletedOccurrence(task.occurrences)?.completedAt ? (
                         <p><span>Resolved</span><strong>{formatRecordedAt(getLatestCompletedOccurrence(task.occurrences)!.completedAt!)}</strong></p>
+                      ) : null}
+                      {getLatestCompletedOccurrence(task.occurrences)?.completedAt ? (
+                        <p><span>Last done</span><strong>{formatRecordedAt(getLatestCompletedOccurrence(task.occurrences)!.completedAt!)}</strong></p>
+                      ) : null}
+                      {getLatestCompletedOccurrence(task.occurrences)?.completedAt && getLatestCompletedOccurrence(task.occurrences)?.dueAt ? (
+                        <p>
+                          <span>Completed</span>
+                          <strong>{wasOccurrenceOnTime(getLatestCompletedOccurrence(task.occurrences)!) ? "On time" : "Late"}</strong>
+                        </p>
                       ) : null}
                       {getLatestCompletedOccurrence(task.occurrences)?.completer?.displayName ? (
                         <p><span>Completed by</span><strong>{getLatestCompletedOccurrence(task.occurrences)!.completer!.displayName}</strong></p>
@@ -676,6 +695,10 @@ function getLatestCompletedOccurrence<T extends { status: string; completedAt?: 
   return occurrences.find((occurrence) => occurrence.status === "done") ?? null;
 }
 
+function getOpenOccurrence<T extends { status: string; dueAt: Date }>(occurrences: T[]) {
+  return occurrences.find((occurrence) => occurrence.status !== "done") ?? null;
+}
+
 function formatRecurrenceChip(schedule: { recurrenceType: string; intervalCount: number }) {
   const interval = schedule.intervalCount > 1 ? `${schedule.intervalCount} ` : "";
   if (schedule.recurrenceType === "daily") {
@@ -685,6 +708,51 @@ function formatRecurrenceChip(schedule: { recurrenceType: string; intervalCount:
     return `Every ${interval}month${schedule.intervalCount > 1 ? "s" : ""}`;
   }
   return `Every ${interval}week${schedule.intervalCount > 1 ? "s" : ""}`;
+}
+
+function getRecurrenceStateLabel(task: {
+  schedule: { nextDueAt: Date | null } | null;
+  occurrences: Array<{ status: string; dueAt: Date; completedAt?: Date | null }>;
+}) {
+  const openOccurrence = getOpenOccurrence(task.occurrences);
+  const dueAt = openOccurrence?.dueAt ?? task.schedule?.nextDueAt;
+  if (!dueAt) {
+    return "Scheduled";
+  }
+
+  const now = new Date();
+  const dueTime = dueAt.getTime();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const tomorrow = today + (24 * 60 * 60 * 1000);
+
+  if (dueTime < now.getTime()) {
+    return "Lapsed";
+  }
+  if (dueTime >= today && dueTime < tomorrow) {
+    return "Due today";
+  }
+  return "On track";
+}
+
+function recurrenceStateClassName(task: {
+  schedule: { nextDueAt: Date | null } | null;
+  occurrences: Array<{ status: string; dueAt: Date; completedAt?: Date | null }>;
+}) {
+  const label = getRecurrenceStateLabel(task);
+  if (label === "Lapsed") {
+    return "task-chip-lapsed";
+  }
+  if (label === "Due today") {
+    return "task-chip-due";
+  }
+  return "task-chip-recurring";
+}
+
+function wasOccurrenceOnTime(occurrence: { dueAt?: Date; completedAt?: Date | null }) {
+  if (!occurrence.dueAt || !occurrence.completedAt) {
+    return true;
+  }
+  return occurrence.completedAt.getTime() <= occurrence.dueAt.getTime();
 }
 
 function displayRoomName(roomName: string) {
