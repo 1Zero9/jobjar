@@ -431,19 +431,24 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
                   ))}
                 </select>
               </label>
-              {selectedRoomId || selectedAssigneeId || selectedState !== "all" ? (
-                <Link href="/tasks#recorded" className="action-btn subtle quiet">
-                  Clear
-                </Link>
-              ) : null}
             </AutoSubmitForm>
 
-            <form action={luckyDipAction}>
-              <input type="hidden" name="returnTo" value="/tasks" />
-              <FormActionButton className="action-btn subtle quiet" pendingLabel="Choosing task">
-                Lucky dip
-              </FormActionButton>
-            </form>
+            <div className="recorded-toolbar-actions">
+              {selectedRoomId || selectedAssigneeId || selectedState !== "all" ? (
+                <Link href="/tasks#recorded" className="action-btn subtle quiet">
+                  Clear filters
+                </Link>
+              ) : (
+                <span className="recorded-toolbar-hint">Filters update instantly.</span>
+              )}
+
+              <form action={luckyDipAction}>
+                <input type="hidden" name="returnTo" value="/tasks" />
+                <FormActionButton className="action-btn subtle quiet" pendingLabel="Choosing task">
+                  Lucky dip
+                </FormActionButton>
+              </form>
+            </div>
           </div>
 
           <div className="recorded-list">
