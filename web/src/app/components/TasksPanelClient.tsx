@@ -1,0 +1,540 @@
+"use client";
+
+import { deleteTaskAction, luckyDipAction, updateRecordedTaskAction } from "@/app/actions";
+import { FormActionButton } from "@/app/components/FormActionButton";
+import { useEffect, useMemo, useState } from "react";
+
+type PersonOption = {
+  id: string;
+  displayName: string;
+};
+
+type RoomOption = {
+  id: string;
+  name: string;
+  designation?: string | null;
+};
+
+type TaskItem = {
+  id: string;
+  title: string;
+  roomId: string;
+  roomName: string;
+  loggerName: string | null;
+  projectParentTitle: string | null;
+  assignmentUserId: string | null;
+  assignmentUserName: string | null;
+  detailNotes: string | null;
+  priority: number;
+  captureStage: string;
+  createdAt: string;
+  schedule: {
+    recurrenceType: string;
+    intervalCount: number;
+    nextDueAt: string | null;
+  } | null;
+  occurrences: Array<{
+    status: string;
+    dueAt: string;
+    completedAt: string | null;
+    completedBy: string | null;
+    completerName: string | null;
+  }>;
+};
+
+type Props = {
+  roomOptions: RoomOption[];
+  peopleOptions: PersonOption[];
+  tasks: TaskItem[];
+  initialRoomId: string;
+  initialAssigneeId: string;
+  initialState: "all" | "open" | "done";
+  initialLuckyId: string | null;
+};
+
+export function TasksPanelClient({
+  roomOptions,
+  peopleOptions,
+  tasks,
+  initialRoomId,
+  initialAssigneeId,
+  initialState,
+  initialLuckyId,
+}: Props) {
+  const [selectedRoomId, setSelectedRoomId] = useState(initialRoomId);
+  const [selectedAssigneeId, setSelectedAssigneeId] = useState(initialAssigneeId);
+  const [selectedState, setSelectedState] = useState<"all" | "open" | "done">(initialState);
+
+  const groupedRoomOptions = groupRoomsByDesignation(roomOptions);
+
+  const visibleTasks = useMemo(() => {
+    return tasks.filter((task) => {
+      const matchesRoom = selectedRoomId ? task.roomId === selectedRoomId : true;
+      const matchesAssignee = selectedAssigneeId ? task.assignmentUserId === selectedAssigneeId : true;
+      const taskState = getTaskState(task);
+      const matchesState = selectedState === "all" ? true : taskState === selectedState;
+      return matchesRoom && matchesAssignee && matchesState;
+    });
+  }, [selectedAssigneeId, selectedRoomId, selectedState, tasks]);
+
+  useEffect(() => {
+    const search = new URLSearchParams(window.location.search);
+    if (selectedRoomId) {
+      search.set("room", selectedRoomId);
+    } else {
+      search.delete("room");
+    }
+    if (selectedAssigneeId) {
+      search.set("assignee", selectedAssigneeId);
+    } else {
+      search.delete("assignee");
+    }
+    if (selectedState !== "all") {
+      search.set("state", selectedState);
+    } else {
+      search.delete("state");
+    }
+    const query = search.toString();
+    const nextUrl = query ? `/tasks?${query}` : "/tasks";
+    window.history.replaceState(null, "", nextUrl);
+  }, [selectedAssigneeId, selectedRoomId, selectedState]);
+
+  return (
+    <section id="recorded" className="recorded-panel">
+      <div className="recorded-header">
+        <div>
+          <p className="capture-kicker">Tasks</p>
+          <h2 className="recorded-title">Logged tasks</h2>
+        </div>
+        <span className="recorded-count">{visibleTasks.length}</span>
+      </div>
+
+      <div className="recorded-toolbar">
+        <div className="recorded-filter-bar">
+          <label className="recorded-filter-field">
+            <span>Room</span>
+            <select
+              value={selectedRoomId}
+              onChange={(event) => setSelectedRoomId(event.target.value)}
+              className="recorded-filter-select"
+            >
+              <option value="">All rooms</option>
+              {groupedRoomOptions.map(([group, groupedRooms]) => (
+                <optgroup key={group} label={group}>
+                  {groupedRooms.map((room) => (
+                    <option key={room.id} value={room.id}>
+                      {room.name}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </label>
+          <label className="recorded-filter-field">
+            <span>State</span>
+            <select
+              value={selectedState}
+              onChange={(event) => setSelectedState(event.target.value as "all" | "open" | "done")}
+              className="recorded-filter-select"
+            >
+              <option value="all">All states</option>
+              <option value="open">Open</option>
+              <option value="done">Completed</option>
+            </select>
+          </label>
+          <label className="recorded-filter-field">
+            <span>Assigned</span>
+            <select
+              value={selectedAssigneeId}
+              onChange={(event) => setSelectedAssigneeId(event.target.value)}
+              className="recorded-filter-select"
+            >
+              <option value="">Anyone</option>
+              {peopleOptions.map((person) => (
+                <option key={person.id} value={person.id}>
+                  {person.displayName}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="recorded-toolbar-actions">
+          {selectedRoomId || selectedAssigneeId || selectedState !== "all" ? (
+            <button
+              type="button"
+              className="action-btn subtle quiet"
+              onClick={() => {
+                setSelectedRoomId("");
+                setSelectedAssigneeId("");
+                setSelectedState("all");
+              }}
+            >
+              Clear filters
+            </button>
+          ) : (
+            <span className="recorded-toolbar-hint">Filters update instantly.</span>
+          )}
+
+          <form action={luckyDipAction}>
+            <input type="hidden" name="returnTo" value="/tasks" />
+            <FormActionButton className="action-btn subtle quiet" pendingLabel="Choosing task">
+              Lucky dip
+            </FormActionButton>
+          </form>
+        </div>
+      </div>
+
+      <div className="recorded-list">
+        {visibleTasks.length === 0 ? (
+          <p className="recorded-empty">
+            {selectedRoomId || selectedAssigneeId || selectedState !== "all"
+              ? "No tasks match these filters."
+              : "No tasks recorded yet."}
+          </p>
+        ) : (
+          visibleTasks.map((task, index) => (
+            <details
+              key={task.id}
+              id={`task-${task.id}`}
+              className={`recorded-row recorded-row-${rowTone(index)}`}
+              open={task.id === initialLuckyId}
+            >
+              <summary className="recorded-row-summary">
+                <div className="recorded-row-main">
+                  <p className="recorded-row-title">{task.title}</p>
+                  <p className="recorded-row-placeholder">
+                    {task.loggerName ? `Logged by ${task.loggerName}` : "Earlier task"}
+                  </p>
+                  <p className="recorded-row-assignee">
+                    Assigned to {task.assignmentUserName ?? "no one"}
+                  </p>
+                  <div className="recorded-summary-line">
+                    {getTaskState(task) !== "done" ? <span className="task-chip">Priority {task.priority}</span> : null}
+                    <span className={`task-chip ${getTaskState(task) === "done" ? "task-chip-done" : ""}`}>
+                      {getTaskState(task) === "done" ? "Completed" : "Open"}
+                    </span>
+                    {task.schedule ? <span className="task-chip">{formatRecurrenceChip(task.schedule)}</span> : null}
+                    {task.schedule?.nextDueAt ? <span className="task-chip">Due {formatShortDate(task.schedule.nextDueAt)}</span> : null}
+                    {task.schedule ? <span className={`task-chip ${recurrenceStateClassName(task)}`}>{getRecurrenceStateLabel(task)}</span> : null}
+                    {task.projectParentTitle ? <span className="task-chip">Sub-task of {task.projectParentTitle}</span> : null}
+                  </div>
+                </div>
+                <div className="recorded-row-meta">
+                  <span className="recorded-row-room">{displayRoomName(task.roomName)}</span>
+                  <div className="recorded-row-summary-actions">
+                    <span className="recorded-row-edit">Edit</span>
+                    <span className="recorded-row-chevron">+</span>
+                  </div>
+                </div>
+              </summary>
+
+              <div className="recorded-row-detail">
+                <form action={updateRecordedTaskAction} className="recorded-edit-form">
+                  <input type="hidden" name="taskId" value={task.id} />
+                  <input type="hidden" name="returnTo" value="/tasks" />
+
+                  <label className="recorded-field">
+                    <span>Task</span>
+                    <input name="title" type="text" defaultValue={task.title} className="recorded-edit-input" />
+                  </label>
+
+                  <label className="recorded-field">
+                    <span>Room</span>
+                    <select name="roomId" defaultValue={task.roomName.toLowerCase() === "unsorted" ? "" : task.roomId} className="recorded-edit-input">
+                      <option value="">No room</option>
+                      {groupedRoomOptions.map(([group, groupedRooms]) => (
+                        <optgroup key={group} label={group}>
+                          {groupedRooms.map((room) => (
+                            <option key={room.id} value={room.id}>
+                              {room.name}
+                            </option>
+                          ))}
+                        </optgroup>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="recorded-field">
+                    <span>Person</span>
+                    <select name="assigneeUserId" defaultValue={task.assignmentUserId ?? ""} className="recorded-edit-input">
+                      <option value="">No person</option>
+                      {peopleOptions.map((person) => (
+                        <option key={person.id} value={person.id}>
+                          {person.displayName}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="recorded-field">
+                    <span>Notes</span>
+                    <textarea
+                      name="detailNotes"
+                      rows={3}
+                      defaultValue={task.detailNotes ?? ""}
+                      className="recorded-edit-input recorded-edit-textarea"
+                    />
+                  </label>
+
+                  <label className="recorded-field">
+                    <span>Status</span>
+                    <select
+                      name="recordStatus"
+                      defaultValue={getTaskState(task) === "done" ? "done" : "open"}
+                      className="recorded-edit-input"
+                    >
+                      <option value="open">Open</option>
+                      <option value="done">Completed</option>
+                    </select>
+                  </label>
+
+                  <details className="recorded-more-details">
+                    <summary className="recorded-more-summary">More details</summary>
+                    <div className="capture-meta-grid">
+                      <label className="recorded-field">
+                        <span>Priority in room</span>
+                        <input
+                          name="priority"
+                          type="number"
+                          min={1}
+                          defaultValue={getTaskState(task) === "done" ? "" : task.priority}
+                          className="recorded-edit-input"
+                        />
+                      </label>
+
+                      <label className="recorded-field">
+                        <span>Completed by</span>
+                        <select
+                          name="completedByUserId"
+                          defaultValue={getLatestCompletedOccurrence(task.occurrences)?.completedBy ?? ""}
+                          className="recorded-edit-input"
+                        >
+                          <option value="">Not set</option>
+                          {peopleOptions.map((person) => (
+                            <option key={person.id} value={person.id}>
+                              {person.displayName}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+
+                    <label className="recorded-field">
+                      <span>Resolved date</span>
+                      <input
+                        name="resolvedAt"
+                        type="datetime-local"
+                        defaultValue={toDateTimeInputValue(getLatestCompletedOccurrence(task.occurrences)?.completedAt ?? task.createdAt)}
+                        className="recorded-edit-input"
+                      />
+                    </label>
+
+                    <div className="capture-meta-grid">
+                      <label className="recorded-field">
+                        <span>Repeats</span>
+                        <select
+                          name="recurrenceType"
+                          defaultValue={task.schedule?.recurrenceType ?? "none"}
+                          className="recorded-edit-input"
+                        >
+                          <option value="none">Does not repeat</option>
+                          <option value="daily">Daily</option>
+                          <option value="weekly">Weekly</option>
+                          <option value="monthly">Monthly</option>
+                        </select>
+                      </label>
+
+                      <label className="recorded-field">
+                        <span>Every</span>
+                        <input
+                          name="recurrenceInterval"
+                          type="number"
+                          min={1}
+                          defaultValue={task.schedule?.intervalCount ?? 1}
+                          className="recorded-edit-input"
+                        />
+                      </label>
+                    </div>
+
+                    <label className="recorded-field">
+                      <span>Next due</span>
+                      <input
+                        name="nextDueAt"
+                        type="datetime-local"
+                        defaultValue={toDateTimeInputValue(task.schedule?.nextDueAt ?? addDays(new Date(), 7))}
+                        className="recorded-edit-input"
+                      />
+                    </label>
+                  </details>
+
+                  <p><span>Recorded</span><strong>{formatRecordedAt(task.createdAt)}</strong></p>
+                  {task.schedule ? (
+                    <p><span>Recurring</span><strong>{formatRecurrenceChip(task.schedule)}</strong></p>
+                  ) : null}
+                  {task.schedule?.nextDueAt ? (
+                    <p><span>Next due</span><strong>{formatRecordedAt(task.schedule.nextDueAt)}</strong></p>
+                  ) : null}
+                  {task.schedule ? (
+                    <p><span>Status</span><strong>{getRecurrenceStateLabel(task)}</strong></p>
+                  ) : null}
+                  {getLatestCompletedOccurrence(task.occurrences)?.completedAt ? (
+                    <p><span>Resolved</span><strong>{formatRecordedAt(getLatestCompletedOccurrence(task.occurrences)!.completedAt!)}</strong></p>
+                  ) : null}
+                  {getLatestCompletedOccurrence(task.occurrences)?.completedAt ? (
+                    <p><span>Last done</span><strong>{formatRecordedAt(getLatestCompletedOccurrence(task.occurrences)!.completedAt!)}</strong></p>
+                  ) : null}
+                  {getLatestCompletedOccurrence(task.occurrences)?.completedAt && getLatestCompletedOccurrence(task.occurrences)?.dueAt ? (
+                    <p>
+                      <span>Completed</span>
+                      <strong>{wasOccurrenceOnTime(getLatestCompletedOccurrence(task.occurrences)!) ? "On time" : "Late"}</strong>
+                    </p>
+                  ) : null}
+                  {getLatestCompletedOccurrence(task.occurrences)?.completerName ? (
+                    <p><span>Completed by</span><strong>{getLatestCompletedOccurrence(task.occurrences)!.completerName}</strong></p>
+                  ) : null}
+                  <div className="recorded-row-actions between">
+                    <FormActionButton className="action-btn bright quiet" pendingLabel="Saving">
+                      Save changes
+                    </FormActionButton>
+                  </div>
+                </form>
+                <form action={deleteTaskAction} className="recorded-row-actions">
+                  <input type="hidden" name="taskId" value={task.id} />
+                  <FormActionButton className="action-btn warn quiet" pendingLabel="Deleting">
+                    Delete task
+                  </FormActionButton>
+                </form>
+              </div>
+            </details>
+          ))
+        )}
+      </div>
+    </section>
+  );
+}
+
+function rowTone(index: number) {
+  const tones = ["blue", "green", "amber", "rose"] as const;
+  return tones[index % tones.length];
+}
+
+function formatRecordedAt(value: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
+function toDateTimeInputValue(value: string) {
+  const date = new Date(value);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+function addDays(value: Date, days: number) {
+  const next = new Date(value);
+  next.setDate(next.getDate() + days);
+  return next.toISOString();
+}
+
+function formatShortDate(value: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+  }).format(new Date(value));
+}
+
+function getTaskState(task: { captureStage: string; occurrences: Array<{ status: string }> }) {
+  if (task.captureStage === "done" || task.occurrences[0]?.status === "done") {
+    return "done";
+  }
+  return "open";
+}
+
+function getLatestCompletedOccurrence<T extends { status: string; completedAt?: string | null; completedBy?: string | null; completerName?: string | null; dueAt?: string }>(
+  occurrences: T[],
+) {
+  return occurrences.find((occurrence) => occurrence.status === "done") ?? null;
+}
+
+function getOpenOccurrence<T extends { status: string; dueAt: string }>(occurrences: T[]) {
+  return occurrences.find((occurrence) => occurrence.status !== "done") ?? null;
+}
+
+function formatRecurrenceChip(schedule: { recurrenceType: string; intervalCount: number }) {
+  const interval = schedule.intervalCount > 1 ? `${schedule.intervalCount} ` : "";
+  if (schedule.recurrenceType === "daily") {
+    return `Every ${interval}day${schedule.intervalCount > 1 ? "s" : ""}`;
+  }
+  if (schedule.recurrenceType === "monthly") {
+    return `Every ${interval}month${schedule.intervalCount > 1 ? "s" : ""}`;
+  }
+  return `Every ${interval}week${schedule.intervalCount > 1 ? "s" : ""}`;
+}
+
+function getRecurrenceStateLabel(task: {
+  schedule: { nextDueAt: string | null } | null;
+  occurrences: Array<{ status: string; dueAt: string }>;
+}) {
+  const openOccurrence = getOpenOccurrence(task.occurrences);
+  const dueAt = openOccurrence?.dueAt ?? task.schedule?.nextDueAt;
+  if (!dueAt) {
+    return "Scheduled";
+  }
+
+  const now = new Date();
+  const dueTime = new Date(dueAt).getTime();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const tomorrow = today + (24 * 60 * 60 * 1000);
+
+  if (dueTime < now.getTime()) {
+    return "Lapsed";
+  }
+  if (dueTime >= today && dueTime < tomorrow) {
+    return "Due today";
+  }
+  return "On track";
+}
+
+function recurrenceStateClassName(task: {
+  schedule: { nextDueAt: string | null } | null;
+  occurrences: Array<{ status: string; dueAt: string }>;
+}) {
+  const label = getRecurrenceStateLabel(task);
+  if (label === "Lapsed") {
+    return "task-chip-lapsed";
+  }
+  if (label === "Due today") {
+    return "task-chip-due";
+  }
+  return "task-chip-recurring";
+}
+
+function wasOccurrenceOnTime(occurrence: { dueAt?: string; completedAt?: string | null }) {
+  if (!occurrence.dueAt || !occurrence.completedAt) {
+    return true;
+  }
+  return new Date(occurrence.completedAt).getTime() <= new Date(occurrence.dueAt).getTime();
+}
+
+function displayRoomName(roomName: string) {
+  return roomName.toLowerCase() === "unsorted" ? "No room" : roomName;
+}
+
+function groupRoomsByDesignation<T extends { designation?: string | null; name: string }>(rooms: T[]) {
+  const grouped = new Map<string, T[]>();
+  for (const room of rooms) {
+    const key = room.designation?.trim() || "General";
+    const entries = grouped.get(key) ?? [];
+    entries.push(room);
+    grouped.set(key, entries);
+  }
+  return [...grouped.entries()];
+}
