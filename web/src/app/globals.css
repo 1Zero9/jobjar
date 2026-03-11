@@ -772,6 +772,37 @@ body {
   gap: 0.75rem;
 }
 
+.recorded-more-details {
+  display: grid;
+  gap: 0.75rem;
+  border: 1px solid var(--neutral-200);
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--card) 80%, transparent);
+  padding: 0.85rem 0.9rem;
+}
+
+.recorded-more-summary {
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 700;
+  list-style: none;
+}
+
+.recorded-more-summary::-webkit-details-marker {
+  display: none;
+}
+
+.recorded-more-summary::after {
+  content: "+";
+  float: right;
+  color: var(--muted);
+}
+
+.recorded-more-details[open] .recorded-more-summary::after {
+  content: "×";
+}
+
 .recorded-field {
   display: grid;
   gap: 0.35rem;

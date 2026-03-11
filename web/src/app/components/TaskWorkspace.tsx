@@ -1,4 +1,5 @@
 import { createQuickTaskAction, deleteTaskAction, logoutAction, luckyDipAction, updateRecordedTaskAction } from "@/app/actions";
+import { AutoSubmitForm } from "@/app/components/AutoSubmitForm";
 import { FormActionButton } from "@/app/components/FormActionButton";
 import { ToastNotice } from "@/app/components/ToastNotice";
 import { requireSessionContext } from "@/lib/auth";
@@ -324,7 +325,7 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
           </div>
 
           <div className="recorded-toolbar">
-            <form method="get" action="/tasks" className="recorded-filter-bar">
+            <AutoSubmitForm action="/tasks" className="recorded-filter-bar">
               <label className="recorded-filter-field">
                 <span>Room</span>
                 <select name="room" defaultValue={selectedRoomId} className="recorded-filter-select">
@@ -348,15 +349,12 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
                   <option value="done">Completed</option>
                 </select>
               </label>
-              <FormActionButton className="action-btn subtle quiet" pendingLabel="Applying">
-                Apply
-              </FormActionButton>
               {selectedRoomId || selectedState !== "all" ? (
                 <Link href="/tasks#recorded" className="action-btn subtle quiet">
                   Clear
                 </Link>
               ) : null}
-            </form>
+            </AutoSubmitForm>
 
             <form action={luckyDipAction}>
               <input type="hidden" name="returnTo" value="/tasks" />
@@ -382,7 +380,9 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
                   <summary className="recorded-row-summary">
                     <div className="recorded-row-main">
                       <p className="recorded-row-title">{task.title}</p>
-                      <p className="recorded-row-placeholder">Logged by {task.logger?.displayName ?? "Unknown"}</p>
+                      <p className="recorded-row-placeholder">
+                        {task.logger?.displayName ? `Logged by ${task.logger.displayName}` : "Earlier task"}
+                      </p>
                       <div className="recorded-summary-line">
                         {getTaskState(task) !== "done" ? <span className="task-chip">Priority {task.priority}</span> : null}
                         <span className={`task-chip ${getTaskState(task) === "done" ? "task-chip-done" : ""}`}>
@@ -456,56 +456,59 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
                         />
                       </label>
 
-                      <div className="capture-meta-grid">
+                      <label className="recorded-field">
+                        <span>Status</span>
+                        <select
+                          name="recordStatus"
+                          defaultValue={getTaskState(task) === "done" ? "done" : "open"}
+                          className="recorded-edit-input"
+                        >
+                          <option value="open">Open</option>
+                          <option value="done">Completed</option>
+                        </select>
+                      </label>
+
+                      <details className="recorded-more-details">
+                        <summary className="recorded-more-summary">More details</summary>
+                        <div className="capture-meta-grid">
+                          <label className="recorded-field">
+                            <span>Priority in room</span>
+                            <input
+                              name="priority"
+                              type="number"
+                              min={1}
+                              defaultValue={getTaskState(task) === "done" ? "" : task.priority}
+                              className="recorded-edit-input"
+                            />
+                          </label>
+
+                          <label className="recorded-field">
+                            <span>Completed by</span>
+                            <select
+                              name="completedByUserId"
+                              defaultValue={task.occurrences[0]?.completedBy ?? ""}
+                              className="recorded-edit-input"
+                            >
+                              <option value="">Not set</option>
+                              {peopleOptions.map((person) => (
+                                <option key={person.id} value={person.id}>
+                                  {person.displayName}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                        </div>
+
                         <label className="recorded-field">
-                          <span>Priority in room</span>
+                          <span>Resolved date</span>
                           <input
-                            name="priority"
-                            type="number"
-                            min={1}
-                            defaultValue={getTaskState(task) === "done" ? "" : task.priority}
+                            name="resolvedAt"
+                            type="datetime-local"
+                            defaultValue={toDateTimeInputValue(task.occurrences[0]?.completedAt ?? task.createdAt)}
                             className="recorded-edit-input"
                           />
                         </label>
-
-                        <label className="recorded-field">
-                          <span>Status</span>
-                          <select
-                            name="recordStatus"
-                            defaultValue={getTaskState(task) === "done" ? "done" : "open"}
-                            className="recorded-edit-input"
-                          >
-                            <option value="open">Open</option>
-                            <option value="done">Completed</option>
-                          </select>
-                        </label>
-
-                        <label className="recorded-field">
-                          <span>Completed by</span>
-                          <select
-                            name="completedByUserId"
-                            defaultValue={task.occurrences[0]?.completedBy ?? ""}
-                            className="recorded-edit-input"
-                          >
-                            <option value="">Not set</option>
-                            {peopleOptions.map((person) => (
-                              <option key={person.id} value={person.id}>
-                                {person.displayName}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                      </div>
-
-                      <label className="recorded-field">
-                        <span>Resolved date</span>
-                        <input
-                          name="resolvedAt"
-                          type="datetime-local"
-                          defaultValue={toDateTimeInputValue(task.occurrences[0]?.completedAt ?? task.createdAt)}
-                          className="recorded-edit-input"
-                        />
-                      </label>
+                      </details>
 
                       <p><span>Recorded</span><strong>{formatRecordedAt(task.createdAt)}</strong></p>
                       {task.occurrences[0]?.completedAt ? (

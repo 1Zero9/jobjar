@@ -80,7 +80,7 @@ export default async function HomePage() {
             {role === "admin" ? (
               <Link href="/settings" className="landing-action-card">
                 <span className="landing-action-kicker">Setup</span>
-                <strong>Manage rooms</strong>
+                <strong>Setup</strong>
                 <span>Rooms, people, and household setup.</span>
               </Link>
             ) : (

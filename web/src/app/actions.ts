@@ -50,7 +50,7 @@ export async function createRoomAction(formData: FormData) {
     },
   });
 
-  refreshViews();
+  refreshViews(["/", "/log", "/tasks", "/settings", "/settings/rooms"]);
   if (returnTo) {
     redirect(`${returnTo}?added=room`);
   }
@@ -91,7 +91,7 @@ export async function updateRoomAction(formData: FormData) {
     data: { name, designation },
   });
 
-  refreshViews();
+  refreshViews(["/", "/log", "/tasks", "/settings", "/settings/rooms"]);
 }
 
 export async function deleteRoomAction(formData: FormData) {
@@ -119,7 +119,7 @@ export async function deleteRoomAction(formData: FormData) {
       data: { active: false },
     }),
   ]);
-  refreshViews();
+  refreshViews(["/", "/log", "/tasks", "/settings", "/settings/rooms"]);
 }
 
 export async function createTaskAction(formData: FormData) {
@@ -215,7 +215,7 @@ export async function createTaskAction(formData: FormData) {
     }
   }
 
-  refreshViews();
+  refreshViews(["/", "/log", "/tasks"]);
 }
 
 export async function createQuickTaskAction(formData: FormData) {
@@ -322,7 +322,6 @@ export async function updateRecordedTaskAction(formData: FormData) {
   const requestedRoomId = String(formData.get("roomId") ?? "").trim();
   const requestedPriority = toPositiveIntOrNull(formData.get("priority"));
   const assigneeUserId = String(formData.get("assigneeUserId") ?? "").trim();
-  const requestedParentTaskId = String(formData.get("parentTaskId") ?? "").trim();
   const detailNotes = String(formData.get("detailNotes") ?? "").trim() || null;
   const recordStatus = String(formData.get("recordStatus") ?? "open").trim();
   const completedByUserId = String(formData.get("completedByUserId") ?? "").trim();
@@ -372,27 +371,11 @@ export async function updateRecordedTaskAction(formData: FormData) {
     roomId = await getOrCreateUnsortedRoomId(householdId);
   }
 
-  let projectParentId: string | null = null;
-  if (requestedParentTaskId && requestedParentTaskId !== existingTask.id) {
-    const parent = await prisma.task.findFirst({
-      where: {
-        id: requestedParentTaskId,
-        active: true,
-        room: { householdId },
-      },
-      select: { id: true },
-    });
-    if (parent) {
-      projectParentId = parent.id;
-    }
-  }
-
   await prisma.task.update({
     where: { id: existingTask.id },
     data: {
       title,
       roomId,
-      projectParentId,
       detailNotes,
       captureStage: recordStatus === "done" ? "done" : "captured",
       priority: recordStatus === "done" ? existingTask.priority : 1,
@@ -489,7 +472,7 @@ export async function updateRecordedTaskAction(formData: FormData) {
     }
   }
 
-  refreshViews();
+  refreshViews(["/", "/log", "/tasks"]);
   redirect(`${returnTo}?updated=${recordStatus === "done" ? "done" : "task"}#recorded`);
 }
 
@@ -663,7 +646,7 @@ export async function updateTaskAction(formData: FormData) {
     }
   }
 
-  refreshViews();
+  refreshViews(["/", "/log", "/tasks"]);
 }
 
 export async function deleteTaskAction(formData: FormData) {
@@ -689,7 +672,7 @@ export async function deleteTaskAction(formData: FormData) {
     data: { active: false },
   });
   await compactOpenTaskPriorities(task.roomId);
-  refreshViews();
+  refreshViews(["/", "/log", "/tasks", "/settings", "/settings/people"]);
 }
 
 export async function createPersonAction(formData: FormData) {
@@ -737,7 +720,7 @@ export async function createPersonAction(formData: FormData) {
     await setUserPasswordHash(user.id, hashPassword(passcodeInput));
   }
 
-  refreshViews();
+  refreshViews(["/", "/log", "/tasks", "/settings", "/settings/people"]);
   if (returnTo) {
     redirect(`${returnTo}?added=person`);
   }
@@ -776,7 +759,7 @@ export async function removePersonAction(formData: FormData) {
     });
   }
 
-  refreshViews();
+  refreshViews(["/", "/log", "/tasks", "/settings", "/settings/people"]);
 }
 
 export async function setPersonPasscodeAction(formData: FormData) {
@@ -1171,16 +1154,10 @@ function parseMinimumMinutes(description: string | null) {
   return Number(match[1]) || 0;
 }
 
-function refreshViews() {
-  revalidatePath("/");
-  revalidatePath("/log");
-  revalidatePath("/tasks");
-  revalidatePath("/admin");
-  revalidatePath("/settings");
-  revalidatePath("/settings/rooms");
-  revalidatePath("/settings/people");
-  revalidatePath("/tv");
-  revalidatePath("/login");
+function refreshViews(paths = ["/", "/log", "/tasks", "/admin", "/settings", "/settings/rooms", "/settings/people", "/tv", "/login"]) {
+  for (const path of new Set(paths)) {
+    revalidatePath(path);
+  }
 }
 
 function getReturnPath(value: FormDataEntryValue | null | undefined, fallback: string) {
