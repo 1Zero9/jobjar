@@ -227,6 +227,9 @@ export async function createQuickTaskAction(formData: FormData) {
   const recordStatus = String(formData.get("recordStatus") ?? "open").trim();
   const completedByUserId = String(formData.get("completedByUserId") ?? "").trim();
   const resolvedAt = toDate(formData.get("resolvedAt")) ?? new Date();
+  const recurrenceType = parseOptionalRecurrenceType(formData.get("recurrenceType"));
+  const recurrenceInterval = toPositiveInt(formData.get("recurrenceInterval"), 1);
+  const requestedNextDueAt = toDate(formData.get("nextDueAt"));
   const returnTo = getReturnPath(formData.get("returnTo"), "/log");
   if (!title) {
     return;
@@ -254,14 +257,14 @@ export async function createQuickTaskAction(formData: FormData) {
       roomId,
       createdByUserId: userId,
       jobKind: "upkeep",
-      captureStage: recordStatus === "done" ? "done" : "captured",
+      captureStage: recordStatus === "done" && !recurrenceType ? "done" : "captured",
       detailNotes,
-      priority: recordStatus === "done" ? 999 : 1,
+      priority: recordStatus === "done" && !recurrenceType ? 999 : 1,
     },
     select: { id: true },
   });
 
-  if (recordStatus !== "done") {
+  if (recordStatus !== "done" || recurrenceType) {
     await moveOpenTaskToPriority(task.id, roomId, requestedPriority);
   }
 
@@ -289,7 +292,13 @@ export async function createQuickTaskAction(formData: FormData) {
     });
   }
 
-  refreshViews();
+  if (recurrenceType) {
+    const nextDueAt = requestedNextDueAt ?? calculateNextDueAt(recordStatus === "done" ? resolvedAt : new Date(), recurrenceType, recurrenceInterval);
+    await upsertSimpleSchedule(task.id, recurrenceType, recurrenceInterval, nextDueAt);
+    await upsertPendingOccurrence(task.id, nextDueAt);
+  }
+
+  refreshViews(["/", "/log", "/tasks"]);
   redirect(`${returnTo}?added=${recordStatus === "done" ? "done" : "task"}#recorded`);
 }
 
@@ -326,6 +335,9 @@ export async function updateRecordedTaskAction(formData: FormData) {
   const recordStatus = String(formData.get("recordStatus") ?? "open").trim();
   const completedByUserId = String(formData.get("completedByUserId") ?? "").trim();
   const resolvedAt = toDate(formData.get("resolvedAt")) ?? new Date();
+  const recurrenceType = parseOptionalRecurrenceType(formData.get("recurrenceType"));
+  const recurrenceInterval = toPositiveInt(formData.get("recurrenceInterval"), 1);
+  const requestedNextDueAt = toDate(formData.get("nextDueAt"));
   const returnTo = getReturnPath(formData.get("returnTo"), "/tasks");
 
   if (!taskId || !title) {
@@ -377,8 +389,8 @@ export async function updateRecordedTaskAction(formData: FormData) {
       title,
       roomId,
       detailNotes,
-      captureStage: recordStatus === "done" ? "done" : "captured",
-      priority: recordStatus === "done" ? existingTask.priority : 1,
+      captureStage: recordStatus === "done" && !recurrenceType ? "done" : "captured",
+      priority: recordStatus === "done" && !recurrenceType ? existingTask.priority : 1,
     },
   });
 
@@ -460,7 +472,23 @@ export async function updateRecordedTaskAction(formData: FormData) {
     });
   }
 
-  if (recordStatus === "done") {
+  if (recurrenceType) {
+    const nextDueAt = requestedNextDueAt ?? calculateNextDueAt(resolvedAt, recurrenceType, recurrenceInterval);
+    await upsertSimpleSchedule(existingTask.id, recurrenceType, recurrenceInterval, nextDueAt);
+    await upsertPendingOccurrence(existingTask.id, nextDueAt);
+  } else {
+    await prisma.taskSchedule.deleteMany({
+      where: { taskId: existingTask.id },
+    });
+    await prisma.taskOccurrence.deleteMany({
+      where: {
+        taskId: existingTask.id,
+        status: { in: ["pending", "overdue", "skipped"] },
+      },
+    });
+  }
+
+  if (recordStatus === "done" && !recurrenceType) {
     await compactOpenTaskPriorities(existingTask.roomId);
     if (roomId !== existingTask.roomId) {
       await compactOpenTaskPriorities(roomId);
@@ -1076,6 +1104,14 @@ function parseRecurrenceType(value: FormDataEntryValue | null) {
   return "weekly";
 }
 
+function parseOptionalRecurrenceType(value: FormDataEntryValue | null) {
+  const raw = String(value ?? "").trim();
+  if (raw === "daily" || raw === "weekly" || raw === "monthly") {
+    return raw;
+  }
+  return null;
+}
+
 function parseJobKind(value: FormDataEntryValue | null, fallback: "upkeep" | "issue" | "project" | "clear_out" | "outdoor" | "planning") {
   const raw = String(value ?? "").trim();
   if (raw === "upkeep" || raw === "issue" || raw === "project" || raw === "clear_out" || raw === "outdoor" || raw === "planning") {
@@ -1209,6 +1245,77 @@ async function moveOpenTaskToPriority(taskId: string, roomId: string, desiredPri
       }),
     ),
   );
+}
+
+function calculateNextDueAt(base: Date, recurrenceType: "daily" | "weekly" | "monthly", interval: number) {
+  const next = new Date(base);
+  if (recurrenceType === "daily") {
+    next.setDate(next.getDate() + interval);
+    return next;
+  }
+  if (recurrenceType === "monthly") {
+    next.setMonth(next.getMonth() + interval);
+    return next;
+  }
+  next.setDate(next.getDate() + (interval * 7));
+  return next;
+}
+
+async function upsertSimpleSchedule(
+  taskId: string,
+  recurrenceType: "daily" | "weekly" | "monthly",
+  intervalCount: number,
+  nextDueAt: Date,
+) {
+  await prisma.taskSchedule.upsert({
+    where: { taskId },
+    create: {
+      taskId,
+      recurrenceType,
+      intervalCount,
+      daysOfWeek: [],
+      timeOfDay: "09:00",
+      nextDueAt,
+    },
+    update: {
+      recurrenceType,
+      intervalCount,
+      nextDueAt,
+      timeOfDay: "09:00",
+    },
+  });
+}
+
+async function upsertPendingOccurrence(taskId: string, dueAt: Date) {
+  const pendingOccurrence = await prisma.taskOccurrence.findFirst({
+    where: {
+      taskId,
+      status: { in: ["pending", "overdue", "skipped"] },
+    },
+    orderBy: { createdAt: "desc" },
+    select: { id: true },
+  });
+
+  if (pendingOccurrence) {
+    await prisma.taskOccurrence.update({
+      where: { id: pendingOccurrence.id },
+      data: {
+        dueAt,
+        status: "pending",
+        completedAt: null,
+        completedBy: null,
+      },
+    });
+    return;
+  }
+
+  await prisma.taskOccurrence.create({
+    data: {
+      taskId,
+      dueAt,
+      status: "pending",
+    },
+  });
 }
 
 async function compactOpenTaskPriorities(roomId: string) {

@@ -178,6 +178,42 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
                     className="recorded-edit-input"
                   />
                 </label>
+
+                <details className="recorded-more-details">
+                  <summary className="recorded-more-summary">Recurring task</summary>
+                  <div className="capture-meta-grid">
+                    <label className="recorded-field">
+                      <span>Repeats</span>
+                      <select name="recurrenceType" defaultValue="none" className="recorded-edit-input">
+                        <option value="none">Does not repeat</option>
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="monthly">Monthly</option>
+                      </select>
+                    </label>
+
+                    <label className="recorded-field">
+                      <span>Every</span>
+                      <input
+                        name="recurrenceInterval"
+                        type="number"
+                        min={1}
+                        defaultValue={1}
+                        className="recorded-edit-input"
+                      />
+                    </label>
+                  </div>
+
+                  <label className="recorded-field">
+                    <span>Next due</span>
+                    <input
+                      name="nextDueAt"
+                      type="datetime-local"
+                      defaultValue={toDateTimeInputValue(addDays(new Date(), 7))}
+                      className="recorded-edit-input"
+                    />
+                  </label>
+                </details>
               </div>
             </details>
 
@@ -245,9 +281,16 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
             },
           },
         },
+        schedule: {
+          select: {
+            recurrenceType: true,
+            intervalCount: true,
+            nextDueAt: true,
+          },
+        },
         occurrences: {
           orderBy: { createdAt: "desc" },
-          take: 1,
+          take: 3,
           include: {
             completer: {
               select: {
@@ -388,6 +431,8 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
                         <span className={`task-chip ${getTaskState(task) === "done" ? "task-chip-done" : ""}`}>
                           {getTaskState(task) === "done" ? "Completed" : "Open"}
                         </span>
+                        {task.schedule ? <span className="task-chip">{formatRecurrenceChip(task.schedule)}</span> : null}
+                        {task.schedule?.nextDueAt ? <span className="task-chip">Due {formatShortDate(task.schedule.nextDueAt)}</span> : null}
                       </div>
                     </div>
                     <div className="recorded-row-meta">
@@ -486,7 +531,7 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
                             <span>Completed by</span>
                             <select
                               name="completedByUserId"
-                              defaultValue={task.occurrences[0]?.completedBy ?? ""}
+                              defaultValue={getLatestCompletedOccurrence(task.occurrences)?.completedBy ?? ""}
                               className="recorded-edit-input"
                             >
                               <option value="">Not set</option>
@@ -504,18 +549,55 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
                           <input
                             name="resolvedAt"
                             type="datetime-local"
-                            defaultValue={toDateTimeInputValue(task.occurrences[0]?.completedAt ?? task.createdAt)}
+                            defaultValue={toDateTimeInputValue(getLatestCompletedOccurrence(task.occurrences)?.completedAt ?? task.createdAt)}
+                            className="recorded-edit-input"
+                          />
+                        </label>
+
+                        <div className="capture-meta-grid">
+                          <label className="recorded-field">
+                            <span>Repeats</span>
+                            <select
+                              name="recurrenceType"
+                              defaultValue={task.schedule?.recurrenceType ?? "none"}
+                              className="recorded-edit-input"
+                            >
+                              <option value="none">Does not repeat</option>
+                              <option value="daily">Daily</option>
+                              <option value="weekly">Weekly</option>
+                              <option value="monthly">Monthly</option>
+                            </select>
+                          </label>
+
+                          <label className="recorded-field">
+                            <span>Every</span>
+                            <input
+                              name="recurrenceInterval"
+                              type="number"
+                              min={1}
+                              defaultValue={task.schedule?.intervalCount ?? 1}
+                              className="recorded-edit-input"
+                            />
+                          </label>
+                        </div>
+
+                        <label className="recorded-field">
+                          <span>Next due</span>
+                          <input
+                            name="nextDueAt"
+                            type="datetime-local"
+                            defaultValue={toDateTimeInputValue(task.schedule?.nextDueAt ?? addDays(new Date(), 7))}
                             className="recorded-edit-input"
                           />
                         </label>
                       </details>
 
                       <p><span>Recorded</span><strong>{formatRecordedAt(task.createdAt)}</strong></p>
-                      {task.occurrences[0]?.completedAt ? (
-                        <p><span>Resolved</span><strong>{formatRecordedAt(task.occurrences[0].completedAt)}</strong></p>
+                      {getLatestCompletedOccurrence(task.occurrences)?.completedAt ? (
+                        <p><span>Resolved</span><strong>{formatRecordedAt(getLatestCompletedOccurrence(task.occurrences)!.completedAt!)}</strong></p>
                       ) : null}
-                      {task.occurrences[0]?.completer?.displayName ? (
-                        <p><span>Completed by</span><strong>{task.occurrences[0].completer.displayName}</strong></p>
+                      {getLatestCompletedOccurrence(task.occurrences)?.completer?.displayName ? (
+                        <p><span>Completed by</span><strong>{getLatestCompletedOccurrence(task.occurrences)!.completer!.displayName}</strong></p>
                       ) : null}
                       <div className="recorded-row-actions between">
                         <FormActionButton className="action-btn bright quiet" pendingLabel="Saving">
@@ -565,6 +647,19 @@ function toDateTimeInputValue(value: Date) {
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
+function addDays(value: Date, days: number) {
+  const next = new Date(value);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function formatShortDate(value: Date) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+  }).format(value);
+}
+
 function getTaskState(task: {
   captureStage: string;
   occurrences: Array<{ status: string }>;
@@ -573,6 +668,23 @@ function getTaskState(task: {
     return "done";
   }
   return "open";
+}
+
+function getLatestCompletedOccurrence<T extends { status: string; completedAt?: Date | null; completedBy?: string | null; completer?: { displayName: string } | null }>(
+  occurrences: T[],
+) {
+  return occurrences.find((occurrence) => occurrence.status === "done") ?? null;
+}
+
+function formatRecurrenceChip(schedule: { recurrenceType: string; intervalCount: number }) {
+  const interval = schedule.intervalCount > 1 ? `${schedule.intervalCount} ` : "";
+  if (schedule.recurrenceType === "daily") {
+    return `Every ${interval}day${schedule.intervalCount > 1 ? "s" : ""}`;
+  }
+  if (schedule.recurrenceType === "monthly") {
+    return `Every ${interval}month${schedule.intervalCount > 1 ? "s" : ""}`;
+  }
+  return `Every ${interval}week${schedule.intervalCount > 1 ? "s" : ""}`;
 }
 
 function displayRoomName(roomName: string) {
