@@ -86,10 +86,10 @@ export default async function HomePage() {
                 <span>Rooms, people, and household setup.</span>
               </Link>
             ) : (
-              <div className="landing-action-card muted">
+              <div className="landing-action-card muted disabled" aria-disabled="true">
                 <span className="landing-action-kicker">Setup</span>
                 <strong>Admin only</strong>
-                <span>Ask an admin to manage rooms and people.</span>
+                <span>Rooms and people can only be managed by an admin account.</span>
               </div>
             )}
           </div>

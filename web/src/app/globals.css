@@ -299,6 +299,37 @@ body {
   color: var(--muted);
 }
 
+.landing-action-card.disabled {
+  border-color: color-mix(in srgb, var(--neutral-300) 78%, var(--card));
+  background:
+    linear-gradient(160deg, color-mix(in srgb, var(--neutral-100) 72%, var(--card)) 0%, color-mix(in srgb, var(--neutral-200) 42%, var(--card)) 100%),
+    color-mix(in srgb, var(--card) 90%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--card) 82%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--neutral-300) 30%, transparent),
+    0 10px 20px color-mix(in srgb, var(--foreground) 4%, transparent);
+  cursor: not-allowed;
+  opacity: 0.82;
+}
+
+.landing-action-card.disabled::before {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--card) 48%, transparent) 0%, transparent 65%, color-mix(in srgb, var(--neutral-300) 12%, transparent) 100%);
+}
+
+.landing-action-card.disabled:hover {
+  transform: none;
+  border-color: color-mix(in srgb, var(--neutral-300) 78%, var(--card));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--card) 82%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--neutral-300) 30%, transparent),
+    0 10px 20px color-mix(in srgb, var(--foreground) 4%, transparent);
+}
+
+.landing-action-card.disabled strong,
+.landing-action-card.disabled span:last-child {
+  color: var(--muted);
+}
+
 .settings-hero {
   display: flex;
   flex-direction: column;
