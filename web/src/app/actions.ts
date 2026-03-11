@@ -511,6 +511,64 @@ export async function updateRecordedTaskAction(formData: FormData) {
   redirect(`${returnTo}?updated=${recordStatus === "done" ? "done" : "task"}#recorded`);
 }
 
+export async function updateTaskAssigneeAction(formData: FormData) {
+  const { householdId } = await requireSessionMemberAction();
+  const taskId = String(formData.get("taskId") ?? "").trim();
+  const assigneeUserId = String(formData.get("assigneeUserId") ?? "").trim();
+  const returnTo = getReturnPath(formData.get("returnTo"), "/tasks");
+
+  if (!taskId) {
+    return;
+  }
+
+  const task = await prisma.task.findFirst({
+    where: {
+      id: taskId,
+      active: true,
+      room: { householdId },
+    },
+    select: { id: true },
+  });
+  if (!task) {
+    return;
+  }
+
+  await prisma.taskAssignment.updateMany({
+    where: {
+      taskId: task.id,
+      assignedTo: null,
+    },
+    data: {
+      assignedTo: new Date(),
+    },
+  });
+
+  if (assigneeUserId) {
+    const member = await prisma.householdMember.findUnique({
+      where: {
+        householdId_userId: {
+          householdId,
+          userId: assigneeUserId,
+        },
+      },
+      select: { userId: true },
+    });
+
+    if (member) {
+      await prisma.taskAssignment.create({
+        data: {
+          taskId: task.id,
+          userId: assigneeUserId,
+          assignedFrom: new Date(),
+        },
+      });
+    }
+  }
+
+  refreshViews(["/", "/log", "/tasks"]);
+  redirect(`${returnTo}${returnTo.includes("#") ? "" : `#task-${task.id}`}`);
+}
+
 export async function updateTaskAction(formData: FormData) {
   const { householdId } = await requireAdminAction();
   const taskId = String(formData.get("taskId") ?? "").trim();

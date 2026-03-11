@@ -1,5 +1,6 @@
-import { createQuickTaskAction, deleteTaskAction, logoutAction, luckyDipAction, updateRecordedTaskAction } from "@/app/actions";
+import { createQuickTaskAction, deleteTaskAction, logoutAction, luckyDipAction, updateRecordedTaskAction, updateTaskAssigneeAction } from "@/app/actions";
 import { AutoSubmitForm } from "@/app/components/AutoSubmitForm";
+import { AutoSubmitSelect } from "@/app/components/AutoSubmitSelect";
 import { FormActionButton } from "@/app/components/FormActionButton";
 import { SimilarTaskField } from "@/app/components/SimilarTaskField";
 import { ToastNotice } from "@/app/components/ToastNotice";
@@ -332,8 +333,8 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
   const roomOptions = uniqueRoomsByName(rooms).filter((room) => room.name.toLowerCase() !== "unsorted");
   const peopleOptions = people.map((member) => member.user);
   const groupedRoomOptions = groupRoomsByDesignation(roomOptions);
-  const selectedRoomId = roomOptions.some((room) => room.id === params.room) ? params.room : "";
-  const selectedState = params.state === "done" || params.state === "open" ? params.state : "all";
+  const selectedRoomId = roomOptions.some((room) => room.id === params.room) ? (params.room ?? "") : "";
+  const selectedState: "all" | "open" | "done" = params.state === "done" || params.state === "open" ? params.state : "all";
   const visibleTasks = recordedTasks.filter((task) => {
     const matchesRoom = selectedRoomId ? task.roomId === selectedRoomId : true;
     const taskState = getTaskState(task);
@@ -343,6 +344,7 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
   const luckyTask = params.lucky && params.lucky !== "empty"
     ? visibleTasks.find((task) => task.id === params.lucky) ?? recordedTasks.find((task) => task.id === params.lucky)
     : null;
+  const currentTasksReturnTo = buildTasksReturnTo(selectedRoomId, selectedState);
 
   return (
     <div className="capture-shell min-h-screen px-4 py-5">
@@ -461,6 +463,23 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
                         {task.schedule ? <span className={`task-chip ${recurrenceStateClassName(task)}`}>{getRecurrenceStateLabel(task)}</span> : null}
                         {task.projectParent ? <span className="task-chip">Sub-task of {task.projectParent.title}</span> : null}
                       </div>
+                      <form action={updateTaskAssigneeAction} className="task-inline-assign">
+                        <input type="hidden" name="taskId" value={task.id} />
+                        <input type="hidden" name="returnTo" value={currentTasksReturnTo} />
+                        <span className="task-inline-assign-label">Assigned</span>
+                        <AutoSubmitSelect
+                          name="assigneeUserId"
+                          defaultValue={task.assignments[0]?.userId ?? ""}
+                          className="task-inline-assign-select"
+                        >
+                          <option value="">No person</option>
+                          {peopleOptions.map((person) => (
+                            <option key={person.id} value={person.id}>
+                              {person.displayName}
+                            </option>
+                          ))}
+                        </AutoSubmitSelect>
+                      </form>
                     </div>
                     <div className="recorded-row-meta">
                       <span className="recorded-row-room">{displayRoomName(task.room.name)}</span>
@@ -705,6 +724,18 @@ function formatShortDate(value: Date) {
     month: "short",
     day: "numeric",
   }).format(value);
+}
+
+function buildTasksReturnTo(selectedRoomId: string, selectedState: string) {
+  const search = new URLSearchParams();
+  if (selectedRoomId) {
+    search.set("room", selectedRoomId);
+  }
+  if (selectedState !== "all") {
+    search.set("state", selectedState);
+  }
+  const query = search.toString();
+  return query ? `/tasks?${query}` : "/tasks";
 }
 
 function getTaskState(task: {
