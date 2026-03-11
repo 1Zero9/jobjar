@@ -175,13 +175,19 @@ body {
 .landing-user-chip {
   display: inline-flex;
   align-items: center;
-  border: 1px solid var(--border);
+  gap: 0.35rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
   border-radius: 999px;
-  background: var(--card);
+  background: color-mix(in srgb, var(--accent-soft) 74%, var(--card));
   color: var(--text-secondary);
   font-size: 0.78rem;
   font-weight: 700;
   padding: 0.58rem 0.82rem;
+}
+
+.session-user {
+  color: var(--accent);
+  font-weight: 800;
 }
 
 .landing-stat-row {

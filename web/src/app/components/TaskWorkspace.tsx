@@ -223,7 +223,9 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
           </form>
         </section>
 
-        <footer className="capture-footer">Logged in as {currentUser?.displayName ?? "You"}</footer>
+        <footer className="capture-footer">
+          Logged in as <span className="session-user">{currentUser?.displayName ?? "You"}</span>
+        </footer>
       </main>
     </div>
   );
@@ -637,7 +639,9 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
           </div>
         </section>
 
-        <footer className="capture-footer">Logged in as {currentUser?.displayName ?? "You"}</footer>
+        <footer className="capture-footer">
+          Logged in as <span className="session-user">{currentUser?.displayName ?? "You"}</span>
+        </footer>
       </main>
     </div>
   );
