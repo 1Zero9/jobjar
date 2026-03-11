@@ -42,9 +42,6 @@ export default async function AdminPage() {
             <Link href="/" className="action-btn subtle text-center">
               Daily View
             </Link>
-            <Link href="/tv" className="action-btn subtle text-center">
-              TV Dashboard
-            </Link>
             <a href="#step-people" className="action-btn subtle text-center">
               Step 1: People
             </a>

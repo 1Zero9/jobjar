@@ -5,8 +5,10 @@ import { getOrCreateHouseholdForUser } from "@/lib/household";
 import { prisma } from "@/lib/prisma";
 import { getUserPasswordHash, setUserPasswordHash } from "@/lib/auth-store";
 import { hashPassword, verifyPassword } from "@/lib/password";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 
 export async function createRoomAction(formData: FormData) {
   const { householdId } = await requireAdminAction();
@@ -123,7 +125,7 @@ export async function deleteRoomAction(formData: FormData) {
 }
 
 export async function createTaskAction(formData: FormData) {
-  const { householdId, userId } = await requireAdminAction();
+  const { householdId, userId: actorUserId } = await requireAdminAction();
   const title = String(formData.get("title") ?? "").trim();
   const requestedRoomId = String(formData.get("roomId") ?? "").trim();
   const detailNotes = String(formData.get("detailNotes") ?? "").trim() || null;
@@ -136,7 +138,6 @@ export async function createTaskAction(formData: FormData) {
   const minimumMinutes = toNonNegativeInt(formData.get("minimumMinutes"), 0);
   const validationMode = formData.get("strictMode") === "on" ? "strict" : "basic";
   const dueAt = toDate(formData.get("dueAt"));
-  const description = buildValidationMeta(validationMode, minimumMinutes);
 
   const recurrenceType = parseRecurrenceType(formData.get("recurrenceType"));
   const recurrenceInterval = toPositiveInt(formData.get("recurrenceInterval"), 1);
@@ -161,7 +162,7 @@ export async function createTaskAction(formData: FormData) {
     data: {
       title,
       roomId: room.id,
-      createdByUserId: userId,
+      createdByUserId: actorUserId,
       detailNotes,
       locationDetails,
       jobKind,
@@ -169,7 +170,8 @@ export async function createTaskAction(formData: FormData) {
       projectParentId,
       estimatedMinutes,
       graceHours,
-      description,
+      validationMode,
+      minimumMinutes,
       schedule: {
         create: {
           recurrenceType,
@@ -214,6 +216,10 @@ export async function createTaskAction(formData: FormData) {
       });
     }
   }
+
+  await prisma.taskLog.create({
+    data: { taskId: task.id, action: "task_created", actorUserId, note: title },
+  });
 
   refreshViews(["/", "/log", "/tasks"]);
 }
@@ -512,7 +518,7 @@ export async function updateRecordedTaskAction(formData: FormData) {
 }
 
 export async function updateTaskAssigneeAction(formData: FormData) {
-  const { householdId } = await requireSessionMemberAction();
+  const { householdId, userId: actorUserId } = await requireSessionMemberAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
   const assigneeUserId = String(formData.get("assigneeUserId") ?? "").trim();
   const returnTo = getReturnPath(formData.get("returnTo"), "/tasks");
@@ -565,12 +571,16 @@ export async function updateTaskAssigneeAction(formData: FormData) {
     }
   }
 
+  await prisma.taskLog.create({
+    data: { taskId: task.id, action: "assignee_changed", actorUserId, note: assigneeUserId || null },
+  });
+
   refreshViews(["/", "/log", "/tasks"]);
   redirect(`${returnTo}${returnTo.includes("#") ? "" : `#task-${task.id}`}`);
 }
 
 export async function updateTaskAction(formData: FormData) {
-  const { householdId } = await requireAdminAction();
+  const { householdId, userId: actorUserId } = await requireAdminAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
   if (!taskId) {
     return;
@@ -609,20 +619,17 @@ export async function updateTaskAction(formData: FormData) {
   const estimatedMinutes = toPositiveInt(formData.get("estimatedMinutes"), existing.estimatedMinutes);
   const graceHours = toPositiveInt(formData.get("graceHours"), existing.graceHours);
 
-  const currentValidationMode = parseValidationMode(existing.description);
-  const currentMinimum = parseMinimumMinutes(existing.description);
   const validationMode = formData.has("strictMode")
     ? formData.get("strictMode") === "on"
       ? "strict"
       : "basic"
     : formData.has("strictModeMarker")
       ? "basic"
-      : currentValidationMode;
-  const minimumMinutes = toNonNegativeInt(formData.get("minimumMinutes"), currentMinimum);
+      : existing.validationMode;
+  const minimumMinutes = toNonNegativeInt(formData.get("minimumMinutes"), existing.minimumMinutes);
   const dueAtRaw = formData.get("dueAt");
   const dueAt = toDate(dueAtRaw);
   const dueWasSupplied = dueAtRaw !== null;
-  const description = buildValidationMeta(validationMode, minimumMinutes);
 
   let roomId = existing.roomId;
   if (requestedRoomId !== existing.roomId) {
@@ -658,8 +665,13 @@ export async function updateTaskAction(formData: FormData) {
       projectParentId,
       estimatedMinutes,
       graceHours,
-      description,
+      validationMode,
+      minimumMinutes,
     },
+  });
+
+  await prisma.taskLog.create({
+    data: { taskId, action: "task_updated", actorUserId },
   });
 
   await prisma.taskSchedule.upsert({
@@ -743,7 +755,7 @@ export async function updateTaskAction(formData: FormData) {
 }
 
 export async function deleteTaskAction(formData: FormData) {
-  const { householdId } = await requireSessionMemberAction();
+  const { householdId, userId: actorUserId } = await requireSessionMemberAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
   if (!taskId) {
     return;
@@ -754,7 +766,7 @@ export async function deleteTaskAction(formData: FormData) {
       id: taskId,
       room: { householdId },
     },
-    select: { id: true, roomId: true },
+    select: { id: true, roomId: true, title: true },
   });
   if (!task) {
     return;
@@ -764,6 +776,11 @@ export async function deleteTaskAction(formData: FormData) {
     where: { id: task.id },
     data: { active: false },
   });
+
+  await prisma.taskLog.create({
+    data: { taskId: task.id, action: "task_deleted", actorUserId, note: task.title },
+  });
+
   await compactOpenTaskPriorities(task.roomId);
   refreshViews(["/", "/log", "/tasks", "/settings", "/settings/people"]);
 }
@@ -881,7 +898,7 @@ export async function setPersonPasscodeAction(formData: FormData) {
 }
 
 export async function startTaskAction(formData: FormData) {
-  const { householdId } = await requireSessionMemberAction();
+  const { householdId, userId: actorUserId } = await requireSessionMemberAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
   if (!taskId) {
     return;
@@ -908,6 +925,7 @@ export async function startTaskAction(formData: FormData) {
     data: {
       taskId: task.id,
       action: "started",
+      actorUserId,
       atTime: new Date(),
     },
   });
@@ -931,7 +949,8 @@ export async function completeTaskAction(formData: FormData) {
     },
     select: {
       id: true,
-      description: true,
+      validationMode: true,
+      minimumMinutes: true,
       captureStage: true,
       occurrences: {
         orderBy: { dueAt: "desc" },
@@ -951,10 +970,8 @@ export async function completeTaskAction(formData: FormData) {
     return;
   }
 
-  const validationMode = parseValidationMode(task.description);
-  const minimumMinutes = parseMinimumMinutes(task.description);
   const lastStart = task.logs[0]?.atTime;
-  if (validationMode === "strict") {
+  if (task.validationMode === "strict") {
     if (note.length < 8) {
       return;
     }
@@ -964,7 +981,7 @@ export async function completeTaskAction(formData: FormData) {
     }
 
     const minutesWorked = (now.getTime() - lastStart.getTime()) / 60000;
-    if (minutesWorked < minimumMinutes) {
+    if (minutesWorked < task.minimumMinutes) {
       return;
     }
   }
@@ -1000,6 +1017,7 @@ export async function completeTaskAction(formData: FormData) {
     data: {
       taskId: task.id,
       action: "completed",
+      actorUserId: currentUserId,
       atTime: now,
       note: note || null,
       durationSeconds,
@@ -1010,7 +1028,7 @@ export async function completeTaskAction(formData: FormData) {
 }
 
 export async function reopenTaskAction(formData: FormData) {
-  const { householdId } = await requireSessionMemberAction();
+  const { householdId, userId: actorUserId } = await requireSessionMemberAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
   if (!taskId) {
     return;
@@ -1052,6 +1070,7 @@ export async function reopenTaskAction(formData: FormData) {
     data: {
       taskId: task.id,
       action: "reopened",
+      actorUserId,
       atTime: new Date(),
       note: "Marked not done",
     },
@@ -1070,7 +1089,7 @@ export async function bootstrapOwnerAction(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim() || "owner@jobjar.app";
   const passcode = String(formData.get("passcode") ?? "").trim();
 
-  if (passcode.length < 4) {
+  if (passcode.length < 8) {
     redirect("/login?error=setup");
   }
 
@@ -1089,6 +1108,12 @@ export async function bootstrapOwnerAction(formData: FormData) {
 }
 
 export async function loginAction(formData: FormData) {
+  const headersList = await headers();
+  const ip = headersList.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  if (!checkRateLimit(`login:${ip}`, 10, 15 * 60 * 1000)) {
+    redirect("/login?error=rate-limited");
+  }
+
   const userId = String(formData.get("userId") ?? "").trim();
   const passcode = String(formData.get("passcode") ?? "").trim();
   const nextPath = String(formData.get("next") ?? "/").trim() || "/";
@@ -1213,13 +1238,6 @@ function inferJobKindFromText(text: string): "upkeep" | "issue" | "project" | "c
   return "upkeep";
 }
 
-function buildValidationMeta(mode: "basic" | "strict", minimumMinutes: number) {
-  if (mode === "strict") {
-    return `validation=strict;min=${minimumMinutes}`;
-  }
-  return `validation=basic;min=${minimumMinutes}`;
-}
-
 async function resolveProjectParentId(projectParentId: string, householdId: string, currentTaskId?: string) {
   if (!projectParentId || projectParentId === currentTaskId) {
     return null;
@@ -1237,25 +1255,7 @@ async function resolveProjectParentId(projectParentId: string, householdId: stri
   return parent?.id ?? null;
 }
 
-function parseValidationMode(description: string | null) {
-  if (!description) {
-    return "basic";
-  }
-  return description.includes("validation=strict") ? "strict" : "basic";
-}
-
-function parseMinimumMinutes(description: string | null) {
-  if (!description) {
-    return 0;
-  }
-  const match = description.match(/min=(\d+)/);
-  if (!match) {
-    return 0;
-  }
-  return Number(match[1]) || 0;
-}
-
-function refreshViews(paths = ["/", "/log", "/tasks", "/admin", "/settings", "/settings/rooms", "/settings/people", "/tv", "/login"]) {
+function refreshViews(paths = ["/", "/log", "/tasks", "/admin", "/settings", "/settings/rooms", "/settings/people", "/login"]) {
   for (const path of new Set(paths)) {
     revalidatePath(path);
   }

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type LookupTask = {
   id: string;
@@ -18,15 +18,25 @@ type SimilarTaskFieldProps = {
 
 export function SimilarTaskField({ tasks, defaultTitle = "" }: SimilarTaskFieldProps) {
   const [title, setTitle] = useState(defaultTitle);
+  const [debouncedTitle, setDebouncedTitle] = useState(defaultTitle);
   const [parentTask, setParentTask] = useState<LookupTask | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => setDebouncedTitle(title), 200);
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [title]);
 
   const similarTasks =
-    title.trim().length < 3
+    debouncedTitle.trim().length < 3
       ? []
       : tasks
           .map((task) => ({
             task,
-            score: scoreTaskSimilarity(title, task),
+            score: scoreTaskSimilarity(debouncedTitle, task),
           }))
           .filter((entry) => entry.score >= 0.22)
           .sort((a, b) => b.score - a.score || a.task.title.localeCompare(b.task.title))

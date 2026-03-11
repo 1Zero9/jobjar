@@ -50,33 +50,35 @@ export async function getAdminData(options: { householdId: string }): Promise<Ad
         where: { active: true },
         orderBy: { sortOrder: "asc" },
         include: {
-            tasks: {
-              where: { active: true },
-              include: {
-                projectParent: {
-                  select: { id: true, title: true },
-                },
-                projectChildren: {
-                  where: { active: true },
-                  select: { id: true },
-                },
-                occurrences: {
-                  orderBy: { dueAt: "desc" },
-                  take: 5,
+          tasks: {
+            where: { active: true },
+            include: {
+              projectParent: { select: { id: true, title: true } },
+              projectChildren: { where: { active: true }, select: { id: true } },
+              occurrences: {
+                where: { status: { not: "done" } },
+                orderBy: { dueAt: "asc" },
+                take: 1,
+                select: { dueAt: true, status: true },
               },
-              schedule: true,
+              schedule: {
+                select: { recurrenceType: true, intervalCount: true, timeOfDay: true, nextDueAt: true },
+              },
               assignments: {
                 where: { assignedTo: null },
                 orderBy: { assignedFrom: "desc" },
                 take: 1,
+                select: { userId: true },
               },
             },
           },
         },
       },
       members: {
-        include: { user: true },
         orderBy: { joinedAt: "asc" },
+        include: {
+          user: { select: { id: true, displayName: true, email: true } },
+        },
       },
     },
   });
@@ -101,7 +103,7 @@ export async function getAdminData(options: { householdId: string }): Promise<Ad
 
   const tasks: AdminTask[] = household.rooms.flatMap((room) =>
     room.tasks.map((task) => {
-      const pendingOccurrence = task.occurrences.find((entry) => entry.status !== "done");
+      const pendingOccurrence = task.occurrences[0] ?? null;
       const schedule = task.schedule;
       const assignee = task.assignments[0];
       return {
@@ -118,8 +120,8 @@ export async function getAdminData(options: { householdId: string }): Promise<Ad
         estimatedMinutes: task.estimatedMinutes,
         graceHours: task.graceHours,
         dueAt: pendingOccurrence?.dueAt?.toISOString() ?? schedule?.nextDueAt?.toISOString() ?? null,
-        validationMode: parseValidationMode(task.description),
-        minimumMinutes: parseMinimumMinutes(task.description),
+        validationMode: task.validationMode as "basic" | "strict",
+        minimumMinutes: task.minimumMinutes,
         recurrenceType: schedule?.recurrenceType ?? "weekly",
         recurrenceInterval: schedule?.intervalCount ?? 1,
         recurrenceTime: schedule?.timeOfDay ?? "09:00",
@@ -131,20 +133,3 @@ export async function getAdminData(options: { householdId: string }): Promise<Ad
   return { rooms, people, tasks };
 }
 
-function parseValidationMode(description: string | null): "basic" | "strict" {
-  if (!description) {
-    return "basic";
-  }
-  return description.includes("validation=strict") ? "strict" : "basic";
-}
-
-function parseMinimumMinutes(description: string | null): number {
-  if (!description) {
-    return 0;
-  }
-  const match = description.match(/min=(\d+)/);
-  if (!match) {
-    return 0;
-  }
-  return Number(match[1]) || 0;
-}

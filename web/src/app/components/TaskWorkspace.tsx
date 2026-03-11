@@ -48,7 +48,7 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
         room: { householdId },
       },
       orderBy: { createdAt: "desc" },
-      take: 120,
+      take: 40,
       select: {
         id: true,
         title: true,

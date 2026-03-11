@@ -20,6 +20,7 @@ export default async function LoginPage({
   const nextPath = params.next && params.next.startsWith("/") ? params.next : "/";
   const showError = params.error === "invalid";
   const showSetupError = params.error === "setup";
+  const showRateLimitError = params.error === "rate-limited";
 
   let users: Array<{ id: string; displayName: string }> = [];
   let dbStatus: DbStatus = { state: "ok" };
@@ -69,9 +70,6 @@ export default async function LoginPage({
                   Missing env vars: <span className="login-mono">{dbError.missingEnvVars.join(", ")}</span>
                 </p>
               ) : null}
-              <p className="login-alert-message">
-                {dbError.message}
-              </p>
             </div>
           ) : null}
 
@@ -102,14 +100,14 @@ export default async function LoginPage({
                   name="passcode"
                   type="password"
                   required
-                  minLength={4}
+                  minLength={8}
                   className="login-input"
-                  placeholder="Minimum 4 characters"
+                  placeholder="Minimum 8 characters"
                 />
               </label>
               {showSetupError ? (
                 <p className="login-error-text">
-                  Passcode must be at least 4 characters.
+                  Passcode must be at least 8 characters.
                 </p>
               ) : null}
               <button type="submit" className="login-primary-btn">Create Admin</button>
@@ -138,7 +136,11 @@ export default async function LoginPage({
                   placeholder="Your personal passcode"
                 />
               </label>
-              {showError ? (
+              {showRateLimitError ? (
+                <p className="login-error-text">
+                  Too many attempts. Please wait a few minutes and try again.
+                </p>
+              ) : showError ? (
                 <p className="login-error-text">
                   Invalid login details.
                 </p>

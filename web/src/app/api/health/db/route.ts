@@ -13,12 +13,11 @@ export async function GET() {
       { status: 200 },
     );
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown database error";
+    console.error("Health check: database connection failed", error);
     return NextResponse.json(
       {
         status: "error",
         db: "disconnected",
-        message,
         checkedAt: new Date().toISOString(),
       },
       { status: 500 },
