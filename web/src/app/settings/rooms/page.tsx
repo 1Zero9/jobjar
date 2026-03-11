@@ -77,7 +77,7 @@ export default async function RoomsPage({
           <div className="room-setup-header">
             <div>
               <p className="settings-kicker">Rooms</p>
-              <h2 className="recorded-title">Spaces</h2>
+              <h2 className="recorded-title">Rooms</h2>
             </div>
             <span className="recorded-count">{visibleRooms.length}</span>
           </div>

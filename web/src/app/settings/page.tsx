@@ -64,16 +64,16 @@ export default async function SettingsPage() {
               <span>{peopleCount} household members and admins.</span>
             </Link>
 
-            <Link href="/log" className="landing-action-card muted">
-              <span className="landing-action-kicker">Log</span>
-              <strong>Back to logging</strong>
-              <span>Return to the simple capture flow.</span>
+            <Link href="/admin" className="landing-action-card">
+              <span className="landing-action-kicker">Tasks</span>
+              <strong>Shape tasks</strong>
+              <span>Type, stage, schedule, and assign tasks.</span>
             </Link>
 
-            <Link href="/tasks" className="landing-action-card muted">
-              <span className="landing-action-kicker">Tasks</span>
-              <strong>Back to tasks</strong>
-              <span>Review, edit, and filter logged work.</span>
+            <Link href="/" className="landing-action-card muted">
+              <span className="landing-action-kicker">Home</span>
+              <strong>Back to home</strong>
+              <span>Return to the main view.</span>
             </Link>
           </div>
         </section>

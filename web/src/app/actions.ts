@@ -309,7 +309,7 @@ export async function createQuickTaskAction(formData: FormData) {
   }
 
   refreshViews(["/", "/log", "/tasks"]);
-  redirect(`${returnTo}?added=${recordStatus === "done" ? "done" : "task"}#recorded`);
+  redirect(`${returnTo}?added=${recordStatus === "done" ? "done" : "task"}&taskId=${task.id}#recorded`);
 }
 
 export async function luckyDipAction(formData?: FormData) {
