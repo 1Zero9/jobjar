@@ -1,6 +1,5 @@
-import { createQuickTaskAction, deleteTaskAction, logoutAction, luckyDipAction, updateRecordedTaskAction, updateTaskAssigneeAction } from "@/app/actions";
+import { createQuickTaskAction, deleteTaskAction, logoutAction, luckyDipAction, updateRecordedTaskAction } from "@/app/actions";
 import { AutoSubmitForm } from "@/app/components/AutoSubmitForm";
-import { AutoSubmitSelect } from "@/app/components/AutoSubmitSelect";
 import { FormActionButton } from "@/app/components/FormActionButton";
 import { SimilarTaskField } from "@/app/components/SimilarTaskField";
 import { ToastNotice } from "@/app/components/ToastNotice";
@@ -13,6 +12,7 @@ type SearchParams = {
   added?: string;
   updated?: string;
   lucky?: string;
+  assignee?: string;
   room?: string;
   state?: string;
 };
@@ -334,17 +334,18 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
   const peopleOptions = people.map((member) => member.user);
   const groupedRoomOptions = groupRoomsByDesignation(roomOptions);
   const selectedRoomId = roomOptions.some((room) => room.id === params.room) ? (params.room ?? "") : "";
+  const selectedAssigneeId = peopleOptions.some((person) => person.id === params.assignee) ? (params.assignee ?? "") : "";
   const selectedState: "all" | "open" | "done" = params.state === "done" || params.state === "open" ? params.state : "all";
   const visibleTasks = recordedTasks.filter((task) => {
     const matchesRoom = selectedRoomId ? task.roomId === selectedRoomId : true;
+    const matchesAssignee = selectedAssigneeId ? task.assignments[0]?.userId === selectedAssigneeId : true;
     const taskState = getTaskState(task);
     const matchesState = selectedState === "all" ? true : taskState === selectedState;
-    return matchesRoom && matchesState;
+    return matchesRoom && matchesAssignee && matchesState;
   });
   const luckyTask = params.lucky && params.lucky !== "empty"
     ? visibleTasks.find((task) => task.id === params.lucky) ?? recordedTasks.find((task) => task.id === params.lucky)
     : null;
-  const currentTasksReturnTo = buildTasksReturnTo(selectedRoomId, selectedState);
 
   return (
     <div className="capture-shell min-h-screen px-4 py-5">
@@ -419,7 +420,18 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
                   <option value="done">Completed</option>
                 </select>
               </label>
-              {selectedRoomId || selectedState !== "all" ? (
+              <label className="recorded-filter-field">
+                <span>Assigned</span>
+                <select name="assignee" defaultValue={selectedAssigneeId} className="recorded-filter-select">
+                  <option value="">Anyone</option>
+                  {peopleOptions.map((person) => (
+                    <option key={person.id} value={person.id}>
+                      {person.displayName}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {selectedRoomId || selectedAssigneeId || selectedState !== "all" ? (
                 <Link href="/tasks#recorded" className="action-btn subtle quiet">
                   Clear
                 </Link>
@@ -453,6 +465,9 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
                       <p className="recorded-row-placeholder">
                         {task.logger?.displayName ? `Logged by ${task.logger.displayName}` : "Earlier task"}
                       </p>
+                      <p className="recorded-row-assignee">
+                        Assigned to {task.assignments[0]?.user?.displayName ?? "no one"}
+                      </p>
                       <div className="recorded-summary-line">
                         {getTaskState(task) !== "done" ? <span className="task-chip">Priority {task.priority}</span> : null}
                         <span className={`task-chip ${getTaskState(task) === "done" ? "task-chip-done" : ""}`}>
@@ -463,23 +478,6 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
                         {task.schedule ? <span className={`task-chip ${recurrenceStateClassName(task)}`}>{getRecurrenceStateLabel(task)}</span> : null}
                         {task.projectParent ? <span className="task-chip">Sub-task of {task.projectParent.title}</span> : null}
                       </div>
-                      <form action={updateTaskAssigneeAction} className="task-inline-assign">
-                        <input type="hidden" name="taskId" value={task.id} />
-                        <input type="hidden" name="returnTo" value={currentTasksReturnTo} />
-                        <span className="task-inline-assign-label">Assigned</span>
-                        <AutoSubmitSelect
-                          name="assigneeUserId"
-                          defaultValue={task.assignments[0]?.userId ?? ""}
-                          className="task-inline-assign-select"
-                        >
-                          <option value="">No person</option>
-                          {peopleOptions.map((person) => (
-                            <option key={person.id} value={person.id}>
-                              {person.displayName}
-                            </option>
-                          ))}
-                        </AutoSubmitSelect>
-                      </form>
                     </div>
                     <div className="recorded-row-meta">
                       <span className="recorded-row-room">{displayRoomName(task.room.name)}</span>
@@ -724,18 +722,6 @@ function formatShortDate(value: Date) {
     month: "short",
     day: "numeric",
   }).format(value);
-}
-
-function buildTasksReturnTo(selectedRoomId: string, selectedState: string) {
-  const search = new URLSearchParams();
-  if (selectedRoomId) {
-    search.set("room", selectedRoomId);
-  }
-  if (selectedState !== "all") {
-    search.set("state", selectedState);
-  }
-  const query = search.toString();
-  return query ? `/tasks?${query}` : "/tasks";
 }
 
 function getTaskState(task: {

@@ -747,38 +747,10 @@ body {
   font-size: 0.8rem;
 }
 
-.task-inline-assign {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: 0.55rem;
-  margin-top: 0.7rem;
-}
-
-.task-inline-assign-label {
+.recorded-row-assignee {
+  margin-top: 0.22rem;
   color: var(--muted);
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.task-inline-assign-select {
-  width: 100%;
-  min-width: 0;
-  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--card) 92%, transparent);
-  color: var(--text-primary);
-  font-size: 0.84rem;
-  font-weight: 600;
-  padding: 0.58rem 0.8rem;
-}
-
-.task-inline-assign-select:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent);
+  font-size: 0.8rem;
 }
 
 .recorded-row-room {
