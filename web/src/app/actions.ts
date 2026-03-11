@@ -310,6 +310,7 @@ export async function luckyDipAction(formData?: FormData) {
     where: {
       active: true,
       captureStage: { not: "done" },
+      schedule: null,
       room: { householdId },
     },
     orderBy: { createdAt: "desc" },
