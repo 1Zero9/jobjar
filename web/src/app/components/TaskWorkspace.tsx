@@ -11,14 +11,18 @@ type SearchParams = {
   added?: string;
   updated?: string;
   lucky?: string;
+  lookup?: string;
+  parentTaskId?: string;
   room?: string;
   state?: string;
 };
 
 export async function LogWorkspace({ params }: { params: SearchParams }) {
   const { householdId, userId, role } = await requireSessionContext("/log");
+  const lookupQuery = String(params.lookup ?? "").trim();
+  const selectedParentTaskId = String(params.parentTaskId ?? "").trim();
 
-  const [currentUser, rooms, people] = await Promise.all([
+  const [currentUser, rooms, people, lookupTasks, selectedParentTask] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       select: { id: true, displayName: true },
@@ -40,11 +44,75 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
         },
       },
     }),
+    lookupQuery
+      ? prisma.task.findMany({
+          where: {
+            active: true,
+            room: { householdId },
+          },
+          orderBy: { createdAt: "desc" },
+          take: 120,
+          select: {
+            id: true,
+            title: true,
+            detailNotes: true,
+            captureStage: true,
+            room: {
+              select: {
+                name: true,
+              },
+            },
+            logger: {
+              select: {
+                displayName: true,
+              },
+            },
+            projectParent: {
+              select: {
+                id: true,
+                title: true,
+              },
+            },
+            schedule: {
+              select: {
+                recurrenceType: true,
+                intervalCount: true,
+                nextDueAt: true,
+              },
+            },
+            occurrences: {
+              orderBy: { createdAt: "desc" },
+              take: 3,
+              include: {
+                completer: {
+                  select: {
+                    displayName: true,
+                  },
+                },
+              },
+            },
+          },
+        })
+      : Promise.resolve([]),
+    selectedParentTaskId
+      ? prisma.task.findFirst({
+          where: {
+            id: selectedParentTaskId,
+            active: true,
+            room: { householdId },
+          },
+          select: {
+            id: true,
+            title: true,
+          },
+        })
+      : Promise.resolve(null),
   ]);
 
   const roomOptions = uniqueRoomsByName(rooms).filter((room) => room.name.toLowerCase() !== "unsorted");
   const peopleOptions = people.map((member) => member.user);
   const groupedRoomOptions = groupRoomsByDesignation(roomOptions);
+  const similarTasks = lookupQuery ? rankSimilarTasks(lookupQuery, lookupTasks).slice(0, 6) : [];
 
   return (
     <div className="capture-shell min-h-screen px-4 py-5">
@@ -82,8 +150,92 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
         {params.added === "done" ? <ToastNotice message="Completed job recorded." tone="success" /> : null}
 
         <section className="capture-panel-simple">
-          <form action={createQuickTaskAction} className="capture-form-simple">
+          <div className="room-setup-header">
+            <div>
+              <p className="capture-kicker">Lookup</p>
+              <h2 className="recorded-title">Find similar tasks</h2>
+            </div>
+            {lookupQuery ? <span className="recorded-count">{similarTasks.length}</span> : null}
+          </div>
+
+          <form method="get" action="/log" className="capture-form-simple">
+            {selectedParentTask ? <input type="hidden" name="parentTaskId" value={selectedParentTask.id} /> : null}
+            <label className="capture-step">
+              <span className="capture-step-label">Search existing tasks</span>
+              <input
+                name="lookup"
+                type="text"
+                defaultValue={lookupQuery}
+                placeholder="windows, grass, oven clean..."
+                className="capture-main-input"
+              />
+            </label>
+            <div className="recorded-row-actions between">
+              <FormActionButton className="action-btn bright quiet" pendingLabel="Searching">
+                Find matches
+              </FormActionButton>
+              {lookupQuery || selectedParentTask ? (
+                <Link href="/log" className="action-btn subtle quiet">
+                  Clear
+                </Link>
+              ) : null}
+            </div>
+          </form>
+
+          {selectedParentTask ? (
+            <div className="lookup-parent-banner">
+              <span>Creating sub-task under</span>
+              <strong>{selectedParentTask.title}</strong>
+            </div>
+          ) : null}
+
+          {lookupQuery ? (
+            <div className="recorded-list">
+              {similarTasks.length > 0 ? (
+                similarTasks.map((task, index) => (
+                  <article key={task.id} className={`recorded-row recorded-row-${rowTone(index)}`}>
+                    <div className="recorded-row-summary">
+                      <div className="recorded-row-main">
+                        <p className="recorded-row-title">{task.title}</p>
+                        <p className="recorded-row-placeholder">
+                          {task.logger?.displayName ? `Logged by ${task.logger.displayName}` : "Earlier task"}
+                        </p>
+                        <div className="recorded-summary-line">
+                          <span className={`task-chip ${getTaskState(task) === "done" ? "task-chip-done" : ""}`}>
+                            {getTaskState(task) === "done" ? "Completed" : "Open"}
+                          </span>
+                          {task.schedule ? <span className="task-chip">{formatRecurrenceChip(task.schedule)}</span> : null}
+                          {task.projectParent ? <span className="task-chip">Sub-task</span> : null}
+                        </div>
+                      </div>
+                      <div className="recorded-row-meta">
+                        <span className="recorded-row-room">{displayRoomName(task.room.name)}</span>
+                        <div className="recorded-row-summary-actions">
+                          <Link href={`/tasks#task-${task.id}`} className="recorded-row-edit">
+                            Open
+                          </Link>
+                          <Link
+                            href={buildParentTaskLookupHref(lookupQuery, task.id)}
+                            className="recorded-row-edit recorded-row-edit-bright"
+                          >
+                            Sub-task
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                ))
+              ) : (
+                <p className="recorded-empty">No close matches found. You can carry on and create a new task.</p>
+              )}
+            </div>
+          ) : null}
+        </section>
+
+        <section className="capture-panel-simple">
+          <form action={createQuickTaskAction} className="capture-form-simple" id="capture-form">
             <input type="hidden" name="returnTo" value="/log" />
+            {selectedParentTask ? <input type="hidden" name="projectParentId" value={selectedParentTask.id} /> : null}
 
             <label className="capture-step">
               <span className="capture-step-label">Task</span>
@@ -91,6 +243,7 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
                 name="title"
                 type="text"
                 required
+                defaultValue={lookupQuery}
                 placeholder="Light bulb out"
                 className="capture-main-input"
                 autoFocus
@@ -270,6 +423,12 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
         logger: {
           select: { displayName: true },
         },
+        projectParent: {
+          select: {
+            id: true,
+            title: true,
+          },
+        },
         assignments: {
           where: { assignedTo: null },
           orderBy: { assignedFrom: "desc" },
@@ -436,6 +595,7 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
                         {task.schedule ? <span className="task-chip">{formatRecurrenceChip(task.schedule)}</span> : null}
                         {task.schedule?.nextDueAt ? <span className="task-chip">Due {formatShortDate(task.schedule.nextDueAt)}</span> : null}
                         {task.schedule ? <span className={`task-chip ${recurrenceStateClassName(task)}`}>{getRecurrenceStateLabel(task)}</span> : null}
+                        {task.projectParent ? <span className="task-chip">Sub-task of {task.projectParent.title}</span> : null}
                       </div>
                     </div>
                     <div className="recorded-row-meta">
@@ -712,6 +872,77 @@ function formatRecurrenceChip(schedule: { recurrenceType: string; intervalCount:
     return `Every ${interval}month${schedule.intervalCount > 1 ? "s" : ""}`;
   }
   return `Every ${interval}week${schedule.intervalCount > 1 ? "s" : ""}`;
+}
+
+function buildParentTaskLookupHref(lookupQuery: string, parentTaskId: string) {
+  const search = new URLSearchParams();
+  if (lookupQuery) {
+    search.set("lookup", lookupQuery);
+  }
+  search.set("parentTaskId", parentTaskId);
+  return `/log?${search.toString()}#capture-form`;
+}
+
+function rankSimilarTasks<
+  T extends {
+    title: string;
+    detailNotes?: string | null;
+  },
+>(query: string, tasks: T[]) {
+  return tasks
+    .map((task) => ({
+      task,
+      score: scoreTaskSimilarity(query, task),
+    }))
+    .filter((entry) => entry.score >= 0.22)
+    .sort((a, b) => b.score - a.score || a.task.title.localeCompare(b.task.title))
+    .map((entry) => entry.task);
+}
+
+function scoreTaskSimilarity(
+  query: string,
+  task: {
+    title: string;
+    detailNotes?: string | null;
+  },
+) {
+  const normalizedQuery = normalizeLookupText(query);
+  const normalizedTitle = normalizeLookupText(task.title);
+  const normalizedNotes = normalizeLookupText(task.detailNotes ?? "");
+
+  if (!normalizedQuery || !normalizedTitle) {
+    return 0;
+  }
+
+  if (normalizedQuery === normalizedTitle) {
+    return 1;
+  }
+
+  const queryTokens = new Set(tokenizeLookupText(normalizedQuery));
+  const titleTokens = new Set(tokenizeLookupText(normalizedTitle));
+  const sharedTokens = [...queryTokens].filter((token) => titleTokens.has(token)).length;
+  const tokenScore = queryTokens.size > 0 ? sharedTokens / queryTokens.size : 0;
+
+  let score = tokenScore * 0.55;
+  if (normalizedTitle.includes(normalizedQuery) || normalizedQuery.includes(normalizedTitle)) {
+    score += 0.3;
+  }
+  if ([...queryTokens].some((token) => normalizedTitle.startsWith(token))) {
+    score += 0.08;
+  }
+  if (normalizedNotes.includes(normalizedQuery)) {
+    score += 0.08;
+  }
+
+  return Math.min(score, 0.98);
+}
+
+function normalizeLookupText(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function tokenizeLookupText(value: string) {
+  return value.split(" ").filter((token) => token.length > 1);
 }
 
 function getRecurrenceStateLabel(task: {

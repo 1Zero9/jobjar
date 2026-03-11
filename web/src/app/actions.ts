@@ -221,6 +221,7 @@ export async function createTaskAction(formData: FormData) {
 export async function createQuickTaskAction(formData: FormData) {
   const { householdId, userId } = await requireSessionMemberAction();
   const title = String(formData.get("title") ?? "").trim();
+  const projectParentIdInput = String(formData.get("projectParentId") ?? "").trim();
   const requestedRoomId = String(formData.get("roomId") ?? "").trim();
   const requestedPriority = toPositiveIntOrNull(formData.get("priority"));
   const detailNotes = String(formData.get("detailNotes") ?? "").trim() || null;
@@ -251,11 +252,14 @@ export async function createQuickTaskAction(formData: FormData) {
     }
   }
 
+  const projectParentId = await resolveProjectParentId(projectParentIdInput, householdId);
+
   const task = await prisma.task.create({
     data: {
       title,
       roomId,
       createdByUserId: userId,
+      projectParentId,
       jobKind: "upkeep",
       captureStage: recordStatus === "done" && !recurrenceType ? "done" : "captured",
       detailNotes,

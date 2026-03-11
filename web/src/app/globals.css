@@ -706,6 +706,12 @@ body {
   text-transform: uppercase;
 }
 
+.recorded-row-edit-bright {
+  border-color: color-mix(in srgb, var(--accent) 42%, transparent);
+  background: color-mix(in srgb, var(--accent-soft) 78%, var(--card));
+  color: var(--accent);
+}
+
 .recorded-row-chevron {
   display: inline-flex;
   align-items: center;
@@ -772,6 +778,30 @@ body {
   font-size: 0.88rem;
   font-weight: 600;
   text-transform: capitalize;
+}
+
+.lookup-parent-banner {
+  display: grid;
+  gap: 0.18rem;
+  margin-top: 1rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 34%, transparent);
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--accent-soft) 72%, var(--card));
+  padding: 0.8rem 0.9rem;
+}
+
+.lookup-parent-banner span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.lookup-parent-banner strong {
+  color: var(--accent);
+  font-size: 0.98rem;
+  font-weight: 800;
 }
 
 .recorded-edit-form {
