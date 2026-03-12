@@ -12,17 +12,23 @@ function startOfThisMonth() {
   return new Date(now.getFullYear(), now.getMonth(), 1);
 }
 
+export type StatsFilters = {
+  locationId?: string;
+  userId?: string;
+  period?: "week" | "month" | "all";
+};
+
 export type StatsPerson = {
   name: string;
+  period: number;
   week: number;
-  month: number;
 };
 
 export type StatsRoom = {
   name: string;
   locationName: string | null;
   openCount: number;
-  doneThisMonth: number;
+  doneThisPeriod: number;
 };
 
 export type StatsStreak = {
@@ -50,11 +56,29 @@ export type StatsData = {
   recentCompletions: RecentCompletion[];
 };
 
-export async function getStatsData(householdId: string): Promise<StatsData> {
+export async function getStatsData(householdId: string, filters: StatsFilters = {}): Promise<StatsData> {
   const weekStart = startOfThisWeek();
   const monthStart = startOfThisMonth();
   const now = new Date();
   const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+
+  const { locationId, userId, period = "month" } = filters;
+
+  const periodStart = period === "week" ? weekStart : period === "month" ? monthStart : undefined;
+
+  const roomWhere = {
+    householdId,
+    ...(locationId ? { locationId } : {}),
+  };
+
+  const taskRoomWhere = {
+    room: {
+      householdId,
+      ...(locationId ? { locationId } : {}),
+    },
+  };
+
+  const completedByFilter = userId ? { completedBy: userId } : {};
 
   const [
     weekCompletions,
@@ -65,26 +89,26 @@ export async function getStatsData(householdId: string): Promise<StatsData> {
     roomStats,
     recurringTasks,
     recentDone,
-    monthOccurrences,
+    periodOccurrences,
   ] = await Promise.all([
     prisma.taskOccurrence.count({
-      where: { status: "done", completedAt: { gte: weekStart }, task: { room: { householdId } } },
+      where: { status: "done", completedAt: { gte: weekStart }, ...completedByFilter, task: taskRoomWhere },
     }),
     prisma.taskOccurrence.count({
-      where: { status: "done", completedAt: { gte: monthStart }, task: { room: { householdId } } },
+      where: { status: "done", completedAt: { gte: monthStart }, ...completedByFilter, task: taskRoomWhere },
     }),
     prisma.taskOccurrence.count({
-      where: { status: "done", task: { room: { householdId } } },
+      where: { status: "done", ...completedByFilter, task: taskRoomWhere },
     }),
     prisma.task.count({
-      where: { active: true, captureStage: { not: "done" }, room: { householdId } },
+      where: { active: true, captureStage: { not: "done" }, ...taskRoomWhere },
     }),
     prisma.householdMember.findMany({
       where: { householdId },
       include: { user: { select: { id: true, displayName: true } } },
     }),
     prisma.room.findMany({
-      where: { householdId, active: true, name: { not: "Unsorted" } },
+      where: { ...roomWhere, active: true, name: { not: "Unsorted" } },
       orderBy: { sortOrder: "asc" },
       include: {
         location: { select: { name: true } },
@@ -92,7 +116,11 @@ export async function getStatsData(householdId: string): Promise<StatsData> {
           where: { active: true },
           include: {
             occurrences: {
-              where: { status: "done", completedAt: { gte: monthStart } },
+              where: {
+                status: "done",
+                ...(periodStart ? { completedAt: { gte: periodStart } } : {}),
+                ...completedByFilter,
+              },
               select: { id: true },
             },
           },
@@ -100,7 +128,7 @@ export async function getStatsData(householdId: string): Promise<StatsData> {
       },
     }),
     prisma.task.findMany({
-      where: { active: true, captureStage: { not: "done" }, room: { householdId }, schedule: { isNot: null } },
+      where: { active: true, captureStage: { not: "done" }, ...taskRoomWhere, schedule: { isNot: null } },
       include: {
         room: { select: { name: true } },
         schedule: { select: { nextDueAt: true } },
@@ -112,7 +140,12 @@ export async function getStatsData(householdId: string): Promise<StatsData> {
       },
     }),
     prisma.taskOccurrence.findMany({
-      where: { status: "done", completedAt: { gte: monthStart }, task: { room: { householdId } } },
+      where: {
+        status: "done",
+        ...(periodStart ? { completedAt: { gte: periodStart } } : {}),
+        ...completedByFilter,
+        task: taskRoomWhere,
+      },
       orderBy: { completedAt: "desc" },
       take: 10,
       include: {
@@ -121,31 +154,39 @@ export async function getStatsData(householdId: string): Promise<StatsData> {
       },
     }),
     prisma.taskOccurrence.findMany({
-      where: { status: "done", completedAt: { gte: monthStart }, task: { room: { householdId } } },
+      where: {
+        status: "done",
+        ...(periodStart ? { completedAt: { gte: periodStart } } : {}),
+        ...completedByFilter,
+        task: taskRoomWhere,
+      },
       select: { completedBy: true, completedAt: true },
     }),
   ]);
 
-  const byPerson: StatsPerson[] = members
+  const byPerson: StatsPerson[] = (userId
+    ? members.filter((m) => m.user.id === userId)
+    : members
+  )
     .map((member) => {
-      const mine = monthOccurrences.filter((o) => o.completedBy === member.user.id);
+      const mine = periodOccurrences.filter((o) => o.completedBy === member.user.id);
       return {
         name: member.user.displayName,
+        period: mine.length,
         week: mine.filter((o) => o.completedAt && o.completedAt >= weekStart).length,
-        month: mine.length,
       };
     })
-    .filter((p) => p.month > 0)
-    .sort((a, b) => b.month - a.month);
+    .filter((p) => p.period > 0)
+    .sort((a, b) => b.period - a.period);
 
   const byRoom: StatsRoom[] = roomStats
     .map((room) => ({
       name: room.name,
       locationName: room.location?.name ?? null,
       openCount: room.tasks.filter((t) => t.captureStage !== "done").length,
-      doneThisMonth: room.tasks.reduce((sum, t) => sum + t.occurrences.length, 0),
+      doneThisPeriod: room.tasks.reduce((sum, t) => sum + t.occurrences.length, 0),
     }))
-    .filter((r) => r.openCount > 0 || r.doneThisMonth > 0)
+    .filter((r) => r.openCount > 0 || r.doneThisPeriod > 0)
     .sort((a, b) => b.openCount - a.openCount);
 
   let onTrack = 0, dueToday = 0, overdue = 0;
