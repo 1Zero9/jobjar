@@ -1,51 +1,55 @@
 @import "tailwindcss";
 
 :root {
-  /* Neutrals (warm stone) */
-  --neutral-50: #faf9f7;
-  --neutral-100: #f5f2ee;
-  --neutral-200: #e8e3dc;
-  --neutral-300: #d4cdc5;
-  --neutral-400: #a89f96;
-  --neutral-500: #78716b;
-  --neutral-600: #57524d;
-  --neutral-700: #44403b;
-  --neutral-800: #2b2723;
-  --neutral-900: #1c1917;
+  /* Neutrals (cool slate) */
+  --neutral-50: #f8fafc;
+  --neutral-100: #f1f5f9;
+  --neutral-200: #e2e8f0;
+  --neutral-300: #cbd5e1;
+  --neutral-400: #94a3b8;
+  --neutral-500: #64748b;
+  --neutral-600: #475569;
+  --neutral-700: #334155;
+  --neutral-800: #1e293b;
+  --neutral-900: #0f172a;
 
   /* Core */
-  --background: #f5f2ee;
-  --foreground: #1c1917;
+  --background: #f7f9ff;
+  --foreground: #1f2937;
   --card: #ffffff;
-  --surface: #faf9f7;
-  --muted: #78716b;
-  --border: #e8e3dc;
-  --text-primary: #1c1917;
-  --text-secondary: #44403b;
-  --text-tertiary: #78716b;
+  --surface: #f8fbff;
+  --muted: #5b6475;
+  --border: #d9e2f2;
+  --text-primary: #1f2937;
+  --text-secondary: #5b6475;
+  --text-tertiary: #7b8496;
 
-  /* Accent (burnt orange – warm and bold) */
-  --accent: #c2410c;
-  --accent-hover: #9a3412;
-  --accent-soft: #fff1eb;
-  --accent-muted: #fed7aa;
+  /* Accent (electric blue – primary brand) */
+  --accent: #2563ff;
+  --accent-hover: #1d4ed8;
+  --accent-soft: #eef4ff;
+  --accent-muted: #bfdbfe;
+
+  /* Secondary (coral warm accent) */
+  --secondary: #ff5a7a;
+  --secondary-soft: #fff1f4;
 
   /* Semantic */
-  --green: #157347;
-  --amber: #92400e;
-  --red: #b42318;
-  --success: #157347;
-  --success-bg: #ecfdf5;
-  --warning: #92400e;
-  --warning-bg: #fffbeb;
-  --error: #b42318;
-  --error-bg: #fef2f2;
+  --green: #047857;
+  --amber: #b45309;
+  --red: #b91c1c;
+  --success: #047857;
+  --success-bg: #d1fae5;
+  --warning: #b45309;
+  --warning-bg: #fef3c7;
+  --error: #b91c1c;
+  --error-bg: #fee2e2;
 
   /* Shadow & border helpers */
-  --shadow-sm: 0 1px 2px rgba(28, 25, 23, 0.05);
-  --shadow-md: 0 12px 24px rgba(28, 25, 23, 0.05);
-  --shadow-lg: 0 16px 28px rgba(28, 25, 23, 0.09);
-  --border-subtle: rgba(232, 227, 220, 0.9);
+  --shadow-sm: 0 4px 12px rgba(31, 41, 55, 0.06);
+  --shadow-md: 0 10px 30px rgba(31, 41, 55, 0.08);
+  --shadow-lg: 0 16px 28px rgba(31, 41, 55, 0.09);
+  --border-subtle: rgba(217, 226, 242, 0.9);
 }
 
 @theme inline {
@@ -64,7 +68,7 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-error: var(--error);
-  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "SFMono-Regular", Menlo, monospace;
 }
 
@@ -94,7 +98,7 @@ select.recorded-filter-select,
 select.admin-input {
   appearance: none;
   -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2378716b' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235b6475' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 0.82rem center;
   padding-right: 2.25rem;
@@ -102,14 +106,16 @@ select.admin-input {
 
 .capture-shell {
   background:
-    radial-gradient(circle at top, rgba(255, 255, 255, 0.9), transparent 30%),
-    linear-gradient(180deg, var(--background) 0%, var(--neutral-200) 100%);
+    radial-gradient(circle at top left, rgba(37, 99, 255, 0.08), transparent 30%),
+    radial-gradient(circle at bottom right, rgba(255, 90, 122, 0.06), transparent 28%),
+    var(--background);
 }
 
 .settings-shell {
   background:
-    radial-gradient(circle at top left, color-mix(in srgb, var(--accent-soft) 85%, transparent), transparent 30%),
-    linear-gradient(180deg, var(--neutral-100) 0%, var(--neutral-200) 100%);
+    radial-gradient(circle at top left, rgba(37, 99, 255, 0.07), transparent 32%),
+    radial-gradient(circle at bottom right, rgba(139, 92, 246, 0.05), transparent 30%),
+    var(--background);
 }
 
 .capture-topbar {
@@ -189,19 +195,18 @@ select.admin-input {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+  border: 1px solid var(--accent-muted);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--accent-soft) 74%, var(--card));
-  color: var(--text-secondary);
+  background: var(--accent-soft);
+  color: var(--accent-hover);
   font-size: 0.78rem;
   font-weight: 700;
   padding: 0.58rem 0.82rem;
 }
 
 .session-user {
-  color: #ec4899;
+  color: var(--accent);
   font-weight: 800;
-  text-shadow: 0 0 10px rgba(236, 72, 153, 0.18);
 }
 
 .landing-stat-row {
@@ -238,45 +243,35 @@ select.admin-input {
 }
 
 .landing-action-card {
+  --card-accent: var(--accent);
   position: relative;
   display: grid;
   gap: 0.35rem;
   width: 100%;
   min-height: 7.75rem;
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--accent-hover) 55%, var(--card));
-  border-radius: 1.35rem;
-  background:
-    linear-gradient(160deg, color-mix(in srgb, var(--card) 54%, transparent) 0%, color-mix(in srgb, var(--accent-soft) 28%, transparent) 100%),
-    color-mix(in srgb, var(--card) 32%, transparent);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--card-accent);
+  border-radius: 1.25rem;
+  background: var(--card);
   color: var(--text-primary);
   padding: 1rem;
   text-align: left;
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--card) 72%, transparent),
-    0 0 0 1px color-mix(in srgb, var(--accent) 24%, transparent),
-    var(--shadow-md);
-  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
-}
-
-.landing-action-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, color-mix(in srgb, var(--card) 55%, transparent) 0%, transparent 45%, color-mix(in srgb, var(--accent) 18%, transparent) 100%);
-  pointer-events: none;
+  box-shadow: var(--shadow-sm);
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
 }
 
 .landing-action-card:hover {
-  transform: translateY(-1px);
-  border-color: var(--accent-hover);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--card) 76%, transparent),
-    0 0 0 1px color-mix(in srgb, var(--accent) 34%, transparent),
-    0 18px 34px color-mix(in srgb, var(--foreground) 8%, transparent);
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--card-accent) 40%, var(--border));
+  border-top-color: var(--card-accent);
+  box-shadow: var(--shadow-md);
 }
+
+.landing-action-card.log   { --card-accent: #2563ff; }
+.landing-action-card.view  { --card-accent: #8b5cf6; }
+.landing-action-card.lucky { --card-accent: #ff5a7a; }
+.landing-action-card.setup { --card-accent: #94a3b8; }
 
 .landing-action-button {
   cursor: pointer;
@@ -295,7 +290,7 @@ select.admin-input {
 }
 
 .landing-action-kicker {
-  color: var(--accent);
+  color: var(--card-accent);
   font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.14em;
@@ -303,39 +298,21 @@ select.admin-input {
 }
 
 .landing-action-card.muted {
-  background:
-    linear-gradient(160deg, color-mix(in srgb, var(--card) 50%, transparent) 0%, color-mix(in srgb, var(--neutral-100) 40%, transparent) 100%),
-    color-mix(in srgb, var(--card) 28%, transparent);
-}
-
-.landing-action-card.muted .landing-action-kicker {
-  color: var(--muted);
+  --card-accent: var(--muted);
+  background: var(--surface);
 }
 
 .landing-action-card.disabled {
-  border-color: color-mix(in srgb, var(--neutral-300) 78%, var(--card));
-  background:
-    linear-gradient(160deg, color-mix(in srgb, var(--neutral-100) 72%, var(--card)) 0%, color-mix(in srgb, var(--neutral-200) 42%, var(--card)) 100%),
-    color-mix(in srgb, var(--card) 90%, transparent);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--card) 82%, transparent),
-    0 0 0 1px color-mix(in srgb, var(--neutral-300) 30%, transparent),
-    0 10px 20px color-mix(in srgb, var(--foreground) 4%, transparent);
+  --card-accent: var(--neutral-400);
+  background: var(--surface);
+  border-color: var(--neutral-200);
   cursor: not-allowed;
-  opacity: 0.82;
-}
-
-.landing-action-card.disabled::before {
-  background: linear-gradient(135deg, color-mix(in srgb, var(--card) 48%, transparent) 0%, transparent 65%, color-mix(in srgb, var(--neutral-300) 12%, transparent) 100%);
+  opacity: 0.72;
 }
 
 .landing-action-card.disabled:hover {
   transform: none;
-  border-color: color-mix(in srgb, var(--neutral-300) 78%, var(--card));
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--card) 82%, transparent),
-    0 0 0 1px color-mix(in srgb, var(--neutral-300) 30%, transparent),
-    0 10px 20px color-mix(in srgb, var(--foreground) 4%, transparent);
+  box-shadow: var(--shadow-sm);
 }
 
 .landing-action-card.disabled strong,
@@ -349,8 +326,8 @@ select.admin-input {
   gap: 1rem;
   border: 1px solid var(--border);
   border-radius: 1.5rem;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--card) 96%, transparent) 0%, color-mix(in srgb, var(--accent-soft) 94%, var(--card)) 100%);
-  box-shadow: var(--shadow-lg);
+  background: var(--card);
+  box-shadow: var(--shadow-md);
   padding: 1rem;
 }
 
@@ -362,8 +339,8 @@ select.admin-input {
 
 .capture-topbar-actions .action-btn.subtle {
   border-color: var(--border);
-  background: color-mix(in srgb, var(--accent-soft) 55%, var(--card));
-  color: var(--accent-hover);
+  background: var(--card);
+  color: var(--text-secondary);
 }
 
 .capture-kicker {
@@ -457,9 +434,9 @@ select.admin-input {
 .capture-main-input,
 .capture-room-select {
   width: 100%;
-  border: 1px solid var(--neutral-300);
+  border: 1px solid var(--border);
   border-radius: 1rem;
-  background: var(--surface);
+  background: var(--card);
   color: var(--text-primary);
   padding: 0.95rem 1rem;
 }
@@ -481,42 +458,27 @@ select.admin-input {
 }
 
 .capture-submit-btn {
-  position: relative;
   width: 100%;
-  overflow: hidden;
   border-radius: 999px;
   border: 1px solid var(--accent-hover);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-muted) 84%, var(--card)) 0%, var(--accent) 58%, var(--accent-hover) 100%);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--card) 35%, transparent),
-    0 12px 24px color-mix(in srgb, var(--accent) 24%, transparent);
+  background: var(--accent);
+  box-shadow: 0 8px 18px rgba(37, 99, 255, 0.22);
   color: #fff;
   font-size: 0.98rem;
   font-weight: 700;
   padding: 0.95rem 1.1rem;
-  transition: transform 120ms ease, box-shadow 120ms ease, opacity 120ms ease, filter 120ms ease;
-}
-
-.capture-submit-btn::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--card) 26%, transparent) 0%, transparent 38%);
-  pointer-events: none;
+  transition: transform 120ms ease, box-shadow 120ms ease, background-color 120ms ease, opacity 120ms ease;
 }
 
 .capture-submit-btn:hover {
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--card) 40%, transparent),
-    0 16px 28px color-mix(in srgb, var(--accent) 28%, transparent);
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(37, 99, 255, 0.28);
 }
 
 .capture-submit-btn:active {
-  transform: translateY(2px) scale(0.985);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--card) 20%, transparent),
-    0 6px 12px color-mix(in srgb, var(--accent) 18%, transparent);
+  transform: translateY(1px) scale(0.985);
+  box-shadow: 0 4px 10px rgba(37, 99, 255, 0.18);
 }
 
 .capture-confirmation {
@@ -640,9 +602,9 @@ select.admin-input {
   display: grid;
   gap: 0.7rem;
   margin-top: 1rem;
-  border: 1px solid var(--border);
+  border: 1px solid #e0eaf8;
   border-radius: 1.1rem;
-  background: color-mix(in srgb, var(--card) 82%, transparent);
+  background: #f8fbff;
   padding: 0.8rem;
 }
 
@@ -662,9 +624,9 @@ select.admin-input {
 
 .recorded-filter-select {
   width: 100%;
-  border: 1px solid var(--neutral-300);
+  border: 1px solid var(--border);
   border-radius: 0.85rem;
-  background: var(--surface);
+  background: var(--card);
   color: var(--text-primary);
   font-size: 0.82rem;
   padding: 0.62rem 0.72rem;
@@ -690,16 +652,17 @@ select.admin-input {
 }
 
 .recorded-row {
-  border: 1px solid var(--neutral-200);
-  border-radius: 1.1rem;
+  border: 1px solid #e6ecf5;
+  border-radius: 1rem;
   background: var(--card);
   overflow: hidden;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
 }
 
 .recorded-row[open] {
-  box-shadow:
-    inset 3px 0 0 var(--accent),
-    0 12px 22px color-mix(in srgb, var(--foreground) 7%, transparent);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  border-color: var(--accent-muted);
+  box-shadow: 0 12px 28px rgba(37, 99, 255, 0.10);
 }
 
 .recorded-row-blue,
@@ -835,10 +798,10 @@ select.admin-input {
 .recorded-row-room {
   display: inline-flex;
   align-items: center;
-  border: 1px solid var(--border);
+  border: 1px solid #e2e8f0;
   border-radius: 999px;
-  background: var(--surface);
-  color: var(--text-secondary);
+  background: #f1f5f9;
+  color: #475569;
   font-size: 0.74rem;
   font-weight: 600;
   padding: 0.18rem 0.58rem;
@@ -1010,9 +973,9 @@ select.admin-input {
 
 .recorded-edit-input {
   width: 100%;
-  border: 1px solid var(--neutral-300);
+  border: 1px solid var(--border);
   border-radius: 0.9rem;
-  background: var(--surface);
+  background: var(--card);
   color: var(--text-primary);
   font-size: 0.94rem;
   padding: 0.8rem 0.9rem;
@@ -1162,8 +1125,9 @@ select.admin-input {
 
 .task-shell {
   background:
-    radial-gradient(circle at top, rgba(255, 255, 255, 0.8), transparent 35%),
-    linear-gradient(180deg, var(--background) 0%, var(--neutral-200) 100%);
+    radial-gradient(circle at top left, rgba(37, 99, 255, 0.08), transparent 30%),
+    radial-gradient(circle at bottom right, rgba(139, 92, 246, 0.05), transparent 28%),
+    var(--background);
 }
 
 .task-topbar {
@@ -1486,25 +1450,25 @@ select.admin-input {
 
 .soft-gradient {
   background:
-    radial-gradient(circle at 20% 10%, color-mix(in srgb, var(--success) 20%, transparent), transparent 40%),
-    radial-gradient(circle at 80% 20%, color-mix(in srgb, var(--warning) 18%, transparent), transparent 35%),
-    linear-gradient(180deg, var(--neutral-50) 0%, var(--neutral-100) 100%);
+    radial-gradient(circle at 20% 10%, rgba(37, 99, 255, 0.07), transparent 40%),
+    radial-gradient(circle at 80% 20%, rgba(16, 185, 129, 0.06), transparent 35%),
+    var(--background);
 }
 
 .family-gradient {
   background:
-    radial-gradient(circle at 15% 12%, color-mix(in srgb, var(--warning) 28%, transparent), transparent 30%),
-    radial-gradient(circle at 84% 8%, color-mix(in srgb, var(--success) 26%, transparent), transparent 30%),
-    radial-gradient(circle at 52% 88%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 40%),
-    linear-gradient(180deg, var(--neutral-50) 0%, var(--neutral-100) 100%);
+    radial-gradient(circle at 15% 12%, rgba(255, 90, 122, 0.07), transparent 30%),
+    radial-gradient(circle at 84% 8%, rgba(16, 185, 129, 0.06), transparent 30%),
+    radial-gradient(circle at 52% 88%, rgba(37, 99, 255, 0.06), transparent 40%),
+    var(--background);
 }
 
 .workday-gradient {
   background:
-    radial-gradient(circle at 10% 8%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 32%),
-    radial-gradient(circle at 88% 6%, color-mix(in srgb, var(--error) 20%, transparent), transparent 30%),
-    radial-gradient(circle at 72% 82%, color-mix(in srgb, var(--success) 20%, transparent), transparent 35%),
-    linear-gradient(180deg, var(--neutral-50) 0%, var(--neutral-100) 100%);
+    radial-gradient(circle at 10% 8%, rgba(37, 99, 255, 0.08), transparent 32%),
+    radial-gradient(circle at 88% 6%, rgba(139, 92, 246, 0.06), transparent 30%),
+    radial-gradient(circle at 72% 82%, rgba(16, 185, 129, 0.05), transparent 35%),
+    var(--background);
 }
 
 .playful-card {
@@ -1752,22 +1716,10 @@ select.admin-input {
 }
 
 .action-btn.bright {
-  overflow: hidden;
   border: 1px solid var(--accent-hover);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-muted) 84%, var(--card)) 0%, var(--accent) 58%, var(--accent-hover) 100%);
+  background: var(--accent);
   color: #fff;
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--card) 30%, transparent),
-    0 10px 18px color-mix(in srgb, var(--accent) 22%, transparent);
-}
-
-.action-btn.bright::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--card) 22%, transparent) 0%, transparent 38%);
-  pointer-events: none;
+  box-shadow: 0 8px 18px rgba(37, 99, 255, 0.22);
 }
 
 .action-btn:hover {
@@ -1775,11 +1727,9 @@ select.admin-input {
 }
 
 .action-btn.bright:hover {
+  background: var(--accent-hover);
   transform: translateY(-1px);
-  filter: brightness(1.06);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--card) 36%, transparent),
-    0 16px 28px color-mix(in srgb, var(--accent) 32%, transparent);
+  box-shadow: 0 12px 24px rgba(37, 99, 255, 0.28);
 }
 
 .action-btn.warn:hover {
@@ -1861,7 +1811,7 @@ select.admin-input {
 
 .admin-search-input {
   width: 100%;
-  border: 1px solid var(--neutral-300);
+  border: 1px solid var(--border);
   border-radius: 0.9rem;
   background: var(--card);
   color: var(--foreground);
@@ -1940,9 +1890,9 @@ select.admin-input {
 
 .admin-shell {
   background:
-    radial-gradient(circle at 15% 10%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 30%),
-    radial-gradient(circle at 88% 12%, color-mix(in srgb, var(--warning) 22%, transparent), transparent 30%),
-    linear-gradient(180deg, var(--neutral-100) 0%, var(--neutral-200) 100%);
+    radial-gradient(circle at 15% 10%, rgba(37, 99, 255, 0.07), transparent 30%),
+    radial-gradient(circle at 88% 12%, rgba(139, 92, 246, 0.05), transparent 30%),
+    var(--background);
   color: var(--foreground);
 }
 
@@ -1955,7 +1905,7 @@ select.admin-input {
 
 .admin-input {
   border-radius: 0.7rem;
-  border: 1px solid var(--neutral-300);
+  border: 1px solid var(--border);
   background: var(--card);
   color: var(--foreground);
 }
@@ -2064,8 +2014,8 @@ select.admin-input {
   -webkit-appearance: none;
   width: 100%;
   border-radius: 0.9rem;
-  border: 1px solid var(--accent-muted);
-  background: var(--accent-soft);
+  border: 1px solid var(--border);
+  background: var(--card);
   color: var(--foreground);
   display: block;
   font-size: 1rem;
@@ -2089,34 +2039,25 @@ select.admin-input {
 }
 
 .login-primary-btn {
-  position: relative;
-  overflow: hidden;
-  border: 1px solid var(--foreground);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--neutral-700) 85%, var(--foreground)) 0%, var(--foreground) 55%, var(--neutral-900) 100%);
+  border: 1px solid var(--accent-hover);
+  background: var(--accent);
   color: #fff;
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--card) 18%, transparent),
-    0 10px 18px color-mix(in srgb, var(--foreground) 12%, transparent);
-}
-
-.login-primary-btn::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--card) 18%, transparent) 0%, transparent 42%);
-  pointer-events: none;
+  box-shadow: 0 8px 18px rgba(37, 99, 255, 0.22);
 }
 
 .login-secondary-btn {
-  border: 1px solid var(--accent-muted);
-  background: linear-gradient(180deg, var(--surface) 0%, var(--accent-soft) 100%);
+  border: 1px solid var(--border);
+  background: var(--card);
   color: var(--foreground);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--card) 60%, transparent);
 }
 
-.login-primary-btn:hover,
+.login-primary-btn:hover {
+  background: var(--accent-hover);
+  box-shadow: 0 12px 22px rgba(37, 99, 255, 0.28);
+}
+
 .login-secondary-btn:hover {
-  box-shadow: 0 12px 22px color-mix(in srgb, var(--foreground) 10%, transparent);
+  box-shadow: var(--shadow-sm);
 }
 
 .login-primary-btn:active,
@@ -2126,7 +2067,7 @@ select.admin-input {
 }
 
 .login-button-row {
-  border-top: 1px solid var(--accent-muted);
+  border-top: 1px solid var(--border);
   margin-top: 1rem;
   padding-top: 1rem;
 }

@@ -56,13 +56,13 @@ export default async function HomePage() {
           </div>
 
           <div className="landing-grid">
-            <Link href="/log" className="landing-action-card">
+            <Link href="/log" className="landing-action-card log">
               <span className="landing-action-kicker">Log</span>
               <strong>Record a task</strong>
               <span>Quick capture for a room and task.</span>
             </Link>
 
-            <Link href="/tasks" className="landing-action-card">
+            <Link href="/tasks" className="landing-action-card view">
               <span className="landing-action-kicker">View</span>
               <strong>View tasks</strong>
               <span>Browse, filter, edit, and tidy up.</span>
@@ -70,7 +70,7 @@ export default async function HomePage() {
 
             <form action={luckyDipAction} className="landing-action-form">
               <input type="hidden" name="returnTo" value="/tasks" />
-              <FormActionButton className="landing-action-card landing-action-button" pendingLabel="Picking task">
+              <FormActionButton className="landing-action-card lucky landing-action-button" pendingLabel="Picking task">
                 <>
                   <span className="landing-action-kicker">Lucky</span>
                   <strong>Lucky dip</strong>
@@ -80,13 +80,13 @@ export default async function HomePage() {
             </form>
 
             {role === "admin" ? (
-              <Link href="/settings" className="landing-action-card">
+              <Link href="/settings" className="landing-action-card setup">
                 <span className="landing-action-kicker">Setup</span>
                 <strong>Setup</strong>
                 <span>Rooms, people, and household setup.</span>
               </Link>
             ) : (
-              <div className="landing-action-card muted disabled" aria-disabled="true">
+              <div className="landing-action-card setup muted disabled" aria-disabled="true">
                 <span className="landing-action-kicker">Setup</span>
                 <strong>Admin only</strong>
                 <span>Rooms and people can only be managed by an admin account.</span>

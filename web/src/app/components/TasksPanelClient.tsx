@@ -420,14 +420,14 @@ export function TasksPanelClient({
 
 
 const AVATAR_PALETTE = [
-  { bg: "#dbeafe", fg: "#1d4ed8" },
-  { bg: "#dcfce7", fg: "#15803d" },
-  { bg: "#fef3c7", fg: "#92400e" },
-  { bg: "#fce7f3", fg: "#be185d" },
-  { bg: "#ede9fe", fg: "#6d28d9" },
-  { bg: "#ffedd5", fg: "#c2410c" },
-  { bg: "#e0f2fe", fg: "#0369a1" },
-  { bg: "#f3e8ff", fg: "#7e22ce" },
+  { bg: "#dbeafe", fg: "#1e40af" }, // blue
+  { bg: "#ede9fe", fg: "#5b21b6" }, // violet
+  { bg: "#d1fae5", fg: "#065f46" }, // mint
+  { bg: "#fef3c7", fg: "#92400e" }, // amber
+  { bg: "#fee2e2", fg: "#991b1b" }, // red
+  { bg: "#e0f2fe", fg: "#075985" }, // sky
+  { bg: "#fce7f3", fg: "#9d174d" }, // rose
+  { bg: "#f1f5f9", fg: "#334155" }, // slate
 ];
 
 function nameInitials(name: string) {
