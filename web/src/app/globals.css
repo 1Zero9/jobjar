@@ -671,17 +671,15 @@ select.admin-input {
 
 .recorded-row[open] {
   background: #ffffff;
-  border: 2px solid var(--row-accent);
-  box-shadow:
-    inset 5px 0 0 var(--row-accent),
-    0 4px 16px rgba(0, 0, 0, 0.07);
+  border: 2px solid var(--accent);
+  box-shadow: 0 4px 20px color-mix(in srgb, var(--accent) 18%, transparent);
   position: relative;
   z-index: 1;
 }
 
 .recorded-row[open] .recorded-row-summary {
-  background: color-mix(in srgb, var(--row-accent) 6%, #ffffff);
-  border-bottom: 1px solid color-mix(in srgb, var(--row-accent) 20%, var(--border));
+  background: color-mix(in srgb, var(--accent) 5%, #ffffff);
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border));
 }
 
 .recorded-row-blue,
