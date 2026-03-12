@@ -136,7 +136,7 @@ export function TasksPanelClient({
               <select
                 value={selectedLocationId}
                 onChange={(event) => { setSelectedLocationId(event.target.value); setSelectedAssigneeId(""); }}
-                className="recorded-filter-select"
+                className={`recorded-filter-select${selectedLocationId ? " filter-active" : ""}`}
               >
                 <option value="">All locations</option>
                 {locationOptions.map((loc) => (
@@ -150,7 +150,7 @@ export function TasksPanelClient({
             <select
               value={selectedRoomId}
               onChange={(event) => setSelectedRoomId(event.target.value)}
-              className="recorded-filter-select"
+              className={`recorded-filter-select${selectedRoomId ? " filter-active" : ""}`}
             >
               <option value="">All rooms</option>
               {groupedRoomOptions.map(([group, groupedRooms]) => (
@@ -169,7 +169,7 @@ export function TasksPanelClient({
             <select
               value={selectedState}
               onChange={(event) => setSelectedState(event.target.value as "all" | "open" | "done")}
-              className="recorded-filter-select"
+              className={`recorded-filter-select${selectedState !== "all" ? " filter-active" : ""}`}
             >
               <option value="all">All states</option>
               <option value="open">Open</option>
@@ -181,7 +181,7 @@ export function TasksPanelClient({
             <select
               value={selectedAssigneeId}
               onChange={(event) => setSelectedAssigneeId(event.target.value)}
-              className="recorded-filter-select"
+              className={`recorded-filter-select${selectedAssigneeId ? " filter-active" : ""}`}
             >
               <option value="">Anyone</option>
               {peopleOptions.map((person) => (

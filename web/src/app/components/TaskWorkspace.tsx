@@ -332,10 +332,7 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
   const roomOptions = uniqueRoomsByName(rooms).filter((room) => room.name.toLowerCase() !== "unsorted");
   const peopleOptions = people.map((member) => member.user);
   const selectedRoomId = roomOptions.some((room) => room.id === params.room) ? (params.room ?? "") : "";
-  const userHasAssigned = !params.assignee && recordedTasks.some((t) => t.assignments[0]?.userId === userId);
-  const selectedAssigneeId = peopleOptions.some((person) => person.id === params.assignee)
-    ? (params.assignee ?? "")
-    : userHasAssigned ? userId : "";
+  const selectedAssigneeId = peopleOptions.some((person) => person.id === params.assignee) ? (params.assignee ?? "") : "";
   const selectedLocationId = locations.some((loc) => loc.id === params.location) ? (params.location ?? "") : "";
   const selectedState: "all" | "open" | "done" = params.state === "done" || params.state === "open" ? params.state : "all";
   const luckyTask = params.lucky && params.lucky !== "empty"

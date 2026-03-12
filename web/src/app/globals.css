@@ -622,6 +622,12 @@ select.admin-input {
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 20%, transparent);
 }
 
+.recorded-filter-select.filter-active {
+  background: #fefce8;
+  border-color: #eab308;
+  color: #713f12;
+}
+
 .recorded-toolbar-actions {
   display: flex;
   align-items: center;
