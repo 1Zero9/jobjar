@@ -350,6 +350,16 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
               <p className="capture-kicker">Task Jar</p>
               <span className="version-chip">{APP_VERSION}</span>
             </div>
+            <div className="page-hero-icon tasks">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <line x1="8" y1="6" x2="21" y2="6"/>
+                <line x1="8" y1="12" x2="21" y2="12"/>
+                <line x1="8" y1="18" x2="21" y2="18"/>
+                <polyline points="3 6 4 7 6 4"/>
+                <polyline points="3 12 4 13 6 10"/>
+                <polyline points="3 18 4 19 6 16"/>
+              </svg>
+            </div>
             <h1 className="capture-title">Tasks</h1>
             <p className="capture-subtitle">View, filter, prioritise, and complete what has already been logged.</p>
           </div>
