@@ -13,6 +13,12 @@ type RoomOption = {
   id: string;
   name: string;
   designation?: string | null;
+  location?: { id: string; name: string } | null;
+};
+
+type LocationOption = {
+  id: string;
+  name: string;
 };
 
 type TaskItem = {
@@ -20,6 +26,8 @@ type TaskItem = {
   title: string;
   roomId: string;
   roomName: string;
+  locationId: string | null;
+  locationName: string | null;
   loggerName: string | null;
   projectParentTitle: string | null;
   assignmentUserId: string | null;
@@ -45,9 +53,11 @@ type TaskItem = {
 type Props = {
   roomOptions: RoomOption[];
   peopleOptions: PersonOption[];
+  locationOptions: LocationOption[];
   tasks: TaskItem[];
   initialRoomId: string;
   initialAssigneeId: string;
+  initialLocationId: string;
   initialState: "all" | "open" | "done";
   initialLuckyId: string | null;
 };
@@ -55,27 +65,31 @@ type Props = {
 export function TasksPanelClient({
   roomOptions,
   peopleOptions,
+  locationOptions,
   tasks,
   initialRoomId,
   initialAssigneeId,
+  initialLocationId,
   initialState,
   initialLuckyId,
 }: Props) {
   const [selectedRoomId, setSelectedRoomId] = useState(initialRoomId);
   const [selectedAssigneeId, setSelectedAssigneeId] = useState(initialAssigneeId);
+  const [selectedLocationId, setSelectedLocationId] = useState(initialLocationId);
   const [selectedState, setSelectedState] = useState<"all" | "open" | "done">(initialState);
 
-  const groupedRoomOptions = groupRoomsByDesignation(roomOptions);
+  const groupedRoomOptions = groupRoomsByLocation(roomOptions);
 
   const visibleTasks = useMemo(() => {
     return tasks.filter((task) => {
       const matchesRoom = selectedRoomId ? task.roomId === selectedRoomId : true;
       const matchesAssignee = selectedAssigneeId ? task.assignmentUserId === selectedAssigneeId : true;
+      const matchesLocation = selectedLocationId ? task.locationId === selectedLocationId : true;
       const taskState = getTaskState(task);
       const matchesState = selectedState === "all" ? true : taskState === selectedState;
-      return matchesRoom && matchesAssignee && matchesState;
+      return matchesRoom && matchesAssignee && matchesLocation && matchesState;
     });
-  }, [selectedAssigneeId, selectedRoomId, selectedState, tasks]);
+  }, [selectedAssigneeId, selectedRoomId, selectedLocationId, selectedState, tasks]);
 
   useEffect(() => {
     const search = new URLSearchParams(window.location.search);
@@ -89,6 +103,11 @@ export function TasksPanelClient({
     } else {
       search.delete("assignee");
     }
+    if (selectedLocationId) {
+      search.set("location", selectedLocationId);
+    } else {
+      search.delete("location");
+    }
     if (selectedState !== "all") {
       search.set("state", selectedState);
     } else {
@@ -97,7 +116,7 @@ export function TasksPanelClient({
     const query = search.toString();
     const nextUrl = query ? `/tasks?${query}` : "/tasks";
     window.history.replaceState(null, "", nextUrl);
-  }, [selectedAssigneeId, selectedRoomId, selectedState]);
+  }, [selectedAssigneeId, selectedRoomId, selectedLocationId, selectedState]);
 
   return (
     <section id="recorded" className="recorded-panel">

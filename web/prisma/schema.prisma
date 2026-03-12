@@ -88,8 +88,22 @@ model Household {
   createdAt   DateTime          @default(now())
   owner       User              @relation("HouseholdOwner", fields: [ownerUserId], references: [id])
   members     HouseholdMember[]
+  locations   Location[]
   rooms       Room[]
   shareLinks  ShareLink[]
+}
+
+model Location {
+  id          String   @id @default(uuid()) @db.Uuid
+  householdId String   @db.Uuid
+  name        String
+  sortOrder   Int      @default(0)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  rooms       Room[]
+
+  @@index([householdId])
 }
 
 model HouseholdMember {
@@ -104,17 +118,20 @@ model HouseholdMember {
 }
 
 model Room {
-  id          String   @id @default(uuid()) @db.Uuid
-  householdId String   @db.Uuid
+  id          String    @id @default(uuid()) @db.Uuid
+  householdId String    @db.Uuid
+  locationId  String?   @db.Uuid
   name        String
   designation String
-  sortOrder   Int      @default(0)
-  active      Boolean  @default(true)
-  createdAt   DateTime @default(now())
+  sortOrder   Int       @default(0)
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
   household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  location    Location? @relation(fields: [locationId], references: [id], onDelete: SetNull)
   tasks       Task[]
 
   @@index([householdId])
+  @@index([locationId])
 }
 
 model Task {

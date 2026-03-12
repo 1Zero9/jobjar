@@ -14,6 +14,7 @@ export async function createRoomAction(formData: FormData) {
   const { householdId } = await requireAdminAction();
   const name = String(formData.get("name") ?? "").trim();
   const designation = String(formData.get("designation") ?? "").trim() || "General";
+  const locationId = String(formData.get("locationId") ?? "").trim() || null;
   const returnTo = getReturnPath(formData.get("returnTo"), "");
 
   if (!name) {
@@ -43,16 +44,21 @@ export async function createRoomAction(formData: FormData) {
     _max: { sortOrder: true },
   });
 
+  const validLocation = locationId
+    ? await prisma.location.findFirst({ where: { id: locationId, householdId, active: true }, select: { id: true } })
+    : null;
+
   await prisma.room.create({
     data: {
       householdId,
       name,
       designation,
       sortOrder: (maxSort._max.sortOrder ?? 0) + 1,
+      locationId: locationId && validLocation ? locationId : null,
     },
   });
 
-  refreshViews(["/", "/log", "/tasks", "/settings", "/settings/rooms"]);
+  refreshViews(["/", "/log", "/tasks", "/settings", "/settings/rooms", "/settings/locations"]);
   if (returnTo) {
     redirect(`${returnTo}?added=room`);
   }
@@ -121,6 +127,107 @@ export async function deleteRoomAction(formData: FormData) {
       data: { active: false },
     }),
   ]);
+  refreshViews(["/", "/log", "/tasks", "/settings", "/settings/rooms", "/settings/locations"]);
+}
+
+export async function createLocationAction(formData: FormData) {
+  const { householdId } = await requireAdminAction();
+  const name = String(formData.get("name") ?? "").trim();
+  const returnTo = getReturnPath(formData.get("returnTo"), "");
+
+  if (!name) {
+    return;
+  }
+
+  const duplicate = await prisma.location.findFirst({
+    where: { householdId, active: true, name: { equals: name, mode: "insensitive" } },
+    select: { id: true },
+  });
+  if (duplicate) {
+    if (returnTo) redirect(`${returnTo}?duplicate=location`);
+    return;
+  }
+
+  const maxSort = await prisma.location.aggregate({
+    where: { householdId },
+    _max: { sortOrder: true },
+  });
+
+  await prisma.location.create({
+    data: { householdId, name, sortOrder: (maxSort._max.sortOrder ?? 0) + 1 },
+  });
+
+  refreshViews(["/", "/log", "/tasks", "/settings", "/settings/locations"]);
+  if (returnTo) redirect(`${returnTo}?added=location`);
+}
+
+export async function updateLocationAction(formData: FormData) {
+  const { householdId } = await requireAdminAction();
+  const locationId = String(formData.get("locationId") ?? "").trim();
+  const name = String(formData.get("name") ?? "").trim();
+  const returnTo = getReturnPath(formData.get("returnTo"), "");
+
+  if (!locationId || !name) {
+    return;
+  }
+
+  const duplicate = await prisma.location.findFirst({
+    where: { householdId, active: true, id: { not: locationId }, name: { equals: name, mode: "insensitive" } },
+    select: { id: true },
+  });
+  if (duplicate) {
+    if (returnTo) redirect(`${returnTo}?duplicate=location`);
+    return;
+  }
+
+  await prisma.location.updateMany({
+    where: { id: locationId, householdId, active: true },
+    data: { name },
+  });
+
+  refreshViews(["/", "/log", "/tasks", "/settings", "/settings/locations"]);
+}
+
+export async function deleteLocationAction(formData: FormData) {
+  const { householdId } = await requireAdminAction();
+  const locationId = String(formData.get("locationId") ?? "").trim();
+  if (!locationId) return;
+
+  const location = await prisma.location.findFirst({
+    where: { id: locationId, householdId },
+    select: { id: true },
+  });
+  if (!location) return;
+
+  // Unlink rooms from this location (set locationId to null)
+  await prisma.room.updateMany({
+    where: { locationId: location.id, householdId },
+    data: { locationId: null },
+  });
+
+  await prisma.location.updateMany({
+    where: { id: location.id, householdId },
+    data: { active: false },
+  });
+
+  refreshViews(["/", "/log", "/tasks", "/settings", "/settings/locations", "/settings/rooms"]);
+}
+
+export async function updateRoomLocationAction(formData: FormData) {
+  const { householdId } = await requireAdminAction();
+  const roomId = String(formData.get("roomId") ?? "").trim();
+  const locationId = String(formData.get("locationId") ?? "").trim() || null;
+  if (!roomId) return;
+
+  const validLocation = locationId
+    ? await prisma.location.findFirst({ where: { id: locationId, householdId, active: true }, select: { id: true } })
+    : null;
+
+  await prisma.room.updateMany({
+    where: { id: roomId, householdId, active: true },
+    data: { locationId: locationId && validLocation ? locationId : null },
+  });
+
   refreshViews(["/", "/log", "/tasks", "/settings", "/settings/rooms"]);
 }
 
@@ -1255,7 +1362,7 @@ async function resolveProjectParentId(projectParentId: string, householdId: stri
   return parent?.id ?? null;
 }
 
-function refreshViews(paths = ["/", "/log", "/tasks", "/admin", "/settings", "/settings/rooms", "/settings/people", "/login"]) {
+function refreshViews(paths = ["/", "/log", "/tasks", "/admin", "/settings", "/settings/rooms", "/settings/people", "/settings/locations", "/login"]) {
   for (const path of new Set(paths)) {
     revalidatePath(path);
   }

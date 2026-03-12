@@ -1,4 +1,4 @@
-import { createRoomAction, deleteRoomAction, logoutAction, updateRoomAction } from "@/app/actions";
+import { createRoomAction, deleteRoomAction, logoutAction, updateRoomAction, updateRoomLocationAction } from "@/app/actions";
 import { FormActionButton } from "@/app/components/FormActionButton";
 import { ToastNotice } from "@/app/components/ToastNotice";
 import { requireAdmin } from "@/lib/auth";
@@ -25,23 +25,32 @@ export default async function RoomsPage({
   const params = await searchParams;
   const { householdId } = await requireAdmin("/settings/rooms");
 
-  const rooms = await prisma.room.findMany({
-    where: { householdId, active: true },
-    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-    select: {
-      id: true,
-      name: true,
-      designation: true,
-      tasks: {
-        where: { active: true },
-        select: { id: true },
+  const [rooms, locations] = await Promise.all([
+    prisma.room.findMany({
+      where: { householdId, active: true },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      select: {
+        id: true,
+        name: true,
+        designation: true,
+        locationId: true,
+        location: { select: { id: true, name: true } },
+        tasks: {
+          where: { active: true },
+          select: { id: true },
+        },
       },
-    },
-  });
+    }),
+    prisma.location.findMany({
+      where: { householdId, active: true },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      select: { id: true, name: true },
+    }),
+  ]);
 
   const visibleRooms = rooms.filter((room) => room.name.toLowerCase() !== "unsorted");
   const systemRoom = rooms.find((room) => room.name.toLowerCase() === "unsorted");
-  const groupedRooms = groupRoomsByDesignation(visibleRooms);
+  const groupedRooms = groupRoomsByLocation(visibleRooms);
 
   return (
     <div className="settings-shell min-h-screen px-4 py-5">
@@ -87,7 +96,14 @@ export default async function RoomsPage({
             <div className="capture-step">
               <p className="capture-step-label">Add a room</p>
               <input name="name" type="text" required placeholder="Utility room" className="capture-main-input" />
-              <input name="designation" type="text" defaultValue="Inside" placeholder="Group e.g. Upstairs / Outside" className="capture-room-select" />
+              {locations.length > 0 ? (
+                <select name="locationId" defaultValue={locations[0]?.id ?? ""} className="capture-room-select">
+                  <option value="">No location</option>
+                  {locations.map((loc) => (
+                    <option key={loc.id} value={loc.id}>{loc.name}</option>
+                  ))}
+                </select>
+              ) : null}
             </div>
             <FormActionButton className="capture-submit-btn" pendingLabel="Adding room">
               Add room
@@ -121,15 +137,13 @@ export default async function RoomsPage({
                   {groupRooms.map((room) => (
                     <details key={room.id} className={`recorded-row recorded-row-${rowTone(groupIndex)}`}>
                       <summary className="recorded-row-summary">
-                        <div className="recorded-row-main">
+                        <div className="recorded-row-top">
                           <p className="recorded-row-title">{room.name}</p>
+                          <span className="recorded-row-chevron">▾</span>
                         </div>
-                        <div className="recorded-row-meta">
+                        <div className="recorded-row-sub">
                           <span className="recorded-row-room">{room.tasks.length} tasks</span>
-                          <div className="recorded-row-summary-actions">
-                            <span className="recorded-row-edit">Edit</span>
-                            <span className="recorded-row-chevron">+</span>
-                          </div>
+                          {room.location ? <span className="task-chip">{room.location.name}</span> : null}
                         </div>
                       </summary>
                       <div className="recorded-row-detail">
@@ -140,10 +154,6 @@ export default async function RoomsPage({
                             <span>Room name</span>
                             <input name="name" type="text" defaultValue={room.name} className="recorded-edit-input" />
                           </label>
-                          <label className="recorded-field">
-                            <span>Group</span>
-                            <input name="designation" type="text" defaultValue={room.designation} className="recorded-edit-input" />
-                          </label>
                           <p><span>Tasks</span><strong>{room.tasks.length}</strong></p>
                           <div className="recorded-row-actions between">
                             <FormActionButton className="action-btn bright quiet" pendingLabel="Saving">
@@ -151,6 +161,25 @@ export default async function RoomsPage({
                             </FormActionButton>
                           </div>
                         </form>
+                        {locations.length > 0 ? (
+                          <form action={updateRoomLocationAction} className="recorded-edit-form">
+                            <input type="hidden" name="roomId" value={room.id} />
+                            <label className="recorded-field">
+                              <span>Location</span>
+                              <select name="locationId" defaultValue={room.locationId ?? ""} className="recorded-edit-input">
+                                <option value="">No location</option>
+                                {locations.map((loc) => (
+                                  <option key={loc.id} value={loc.id}>{loc.name}</option>
+                                ))}
+                              </select>
+                            </label>
+                            <div className="recorded-row-actions between">
+                              <FormActionButton className="action-btn bright quiet" pendingLabel="Saving">
+                                Save location
+                              </FormActionButton>
+                            </div>
+                          </form>
+                        ) : null}
                         <form action={deleteRoomAction} className="recorded-row-actions">
                           <input type="hidden" name="roomId" value={room.id} />
                           <FormActionButton className="action-btn warn quiet" pendingLabel="Archiving">
@@ -183,10 +212,10 @@ export default async function RoomsPage({
   );
 }
 
-function groupRoomsByDesignation<T extends { designation?: string | null }>(rooms: T[]) {
+function groupRoomsByLocation<T extends { location?: { name: string } | null }>(rooms: T[]) {
   const grouped = new Map<string, T[]>();
   for (const room of rooms) {
-    const key = room.designation?.trim() || "General";
+    const key = room.location?.name ?? "No location";
     const entries = grouped.get(key) ?? [];
     entries.push(room);
     grouped.set(key, entries);

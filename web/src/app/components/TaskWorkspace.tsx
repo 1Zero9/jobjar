@@ -15,6 +15,7 @@ type SearchParams = {
   assignee?: string;
   room?: string;
   state?: string;
+  location?: string;
   taskId?: string;
 };
 
@@ -29,7 +30,7 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
     prisma.room.findMany({
       where: { householdId, active: true },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-      select: { id: true, name: true, designation: true },
+      select: { id: true, name: true, designation: true, location: { select: { name: true } } },
     }),
     prisma.householdMember.findMany({
       where: { householdId },
@@ -66,7 +67,7 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
 
   const roomOptions = uniqueRoomsByName(rooms).filter((room) => room.name.toLowerCase() !== "unsorted");
   const peopleOptions = people.map((member) => member.user);
-  const groupedRoomOptions = groupRoomsByDesignation(roomOptions);
+  const groupedRoomOptions = groupRoomsByLocation(roomOptions);
 
   return (
     <div className="capture-shell min-h-screen px-4 py-5">
@@ -258,7 +259,7 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
 export async function TasksWorkspace({ params }: { params: SearchParams }) {
   const { householdId, userId, role } = await requireSessionContext("/tasks");
 
-  const [currentUser, rooms, people, recordedTasks] = await Promise.all([
+  const [currentUser, rooms, people, locations, recordedTasks] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       select: { displayName: true },
@@ -266,7 +267,7 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
     prisma.room.findMany({
       where: { householdId, active: true },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-      select: { id: true, name: true, designation: true },
+      select: { id: true, name: true, designation: true, locationId: true, location: { select: { id: true, name: true } } },
     }),
     prisma.householdMember.findMany({
       where: { householdId },
@@ -280,6 +281,11 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
         },
       },
     }),
+    prisma.location.findMany({
+      where: { householdId, active: true },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      select: { id: true, name: true },
+    }),
     prisma.task.findMany({
       where: {
         active: true,
@@ -289,7 +295,7 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
       take: 60,
       include: {
         room: {
-          select: { name: true },
+          select: { name: true, location: { select: { id: true, name: true } } },
         },
         logger: {
           select: { displayName: true },
@@ -338,6 +344,7 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
   const peopleOptions = people.map((member) => member.user);
   const selectedRoomId = roomOptions.some((room) => room.id === params.room) ? (params.room ?? "") : "";
   const selectedAssigneeId = peopleOptions.some((person) => person.id === params.assignee) ? (params.assignee ?? "") : "";
+  const selectedLocationId = locations.some((loc) => loc.id === params.location) ? (params.location ?? "") : "";
   const selectedState: "all" | "open" | "done" = params.state === "done" || params.state === "open" ? params.state : "all";
   const luckyTask = params.lucky && params.lucky !== "empty"
     ? recordedTasks.find((task) => task.id === params.lucky)
@@ -385,8 +392,10 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
         <TasksPanelClient
           roomOptions={roomOptions}
           peopleOptions={peopleOptions}
+          locationOptions={locations}
           initialRoomId={selectedRoomId}
           initialAssigneeId={selectedAssigneeId}
+          initialLocationId={selectedLocationId}
           initialState={selectedState}
           initialLuckyId={params.lucky && params.lucky !== "empty" ? params.lucky : null}
           tasks={recordedTasks.map((task) => ({
@@ -394,6 +403,8 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
             title: task.title,
             roomId: task.roomId,
             roomName: task.room.name,
+            locationId: task.room.location?.id ?? null,
+            locationName: task.room.location?.name ?? null,
             loggerName: task.logger?.displayName ?? null,
             projectParentTitle: task.projectParent?.title ?? null,
             assignmentUserId: task.assignments[0]?.userId ?? null,
@@ -454,10 +465,10 @@ function uniqueRoomsByName<T extends { id: string; name: string }>(rooms: T[]) {
   });
 }
 
-function groupRoomsByDesignation<T extends { designation?: string | null; name: string }>(rooms: T[]) {
+function groupRoomsByLocation<T extends { location?: { name: string } | null; name: string }>(rooms: T[]) {
   const grouped = new Map<string, T[]>();
   for (const room of rooms) {
-    const key = room.designation?.trim() || "General";
+    const key = room.location?.name ?? "Other";
     const entries = grouped.get(key) ?? [];
     entries.push(room);
     grouped.set(key, entries);

@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export default async function SettingsPage() {
   const { householdId } = await requireAdmin("/settings");
 
-  const [roomCount, peopleCount] = await Promise.all([
+  const [roomCount, peopleCount, locationCount] = await Promise.all([
     prisma.room.count({
       where: {
         householdId,
@@ -20,6 +20,9 @@ export default async function SettingsPage() {
     }),
     prisma.householdMember.count({
       where: { householdId },
+    }),
+    prisma.location.count({
+      where: { householdId, active: true },
     }),
   ]);
 
@@ -52,6 +55,12 @@ export default async function SettingsPage() {
 
         <section className="landing-panel">
           <div className="landing-grid">
+            <Link href="/settings/locations" className="landing-action-card">
+              <span className="landing-action-kicker">Locations</span>
+              <strong>Manage locations</strong>
+              <span>{locationCount} {locationCount === 1 ? "property" : "properties"} set up.</span>
+            </Link>
+
             <Link href="/settings/rooms" className="landing-action-card">
               <span className="landing-action-kicker">Rooms</span>
               <strong>Manage rooms</strong>
@@ -68,12 +77,6 @@ export default async function SettingsPage() {
               <span className="landing-action-kicker">Tasks</span>
               <strong>Shape tasks</strong>
               <span>Type, stage, schedule, and assign tasks.</span>
-            </Link>
-
-            <Link href="/" className="landing-action-card muted">
-              <span className="landing-action-kicker">Home</span>
-              <strong>Back to home</strong>
-              <span>Return to the main view.</span>
             </Link>
           </div>
         </section>
