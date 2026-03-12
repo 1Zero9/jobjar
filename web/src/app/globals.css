@@ -213,11 +213,14 @@ select.admin-input {
 }
 
 .landing-title {
-  color: var(--foreground);
   font-size: clamp(2.4rem, 8vw, 3rem);
   font-weight: 900;
   letter-spacing: -0.05em;
   line-height: 1;
+  background: linear-gradient(135deg, #1BE7FF 0%, #6EEB83 55%, #E4FF1A 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .session-chip {
@@ -297,21 +300,24 @@ select.admin-input {
   width: 100%;
   min-height: 7rem;
   padding: 1.25rem;
-  border: 1px solid var(--border);
-  border-top: 3px solid var(--card-accent);
+  border: 1.5px solid color-mix(in srgb, var(--card-accent) 35%, rgba(255,255,255,0.6));
   border-radius: 1.25rem;
-  background: var(--card);
+  background: linear-gradient(
+    150deg,
+    color-mix(in srgb, var(--card-accent) 14%, #fff) 0%,
+    rgba(255,255,255,0.85) 65%
+  );
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   color: var(--text-primary);
   text-align: left;
-  box-shadow: var(--shadow-sm);
-  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--card-accent) 18%, transparent), var(--shadow-sm);
+  transition: transform 160ms ease, box-shadow 160ms ease;
 }
 
 .landing-action-card:hover {
-  transform: translateY(-2px);
-  border-color: color-mix(in srgb, var(--card-accent) 40%, var(--border));
-  border-top-color: var(--card-accent);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 32px color-mix(in srgb, var(--card-accent) 28%, transparent), var(--shadow-md);
 }
 
 .landing-action-card svg {
@@ -358,10 +364,14 @@ select.admin-input {
 }
 
 .capture-kicker {
-  color: var(--text-tertiary);
+  display: inline-block;
+  background: linear-gradient(135deg, #1BE7FF, #6EEB83);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
   font-size: 0.68rem;
   font-weight: 800;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
 }
 
@@ -479,25 +489,25 @@ select.admin-input {
 .capture-submit-btn {
   width: 100%;
   border-radius: 999px;
-  border: 1px solid var(--accent-hover);
-  background: var(--accent);
-  box-shadow: 0 8px 18px rgba(37, 99, 255, 0.22);
-  color: #fff;
+  border: none;
+  background: linear-gradient(135deg, #1BE7FF 0%, #6EEB83 100%);
+  box-shadow: 0 8px 24px rgba(27, 231, 255, 0.35);
+  color: #0d1117;
   font-size: 0.98rem;
   font-weight: 700;
   padding: 0.95rem 1.1rem;
-  transition: transform 120ms ease, box-shadow 120ms ease, background-color 120ms ease, opacity 120ms ease;
+  transition: transform 120ms ease, box-shadow 120ms ease, opacity 120ms ease;
 }
 
 .capture-submit-btn:hover {
-  background: var(--accent-hover);
-  transform: translateY(-1px);
-  box-shadow: 0 12px 24px rgba(37, 99, 255, 0.28);
+  background: linear-gradient(135deg, #00d4e8 0%, #52d96e 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 14px 32px rgba(27, 231, 255, 0.45);
 }
 
 .capture-submit-btn:active {
   transform: translateY(1px) scale(0.985);
-  box-shadow: 0 4px 10px rgba(37, 99, 255, 0.18);
+  box-shadow: 0 4px 12px rgba(27, 231, 255, 0.25);
 }
 
 .capture-confirmation {
@@ -1686,15 +1696,17 @@ select.admin-input {
 }
 
 .action-btn.subtle {
-  border: 1px solid var(--border);
-  background: var(--card);
+  border: 1px solid rgba(27, 231, 255, 0.25);
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   color: var(--text-secondary);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), var(--shadow-sm);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 2px 8px rgba(27,231,255,0.08);
 }
 
 .action-btn.subtle:hover {
-  border-color: var(--neutral-300);
-  background: var(--surface);
+  border-color: rgba(27, 231, 255, 0.5);
+  background: rgba(27, 231, 255, 0.08);
   color: var(--text-primary);
 }
 
@@ -1705,20 +1717,20 @@ select.admin-input {
 }
 
 .action-btn.bright {
-  border: 1px solid var(--accent-hover);
-  background: var(--accent);
-  color: #fff;
-  box-shadow: 0 8px 18px rgba(37, 99, 255, 0.22);
+  border: none;
+  background: linear-gradient(135deg, #1BE7FF 0%, #6EEB83 100%);
+  color: #0d1117;
+  box-shadow: 0 8px 20px rgba(27, 231, 255, 0.30);
 }
 
 .action-btn:hover {
-  box-shadow: 0 8px 16px color-mix(in srgb, var(--foreground) 8%, transparent);
+  box-shadow: 0 8px 16px rgba(27, 231, 255, 0.15);
 }
 
 .action-btn.bright:hover {
-  background: var(--accent-hover);
+  background: linear-gradient(135deg, #00d4e8 0%, #52d96e 100%);
   transform: translateY(-1px);
-  box-shadow: 0 12px 24px rgba(37, 99, 255, 0.28);
+  box-shadow: 0 12px 28px rgba(27, 231, 255, 0.40);
 }
 
 .action-btn.warn:hover {

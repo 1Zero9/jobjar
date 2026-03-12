@@ -53,7 +53,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
         <header className="capture-topbar">
           <div>
             <div className="capture-topline">
-              <p className="capture-kicker">Task Jar</p>
+              <p className="capture-kicker">Jobjar</p>
               <span className="version-chip">{APP_VERSION}</span>
             </div>
             <h1 className="capture-title">Stats</h1>

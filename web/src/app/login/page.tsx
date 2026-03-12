@@ -53,7 +53,7 @@ export default async function LoginPage({
     <div className="login-screen task-shell min-h-screen px-4 py-6">
       <main className="login-main">
         <section className="login-shell board-shell">
-          <p className="login-kicker">Task Jar</p>
+          <p className="login-kicker">Jobjar</p>
           <h1 className="login-heading">
             {needsSetup ? "Create Admin" : "Sign In"}
           </h1>

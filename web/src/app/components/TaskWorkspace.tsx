@@ -80,7 +80,7 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
         <header className="capture-topbar">
           <div>
             <div className="capture-topline">
-              <p className="capture-kicker">Task Jar</p>
+              <p className="capture-kicker">Jobjar</p>
               <span className="version-chip">{APP_VERSION}</span>
             </div>
             <h1 className="capture-title">Log a task</h1>
@@ -327,7 +327,7 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
         <header className="capture-topbar">
           <div>
             <div className="capture-topline">
-              <p className="capture-kicker">Task Jar</p>
+              <p className="capture-kicker">Jobjar</p>
               <span className="version-chip">{APP_VERSION}</span>
             </div>
             <div className="page-hero-icon tasks">
