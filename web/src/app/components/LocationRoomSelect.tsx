@@ -20,7 +20,7 @@ type Props = {
 
 export function LocationRoomSelect({ locations, rooms }: Props) {
   const [selectedLocationId, setSelectedLocationId] = useState(
-    locations.length === 1 ? locations[0].id : ""
+    locations.length > 0 ? locations[0].id : ""
   );
 
   const visibleRooms = selectedLocationId

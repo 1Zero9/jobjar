@@ -112,6 +112,35 @@ select.admin-input {
     var(--background);
 }
 
+/* Per-page background tints */
+.page-log {
+  background:
+    radial-gradient(circle at top left, rgba(242, 107, 56, 0.08), transparent 35%),
+    radial-gradient(circle at bottom right, rgba(242, 107, 56, 0.05), transparent 30%),
+    #fff9f5;
+}
+
+.page-tasks {
+  background:
+    radial-gradient(circle at top left, rgba(69, 123, 157, 0.09), transparent 35%),
+    radial-gradient(circle at bottom right, rgba(74, 144, 226, 0.06), transparent 30%),
+    #f2f6fb;
+}
+
+.page-stats {
+  background:
+    radial-gradient(circle at top left, rgba(184, 233, 134, 0.25), transparent 35%),
+    radial-gradient(circle at bottom right, rgba(69, 123, 157, 0.06), transparent 30%),
+    #f3faf5;
+}
+
+.page-settings {
+  background:
+    radial-gradient(circle at top left, rgba(148, 163, 184, 0.10), transparent 35%),
+    radial-gradient(circle at bottom right, rgba(74, 144, 226, 0.05), transparent 30%),
+    #f6f5fb;
+}
+
 .settings-shell {
   background:
     radial-gradient(circle at top left, rgba(74, 144, 226, 0.07), transparent 32%),

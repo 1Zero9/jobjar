@@ -75,7 +75,7 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
   const peopleOptions = people.map((member) => member.user);
 
   return (
-    <div className="capture-shell min-h-screen px-4 py-5">
+    <div className="capture-shell page-log min-h-screen px-4 py-5">
       <main className="capture-app-shell mx-auto flex w-full max-w-[28rem] flex-col gap-6">
         <header className="capture-topbar">
           <div>
@@ -130,11 +130,25 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
 
             <LocationRoomSelect locations={locations} rooms={roomOptions} />
 
+            <div className="capture-step">
+              <label className="capture-step-inner">
+                <span className="capture-step-label">Assigned to (optional)</span>
+                <select name="assignedToUserId" defaultValue="" className="capture-room-select">
+                  <option value="">No one yet</option>
+                  {peopleOptions.map((person) => (
+                    <option key={person.id} value={person.id}>
+                      {person.displayName}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
             <details className="recorded-row">
               <summary className="recorded-row-summary">
                 <div className="min-w-0">
                   <p className="recorded-row-title">Add details</p>
-                  <p className="recorded-row-placeholder">Notes, priority, or mark it as already completed.</p>
+                  <p className="recorded-row-placeholder">Notes, priority, or set it as recurring.</p>
                 </div>
                 <div className="recorded-row-meta">
                   <span className="recorded-row-edit">Optional</span>
@@ -153,45 +167,13 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
                   />
                 </label>
 
-                <div className="capture-meta-grid">
-                  <label className="recorded-field">
-                    <span>Priority in room</span>
-                    <input
-                      name="priority"
-                      type="number"
-                      min={1}
-                      placeholder="Auto"
-                      className="recorded-edit-input"
-                    />
-                  </label>
-
-                  <label className="recorded-field">
-                    <span>Status</span>
-                    <select name="recordStatus" defaultValue="open" className="recorded-edit-input">
-                      <option value="open">Open</option>
-                      <option value="done">Completed</option>
-                    </select>
-                  </label>
-
-                  <label className="recorded-field">
-                    <span>Completed by</span>
-                    <select name="completedByUserId" defaultValue={currentUser?.id ?? ""} className="recorded-edit-input">
-                      <option value="">Not set</option>
-                      {peopleOptions.map((person) => (
-                        <option key={person.id} value={person.id}>
-                          {person.displayName}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-
                 <label className="recorded-field">
-                  <span>Resolved date</span>
+                  <span>Priority in room</span>
                   <input
-                    name="resolvedAt"
-                    type="datetime-local"
-                    defaultValue={toDateTimeInputValue(new Date())}
+                    name="priority"
+                    type="number"
+                    min={1}
+                    placeholder="Auto"
                     className="recorded-edit-input"
                   />
                 </label>
@@ -340,7 +322,7 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
     : null;
 
   return (
-    <div className="capture-shell min-h-screen px-4 py-5">
+    <div className="capture-shell page-tasks min-h-screen px-4 py-5">
       <main className="capture-app-shell mx-auto flex w-full max-w-[32rem] flex-col gap-6">
         <header className="capture-topbar">
           <div>

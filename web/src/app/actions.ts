@@ -335,6 +335,7 @@ export async function createQuickTaskAction(formData: FormData) {
   const requestedRoomId = String(formData.get("roomId") ?? "").trim();
   const requestedPriority = toPositiveIntOrNull(formData.get("priority"));
   const detailNotes = String(formData.get("detailNotes") ?? "").trim() || null;
+  const assignedToUserId = String(formData.get("assignedToUserId") ?? "").trim();
   const recordStatus = String(formData.get("recordStatus") ?? "open").trim();
   const completedByUserId = String(formData.get("completedByUserId") ?? "").trim();
   const resolvedAt = toDate(formData.get("resolvedAt")) ?? new Date();
@@ -380,6 +381,18 @@ export async function createQuickTaskAction(formData: FormData) {
 
   if (recordStatus !== "done" || recurrenceType) {
     await moveOpenTaskToPriority(task.id, roomId, requestedPriority);
+  }
+
+  if (assignedToUserId && recordStatus !== "done") {
+    const assigneeMember = await prisma.householdMember.findUnique({
+      where: { householdId_userId: { householdId, userId: assignedToUserId } },
+      select: { userId: true },
+    });
+    if (assigneeMember) {
+      await prisma.taskAssignment.create({
+        data: { taskId: task.id, userId: assignedToUserId, assignedFrom: new Date() },
+      });
+    }
   }
 
   if (recordStatus === "done") {

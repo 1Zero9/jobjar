@@ -27,7 +27,7 @@ export default async function SettingsPage() {
   ]);
 
   return (
-    <div className="settings-shell min-h-screen px-4 py-5">
+    <div className="settings-shell page-settings min-h-screen px-4 py-5">
       <main className="mx-auto flex w-full max-w-[32rem] flex-col gap-6">
         <header className="settings-hero">
           <div>
