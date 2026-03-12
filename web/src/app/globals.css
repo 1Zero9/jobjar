@@ -24,11 +24,11 @@
   --text-secondary: #44403b;
   --text-tertiary: #78716b;
 
-  /* Accent (teal – pops against the warm base) */
-  --accent: #0d9488;
-  --accent-hover: #0f766e;
-  --accent-soft: #ccfbf1;
-  --accent-muted: #99f6e4;
+  /* Accent (burnt orange – warm and bold) */
+  --accent: #c2410c;
+  --accent-hover: #9a3412;
+  --accent-soft: #fff1eb;
+  --accent-muted: #fed7aa;
 
   /* Semantic */
   --green: #157347;
@@ -702,20 +702,11 @@ select.admin-input {
     0 12px 22px color-mix(in srgb, var(--foreground) 7%, transparent);
 }
 
-.recorded-row-blue {
-  background: linear-gradient(180deg, var(--accent-soft) 0%, var(--card) 100%);
-}
-
-.recorded-row-green {
-  background: linear-gradient(180deg, var(--success-bg) 0%, var(--card) 100%);
-}
-
-.recorded-row-amber {
-  background: linear-gradient(180deg, var(--warning-bg) 0%, var(--card) 100%);
-}
-
+.recorded-row-blue,
+.recorded-row-green,
+.recorded-row-amber,
 .recorded-row-rose {
-  background: linear-gradient(180deg, var(--error-bg) 0%, var(--card) 100%);
+  background: var(--card);
 }
 
 .recorded-row-summary {

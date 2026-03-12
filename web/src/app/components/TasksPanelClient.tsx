@@ -193,11 +193,11 @@ export function TasksPanelClient({
               : "No tasks recorded yet."}
           </p>
         ) : (
-          visibleTasks.map((task, index) => (
+          visibleTasks.map((task) => (
             <details
               key={task.id}
               id={`task-${task.id}`}
-              className={`recorded-row recorded-row-${rowTone(index)}`}
+              className="recorded-row"
               open={task.id === initialLuckyId}
             >
               <summary className="recorded-row-summary">
@@ -418,10 +418,6 @@ export function TasksPanelClient({
   );
 }
 
-function rowTone(index: number) {
-  const tones = ["blue", "green", "amber", "rose"] as const;
-  return tones[index % tones.length];
-}
 
 const AVATAR_PALETTE = [
   { bg: "#dbeafe", fg: "#1d4ed8" },

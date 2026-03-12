@@ -169,7 +169,7 @@ export default async function RoomsPage({
             ) : null}
 
             {systemRoom ? (
-              <article className="recorded-row recorded-row-amber">
+              <article className="recorded-row">
                 <div className="recorded-row-detail">
                   <p><span>System room</span><strong>No room</strong></p>
                   <p><span>Used for</span><strong>Tasks saved without a room</strong></p>

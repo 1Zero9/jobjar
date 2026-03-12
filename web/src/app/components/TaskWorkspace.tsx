@@ -137,7 +137,7 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
               </select>
             </label>
 
-            <details className="recorded-row recorded-row-green">
+            <details className="recorded-row">
               <summary className="recorded-row-summary">
                 <div className="min-w-0">
                   <p className="recorded-row-title">Add details</p>
