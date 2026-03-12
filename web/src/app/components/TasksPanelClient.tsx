@@ -135,7 +135,7 @@ export function TasksPanelClient({
               <span>Location</span>
               <select
                 value={selectedLocationId}
-                onChange={(event) => setSelectedLocationId(event.target.value)}
+                onChange={(event) => { setSelectedLocationId(event.target.value); setSelectedAssigneeId(""); }}
                 className="recorded-filter-select"
               >
                 <option value="">All locations</option>
