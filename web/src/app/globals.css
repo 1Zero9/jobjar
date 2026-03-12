@@ -656,16 +656,27 @@ select.admin-input {
   transition: border-color 120ms ease, box-shadow 120ms ease;
 }
 
-.recorded-row.row-state-done       { --row-accent: #059669; --row-bg: #f0fdf4; }
-.recorded-row.row-state-overdue    { --row-accent: #dc2626; --row-bg: #fef2f2; }
-.recorded-row.row-state-due        { --row-accent: #ea580c; --row-bg: #fff7ed; }
-.recorded-row.row-state-active     { --row-accent: #2563ff; --row-bg: #eff6ff; }
-.recorded-row.row-state-unassigned { --row-accent: #d97706; --row-bg: #fffbeb; }
-.recorded-row.row-state-assigned   { --row-accent: #7c3aed; --row-bg: #f5f3ff; }
+.recorded-row.row-state-done       { --row-accent: #059669; --row-bg: #f5fef8; }
+.recorded-row.row-state-overdue    { --row-accent: #dc2626; --row-bg: #fff5f5; }
+.recorded-row.row-state-due        { --row-accent: #ea580c; --row-bg: #fff9f4; }
+.recorded-row.row-state-active     { --row-accent: #2563ff; --row-bg: #f4f8ff; }
+.recorded-row.row-state-unassigned { --row-accent: #d97706; --row-bg: #fdfcf0; }
+.recorded-row.row-state-assigned   { --row-accent: #7c3aed; --row-bg: #f8f7ff; }
 
 .recorded-row[open] {
-  border-color: color-mix(in srgb, var(--row-accent) 35%, #e6ecf5);
-  box-shadow: inset 5px 0 0 var(--row-accent), 0 10px 24px rgba(0, 0, 0, 0.07);
+  background: #ffffff;
+  border: 2px solid color-mix(in srgb, var(--row-accent) 60%, transparent);
+  box-shadow:
+    inset 6px 0 0 var(--row-accent),
+    0 0 0 4px color-mix(in srgb, var(--row-accent) 12%, transparent),
+    0 18px 40px rgba(0, 0, 0, 0.10);
+  position: relative;
+  z-index: 1;
+}
+
+.recorded-row[open] .recorded-row-summary {
+  background: color-mix(in srgb, var(--row-accent) 8%, #ffffff);
+  border-bottom: 1px solid color-mix(in srgb, var(--row-accent) 18%, #e6ecf5);
 }
 
 .recorded-row-blue,
