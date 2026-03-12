@@ -326,8 +326,8 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
           },
         },
         occurrences: {
-          orderBy: { createdAt: "desc" },
-          take: 3,
+          orderBy: { dueAt: "desc" },
+          take: 10,
           include: {
             completer: {
               select: {

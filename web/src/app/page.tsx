@@ -79,6 +79,12 @@ export default async function HomePage() {
               </FormActionButton>
             </form>
 
+            <Link href="/stats" className="landing-action-card stats">
+              <span className="landing-action-kicker">Stats</span>
+              <strong>Stats</strong>
+              <span>Completions, streaks, and household progress.</span>
+            </Link>
+
             {role === "admin" ? (
               <Link href="/settings" className="landing-action-card setup">
                 <span className="landing-action-kicker">Setup</span>

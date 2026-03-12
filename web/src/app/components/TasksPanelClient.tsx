@@ -130,6 +130,21 @@ export function TasksPanelClient({
 
       <div className="recorded-toolbar">
         <div className="recorded-filter-bar">
+          {locationOptions.length > 1 ? (
+            <label className="recorded-filter-field">
+              <span>Location</span>
+              <select
+                value={selectedLocationId}
+                onChange={(event) => setSelectedLocationId(event.target.value)}
+                className="recorded-filter-select"
+              >
+                <option value="">All locations</option>
+                {locationOptions.map((loc) => (
+                  <option key={loc.id} value={loc.id}>{loc.name}</option>
+                ))}
+              </select>
+            </label>
+          ) : null}
           <label className="recorded-filter-field">
             <span>Room</span>
             <select
@@ -179,13 +194,14 @@ export function TasksPanelClient({
         </div>
 
         <div className="recorded-toolbar-actions">
-          {selectedRoomId || selectedAssigneeId || selectedState !== "all" ? (
+          {selectedRoomId || selectedAssigneeId || selectedLocationId || selectedState !== "all" ? (
             <button
               type="button"
               className="action-btn subtle quiet"
               onClick={() => {
                 setSelectedRoomId("");
                 setSelectedAssigneeId("");
+                setSelectedLocationId("");
                 setSelectedState("all");
               }}
             >
@@ -240,6 +256,9 @@ export function TasksPanelClient({
                   {recurrenceStateClassName(task) === "task-chip-lapsed" ? <span className="task-chip task-chip-lapsed">Lapsed</span> : null}
                   {recurrenceStateClassName(task) === "task-chip-due" ? <span className="task-chip task-chip-due">Due today</span> : null}
                   {task.projectParentTitle ? <span className="task-chip">↳ {task.projectParentTitle}</span> : null}
+                  {task.schedule && computeStreak(task.occurrences) >= 2 ? (
+                    <span className="task-chip task-chip-streak">{computeStreak(task.occurrences)} in a row</span>
+                  ) : null}
                 </div>
               </summary>
 
@@ -576,14 +595,23 @@ function rowStateClass(task: {
   return "row-state-assigned";
 }
 
+function computeStreak(occurrences: Array<{ status: string }>) {
+  let streak = 0;
+  for (const occ of occurrences) {
+    if (occ.status === "done") streak++;
+    else break;
+  }
+  return streak;
+}
+
 function displayRoomName(roomName: string) {
   return roomName.toLowerCase() === "unsorted" ? "No room" : roomName;
 }
 
-function groupRoomsByDesignation<T extends { designation?: string | null; name: string }>(rooms: T[]) {
+function groupRoomsByLocation<T extends { location?: { name: string } | null; name: string }>(rooms: T[]) {
   const grouped = new Map<string, T[]>();
   for (const room of rooms) {
-    const key = room.designation?.trim() || "General";
+    const key = room.location?.name ?? "Other";
     const entries = grouped.get(key) ?? [];
     entries.push(room);
     grouped.set(key, entries);
