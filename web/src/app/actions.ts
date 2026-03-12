@@ -25,17 +25,13 @@ export async function createRoomAction(formData: FormData) {
     where: {
       householdId,
       active: true,
-      name: {
-        equals: name,
-        mode: "insensitive",
-      },
+      locationId: locationId ?? null,
+      name: { equals: name, mode: "insensitive" },
     },
     select: { id: true },
   });
   if (duplicateRoom) {
-    if (returnTo) {
-      redirect(`${returnTo}?duplicate=room`);
-    }
+    if (returnTo) redirect(`${returnTo}?duplicate=room`);
     return;
   }
 
@@ -75,22 +71,23 @@ export async function updateRoomAction(formData: FormData) {
     return;
   }
 
+  const currentRoom = await prisma.room.findFirst({
+    where: { id: roomId, householdId, active: true },
+    select: { locationId: true },
+  });
+
   const duplicateRoom = await prisma.room.findFirst({
     where: {
       householdId,
       active: true,
       id: { not: roomId },
-      name: {
-        equals: name,
-        mode: "insensitive",
-      },
+      locationId: currentRoom?.locationId ?? null,
+      name: { equals: name, mode: "insensitive" },
     },
     select: { id: true },
   });
   if (duplicateRoom) {
-    if (returnTo) {
-      redirect(`${returnTo}?duplicate=room`);
-    }
+    if (returnTo) redirect(`${returnTo}?duplicate=room`);
     return;
   }
 
