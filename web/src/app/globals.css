@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  /* Neutrals (cool slate) */
+  /* Neutrals */
   --neutral-50: #f8fafc;
   --neutral-100: #f1f5f9;
   --neutral-200: #e2e8f0;
@@ -14,43 +14,43 @@
   --neutral-900: #0f172a;
 
   /* Core */
-  --background: #f1faee;
-  --foreground: #1d3557;
+  --background: #f8fffe;
+  --foreground: #111827;
   --card: #ffffff;
-  --surface: #f8fdf8;
-  --muted: #457b9d;
-  --border: #a8dadc;
-  --text-primary: #1d3557;
-  --text-secondary: #457b9d;
-  --text-tertiary: #6a9ab8;
-  --border-color: #a8dadc;
+  --surface: #f4fffe;
+  --muted: #6b7280;
+  --border: #b8f5fd;
+  --text-primary: #111827;
+  --text-secondary: #374151;
+  --text-tertiary: #6b7280;
+  --border-color: #b8f5fd;
 
-  /* Accent (sky blue – primary brand) */
-  --accent: #4a90e2;
-  --accent-hover: #2d7ac9;
-  --accent-soft: #eaf3fd;
-  --accent-muted: #b3d4f5;
+  /* Accent — Electric Aqua */
+  --accent: #1BE7FF;
+  --accent-hover: #00ccdd;
+  --accent-soft: #e0feff;
+  --accent-muted: #7ef3ff;
 
-  /* Secondary (steel blue accent) */
-  --secondary: #457b9d;
-  --secondary-soft: #dce8f0;
+  /* Secondary — Light Green */
+  --secondary: #6EEB83;
+  --secondary-soft: #e8fbed;
 
   /* Semantic */
-  --green: #4a7a14;
-  --amber: #b86b0a;
-  --red: #d0021b;
-  --success: #4a7a14;
-  --success-bg: #f4fce6;
-  --warning: #b86b0a;
-  --warning-bg: #fef4de;
-  --error: #d0021b;
-  --error-bg: #ffeaea;
+  --green: #1a8a2e;
+  --amber: #a07010;
+  --red: #cc3300;
+  --success: #1a8a2e;
+  --success-bg: #eafbee;
+  --warning: #a07010;
+  --warning-bg: #fef5dc;
+  --error: #cc3300;
+  --error-bg: #ffe8e0;
 
-  /* Shadow & border helpers */
-  --shadow-sm: 0 4px 12px rgba(29, 53, 87, 0.06);
-  --shadow-md: 0 10px 30px rgba(29, 53, 87, 0.08);
-  --shadow-lg: 0 16px 28px rgba(29, 53, 87, 0.09);
-  --border-subtle: rgba(168, 218, 220, 0.8);
+  /* Shadows */
+  --shadow-sm: 0 4px 12px rgba(0, 150, 170, 0.07);
+  --shadow-md: 0 10px 30px rgba(0, 150, 170, 0.09);
+  --shadow-lg: 0 16px 28px rgba(0, 150, 170, 0.10);
+  --border-subtle: rgba(27, 231, 255, 0.3);
 }
 
 @theme inline {
@@ -115,30 +115,30 @@ select.admin-input {
 /* Per-page background tints */
 .page-log {
   background:
-    radial-gradient(circle at top left, rgba(242, 107, 56, 0.08), transparent 35%),
-    radial-gradient(circle at bottom right, rgba(242, 107, 56, 0.05), transparent 30%),
-    #fff9f5;
+    radial-gradient(circle at top left, rgba(255, 87, 20, 0.07), transparent 35%),
+    radial-gradient(circle at bottom right, rgba(232, 170, 20, 0.05), transparent 30%),
+    #fffcfa;
 }
 
 .page-tasks {
   background:
-    radial-gradient(circle at top left, rgba(69, 123, 157, 0.09), transparent 35%),
-    radial-gradient(circle at bottom right, rgba(74, 144, 226, 0.06), transparent 30%),
-    #f2f6fb;
+    radial-gradient(circle at top left, rgba(27, 231, 255, 0.08), transparent 35%),
+    radial-gradient(circle at bottom right, rgba(110, 235, 131, 0.06), transparent 30%),
+    #f8fffe;
 }
 
 .page-stats {
   background:
-    radial-gradient(circle at top left, rgba(184, 233, 134, 0.25), transparent 35%),
-    radial-gradient(circle at bottom right, rgba(69, 123, 157, 0.06), transparent 30%),
-    #f3faf5;
+    radial-gradient(circle at top left, rgba(110, 235, 131, 0.12), transparent 35%),
+    radial-gradient(circle at bottom right, rgba(228, 255, 26, 0.08), transparent 30%),
+    #f8fffb;
 }
 
 .page-settings {
   background:
-    radial-gradient(circle at top left, rgba(148, 163, 184, 0.10), transparent 35%),
-    radial-gradient(circle at bottom right, rgba(74, 144, 226, 0.05), transparent 30%),
-    #f6f5fb;
+    radial-gradient(circle at top left, rgba(232, 170, 20, 0.07), transparent 35%),
+    radial-gradient(circle at bottom right, rgba(27, 231, 255, 0.05), transparent 30%),
+    #fffef8;
 }
 
 .settings-shell {
@@ -224,8 +224,8 @@ select.admin-input {
   display: inline-flex;
   align-items: center;
   border-radius: 999px;
-  background: var(--accent);
-  color: #fff;
+  background: #1BE7FF;
+  color: #0d1117;
   font-size: 0.8rem;
   font-weight: 700;
   padding: 0.35rem 0.85rem;
@@ -279,13 +279,13 @@ select.admin-input {
 }
 
 .page-hero-icon.home {
-  background: color-mix(in srgb, #4a90e2 12%, transparent);
-  color: #4a90e2;
+  background: color-mix(in srgb, #1BE7FF 15%, transparent);
+  color: #009db5;
 }
 
 .page-hero-icon.tasks {
-  background: color-mix(in srgb, #457b9d 12%, transparent);
-  color: #457b9d;
+  background: color-mix(in srgb, #6EEB83 15%, transparent);
+  color: #1a8a2e;
 }
 
 .landing-action-card {
@@ -319,10 +319,10 @@ select.admin-input {
   flex-shrink: 0;
 }
 
-.landing-action-card.log   { --card-accent: #4a90e2; }
-.landing-action-card.view  { --card-accent: #457b9d; }
-.landing-action-card.lucky { --card-accent: #f26b38; }
-.landing-action-card.setup { --card-accent: #94a3b8; }
+.landing-action-card.log   { --card-accent: #1BE7FF; }
+.landing-action-card.view  { --card-accent: #6EEB83; }
+.landing-action-card.lucky { --card-accent: #FF5714; }
+.landing-action-card.setup { --card-accent: #E8AA14; }
 
 .landing-action-button {
   cursor: pointer;
@@ -652,9 +652,9 @@ select.admin-input {
 }
 
 .recorded-filter-select.filter-active {
-  background: #fefce8;
-  border-color: #eab308;
-  color: #713f12;
+  background: #E4FF1A;
+  border-color: #c8d800;
+  color: #1a1a00;
 }
 
 .recorded-toolbar-actions {
@@ -681,12 +681,12 @@ select.admin-input {
   transition: border-color 120ms ease, box-shadow 120ms ease;
 }
 
-.recorded-row.row-state-done       { --row-accent: #6ab52a; --row-bg: #fafff5; }
-.recorded-row.row-state-overdue    { --row-accent: #d0021b; --row-bg: #fffbfb; }
-.recorded-row.row-state-due        { --row-accent: #f26b38; --row-bg: #fffdf9; }
-.recorded-row.row-state-active     { --row-accent: #4a90e2; --row-bg: #fbfdff; }
-.recorded-row.row-state-unassigned { --row-accent: #f26b38; --row-bg: #fffdf9; }
-.recorded-row.row-state-assigned   { --row-accent: #457b9d; --row-bg: #f8fbfd; }
+.recorded-row.row-state-done       { --row-accent: #6EEB83; --row-bg: #f4fdf6; }
+.recorded-row.row-state-overdue    { --row-accent: #FF5714; --row-bg: #fff4f0; }
+.recorded-row.row-state-due        { --row-accent: #E8AA14; --row-bg: #fffbf0; }
+.recorded-row.row-state-active     { --row-accent: #1BE7FF; --row-bg: #f0feff; }
+.recorded-row.row-state-unassigned { --row-accent: #E8AA14; --row-bg: #fffbf0; }
+.recorded-row.row-state-assigned   { --row-accent: #6EEB83; --row-bg: #f4fdf6; }
 
 .recorded-row[open] {
   background: #ffffff;
@@ -2695,7 +2695,7 @@ select.admin-input {
 
 .stats-bar-fill {
   height: 100%;
-  background: var(--accent);
+  background: #1BE7FF;
   border-radius: 999px;
   transition: width 400ms ease;
   min-width: 4px;
@@ -2807,10 +2807,10 @@ select.admin-input {
 }
 
 .task-chip-streak {
-  background: var(--accent-soft);
-  color: var(--accent);
-  border: 1px solid var(--accent-muted);
+  background: #E4FF1A;
+  color: #1a1a00;
+  border: 1px solid #c8d800;
   font-weight: 700;
 }
 
-.landing-action-card.stats { --card-accent: #b8e986; }
+.landing-action-card.stats { --card-accent: #E4FF1A; }
