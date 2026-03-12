@@ -16,10 +16,7 @@ export default async function HomePage() {
       select: { displayName: true },
     }),
     prisma.task.count({
-      where: {
-        active: true,
-        room: { householdId },
-      },
+      where: { active: true, room: { householdId } },
     }),
   ]);
 
@@ -27,20 +24,12 @@ export default async function HomePage() {
     <div className="capture-shell min-h-screen px-4 py-5">
       <main className="landing-shell mx-auto flex w-full max-w-[28rem] flex-col gap-6">
         <header className="landing-hero">
-          <div>
-            <div className="capture-topline">
-              <p className="capture-kicker">Task Jar</p>
-              <span className="version-chip">{APP_VERSION}</span>
-            </div>
-            <h1 className="landing-title">Choose what you want to do.</h1>
-            <p className="landing-copy">
-              Keep the main actions obvious: log a task, view what is recorded, pull a lucky dip, or manage the setup.
-            </p>
+          <div className="landing-title-row">
+            <h1 className="landing-title">Jobjar</h1>
+            <span className="version-chip">{APP_VERSION}</span>
           </div>
           <div className="capture-topbar-actions">
-            <span className="landing-user-chip">
-              Signed in as <span className="session-user">{currentUser?.displayName ?? "You"}</span>
-            </span>
+            <span className="landing-user-chip">{currentUser?.displayName ?? "You"}</span>
             <form action={logoutAction}>
               <FormActionButton className="action-btn subtle quiet" pendingLabel="Logging out">
                 Log out
@@ -57,47 +46,60 @@ export default async function HomePage() {
 
           <div className="landing-grid">
             <Link href="/log" className="landing-action-card log">
-              <span className="landing-action-kicker">Log</span>
-              <strong>Record a task</strong>
-              <span>Quick capture for a room and task.</span>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+              <strong>Log task</strong>
             </Link>
 
             <Link href="/tasks" className="landing-action-card view">
-              <span className="landing-action-kicker">View</span>
-              <strong>View tasks</strong>
-              <span>Browse, filter, edit, and tidy up.</span>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <line x1="8" y1="6" x2="21" y2="6"/>
+                <line x1="8" y1="12" x2="21" y2="12"/>
+                <line x1="8" y1="18" x2="21" y2="18"/>
+                <polyline points="3 6 4 7 6 4"/>
+                <polyline points="3 12 4 13 6 10"/>
+                <polyline points="3 18 4 19 6 16"/>
+              </svg>
+              <strong>Tasks</strong>
             </Link>
 
             <form action={luckyDipAction} className="landing-action-form">
               <input type="hidden" name="returnTo" value="/tasks" />
-              <FormActionButton className="landing-action-card lucky landing-action-button" pendingLabel="Picking task">
+              <FormActionButton className="landing-action-card lucky landing-action-button" pendingLabel="Picking…">
                 <>
-                  <span className="landing-action-kicker">Lucky</span>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <polyline points="16 3 21 3 21 8"/>
+                    <line x1="4" y1="20" x2="21" y2="3"/>
+                    <polyline points="21 16 21 21 16 21"/>
+                    <line x1="15" y1="15" x2="21" y2="21"/>
+                    <line x1="4" y1="4" x2="9" y2="9"/>
+                  </svg>
                   <strong>Lucky dip</strong>
-                  <span>Pick something at random and get moving.</span>
                 </>
               </FormActionButton>
             </form>
 
             <Link href="/stats" className="landing-action-card stats">
-              <span className="landing-action-kicker">Stats</span>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <line x1="18" y1="20" x2="18" y2="10"/>
+                <line x1="12" y1="20" x2="12" y2="4"/>
+                <line x1="6" y1="20" x2="6" y2="14"/>
+                <line x1="2" y1="20" x2="22" y2="20"/>
+              </svg>
               <strong>Stats</strong>
-              <span>Completions, streaks, and household progress.</span>
             </Link>
 
             {role === "admin" ? (
               <Link href="/settings" className="landing-action-card setup">
-                <span className="landing-action-kicker">Setup</span>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
                 <strong>Setup</strong>
-                <span>Rooms, people, and household setup.</span>
               </Link>
-            ) : (
-              <div className="landing-action-card setup muted disabled" aria-disabled="true">
-                <span className="landing-action-kicker">Setup</span>
-                <strong>Admin only</strong>
-                <span>Rooms and people can only be managed by an admin account.</span>
-              </div>
-            )}
+            ) : null}
           </div>
         </section>
       </main>

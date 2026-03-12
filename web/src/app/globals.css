@@ -172,37 +172,35 @@ select.admin-input {
 }
 
 .landing-hero {
-  display: grid;
-  gap: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.landing-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
 }
 
 .landing-title {
-  margin-top: 0.45rem;
-  color: var(--text-primary);
-  font-size: clamp(2rem, 6vw, 2.6rem);
-  font-weight: 800;
-  letter-spacing: -0.04em;
-  line-height: 0.98;
-}
-
-.landing-copy {
-  margin-top: 0.55rem;
-  color: var(--muted);
-  font-size: 0.98rem;
-  line-height: 1.5;
+  color: var(--foreground);
+  font-size: clamp(2.4rem, 8vw, 3rem);
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  line-height: 1;
 }
 
 .landing-user-chip {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  border: 1px solid var(--accent-muted);
+  border: 1px solid var(--border);
   border-radius: 999px;
-  background: var(--accent-soft);
-  color: var(--accent-hover);
-  font-size: 0.78rem;
-  font-weight: 700;
-  padding: 0.58rem 0.82rem;
+  background: var(--surface);
+  color: var(--foreground);
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.4rem 0.75rem;
 }
 
 .session-user {
@@ -246,17 +244,16 @@ select.admin-input {
 .landing-action-card {
   --card-accent: var(--accent);
   position: relative;
-  display: grid;
-  gap: 0.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
   width: 100%;
-  min-height: 7.75rem;
-  overflow: hidden;
+  padding: 1rem;
   border: 1px solid var(--border);
   border-top: 3px solid var(--card-accent);
   border-radius: 1.25rem;
   background: var(--card);
   color: var(--text-primary);
-  padding: 1rem;
   text-align: left;
   box-shadow: var(--shadow-sm);
   transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
@@ -269,6 +266,11 @@ select.admin-input {
   box-shadow: var(--shadow-md);
 }
 
+.landing-action-card svg {
+  color: var(--card-accent);
+  flex-shrink: 0;
+}
+
 .landing-action-card.log   { --card-accent: #4a90e2; }
 .landing-action-card.view  { --card-accent: #457b9d; }
 .landing-action-card.lucky { --card-accent: #f26b38; }
@@ -279,46 +281,9 @@ select.admin-input {
 }
 
 .landing-action-card strong {
-  font-size: 1.3rem;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-}
-
-.landing-action-card span:last-child {
-  color: var(--muted);
-  font-size: 0.92rem;
-  line-height: 1.45;
-}
-
-.landing-action-kicker {
-  color: var(--card-accent);
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-.landing-action-card.muted {
-  --card-accent: var(--muted);
-  background: var(--surface);
-}
-
-.landing-action-card.disabled {
-  --card-accent: var(--neutral-400);
-  background: var(--surface);
-  border-color: var(--neutral-200);
-  cursor: not-allowed;
-  opacity: 0.72;
-}
-
-.landing-action-card.disabled:hover {
-  transform: none;
-  box-shadow: var(--shadow-sm);
-}
-
-.landing-action-card.disabled strong,
-.landing-action-card.disabled span:last-child {
-  color: var(--muted);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .settings-hero {
@@ -1072,11 +1037,6 @@ select.admin-input {
 
   .landing-shell {
     max-width: 100%;
-  }
-
-  .landing-hero {
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: end;
   }
 
   .landing-grid {
