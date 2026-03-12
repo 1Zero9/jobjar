@@ -648,36 +648,35 @@ select.admin-input {
 
 .recorded-row {
   --row-accent: #94a3b8;
-  --row-bg: var(--card);
-  border: 1px solid #e6ecf5;
+  --row-bg: #ffffff;
+  border: 1px solid var(--border);
   border-radius: 1rem;
   background: var(--row-bg);
   overflow: hidden;
-  box-shadow: inset 5px 0 0 var(--row-accent);
+  box-shadow: inset 4px 0 0 var(--row-accent);
   transition: border-color 120ms ease, box-shadow 120ms ease;
 }
 
-.recorded-row.row-state-done       { --row-accent: #6ab52a; --row-bg: #f4fce6; }
-.recorded-row.row-state-overdue    { --row-accent: #d0021b; --row-bg: #fff0f0; }
-.recorded-row.row-state-due        { --row-accent: #f26b38; --row-bg: #fff2ec; }
-.recorded-row.row-state-active     { --row-accent: #4a90e2; --row-bg: #eaf3fd; }
-.recorded-row.row-state-unassigned { --row-accent: #f26b38; --row-bg: #fff2ec; }
-.recorded-row.row-state-assigned   { --row-accent: #457b9d; --row-bg: #dce8f0; }
+.recorded-row.row-state-done       { --row-accent: #6ab52a; --row-bg: #fafff5; }
+.recorded-row.row-state-overdue    { --row-accent: #d0021b; --row-bg: #fffbfb; }
+.recorded-row.row-state-due        { --row-accent: #f26b38; --row-bg: #fffdf9; }
+.recorded-row.row-state-active     { --row-accent: #4a90e2; --row-bg: #fbfdff; }
+.recorded-row.row-state-unassigned { --row-accent: #f26b38; --row-bg: #fffdf9; }
+.recorded-row.row-state-assigned   { --row-accent: #457b9d; --row-bg: #f8fbfd; }
 
 .recorded-row[open] {
   background: #ffffff;
-  border: 2px solid color-mix(in srgb, var(--row-accent) 60%, transparent);
+  border: 1.5px solid var(--row-accent);
   box-shadow:
-    inset 6px 0 0 var(--row-accent),
-    0 0 0 4px color-mix(in srgb, var(--row-accent) 12%, transparent),
-    0 18px 40px rgba(0, 0, 0, 0.10);
+    inset 5px 0 0 var(--row-accent),
+    0 4px 16px rgba(0, 0, 0, 0.07);
   position: relative;
   z-index: 1;
 }
 
 .recorded-row[open] .recorded-row-summary {
-  background: color-mix(in srgb, var(--row-accent) 8%, #ffffff);
-  border-bottom: 1px solid color-mix(in srgb, var(--row-accent) 18%, #e6ecf5);
+  background: color-mix(in srgb, var(--row-accent) 6%, #ffffff);
+  border-bottom: 1px solid color-mix(in srgb, var(--row-accent) 20%, var(--border));
 }
 
 .recorded-row-blue,
