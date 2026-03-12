@@ -594,7 +594,7 @@ select.admin-input {
 
 .recorded-filter-bar {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.55rem;
 }
 
@@ -602,9 +602,9 @@ select.admin-input {
   display: grid;
   gap: 0.7rem;
   margin-top: 1rem;
-  border: 1px solid #e0eaf8;
+  border: 1px solid var(--border);
   border-radius: 1.1rem;
-  background: #f8fbff;
+  background: var(--surface);
   padding: 0.8rem;
 }
 
@@ -671,7 +671,7 @@ select.admin-input {
 
 .recorded-row[open] {
   background: #ffffff;
-  border: 1.5px solid var(--row-accent);
+  border: 2px solid var(--row-accent);
   box-shadow:
     inset 5px 0 0 var(--row-accent),
     0 4px 16px rgba(0, 0, 0, 0.07);
