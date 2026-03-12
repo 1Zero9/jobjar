@@ -87,6 +87,7 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
             <p className="capture-subtitle">Keep capture fast. Task first, room second, everything else optional.</p>
           </div>
           <div className="capture-topbar-actions">
+            <span className="session-chip">{currentUser?.displayName ?? "You"}</span>
             <Link href="/" className="action-btn subtle quiet">
               Home
             </Link>
@@ -239,9 +240,6 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
           </form>
         </section>
 
-        <footer className="capture-footer">
-          Logged in as <span className="session-user">{currentUser?.displayName ?? "You"}</span>
-        </footer>
       </main>
     </div>
   );
@@ -334,7 +332,10 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
   const roomOptions = uniqueRoomsByName(rooms).filter((room) => room.name.toLowerCase() !== "unsorted");
   const peopleOptions = people.map((member) => member.user);
   const selectedRoomId = roomOptions.some((room) => room.id === params.room) ? (params.room ?? "") : "";
-  const selectedAssigneeId = peopleOptions.some((person) => person.id === params.assignee) ? (params.assignee ?? "") : "";
+  const userHasAssigned = !params.assignee && recordedTasks.some((t) => t.assignments[0]?.userId === userId);
+  const selectedAssigneeId = peopleOptions.some((person) => person.id === params.assignee)
+    ? (params.assignee ?? "")
+    : userHasAssigned ? userId : "";
   const selectedLocationId = locations.some((loc) => loc.id === params.location) ? (params.location ?? "") : "";
   const selectedState: "all" | "open" | "done" = params.state === "done" || params.state === "open" ? params.state : "all";
   const luckyTask = params.lucky && params.lucky !== "empty"
@@ -364,6 +365,7 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
             <p className="capture-subtitle">View, filter, prioritise, and complete what has already been logged.</p>
           </div>
           <div className="capture-topbar-actions">
+            <span className="session-chip">{currentUser?.displayName ?? "You"}</span>
             <Link href="/" className="action-btn subtle quiet">
               Home
             </Link>
@@ -431,9 +433,6 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
           }))}
         />
 
-        <footer className="capture-footer">
-          Logged in as <span className="session-user">{currentUser?.displayName ?? "You"}</span>
-        </footer>
       </main>
     </div>
   );

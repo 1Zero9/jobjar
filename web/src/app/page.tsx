@@ -36,7 +36,7 @@ export default async function HomePage() {
             <span className="version-chip">{APP_VERSION}</span>
           </div>
           <div className="capture-topbar-actions">
-            <span className="landing-user-chip">{currentUser?.displayName ?? "You"}</span>
+            <span className="session-chip">{currentUser?.displayName ?? "You"}</span>
             <form action={logoutAction}>
               <FormActionButton className="action-btn subtle quiet" pendingLabel="Logging out">
                 Log out
