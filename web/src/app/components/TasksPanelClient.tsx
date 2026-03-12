@@ -197,7 +197,7 @@ export function TasksPanelClient({
             <details
               key={task.id}
               id={`task-${task.id}`}
-              className="recorded-row"
+              className={`recorded-row ${rowStateClass(task)}`}
               open={task.id === initialLuckyId}
             >
               <summary className="recorded-row-summary">
@@ -548,6 +548,19 @@ function wasOccurrenceOnTime(occurrence: { dueAt?: string; completedAt?: string 
     return true;
   }
   return new Date(occurrence.completedAt).getTime() <= new Date(occurrence.dueAt).getTime();
+}
+
+function rowStateClass(task: {
+  captureStage: string;
+  occurrences: Array<{ status: string; dueAt: string }>;
+  schedule: { nextDueAt: string | null } | null;
+}): string {
+  if (getTaskState(task) === "done") return "row-state-done";
+  const stateClass = recurrenceStateClassName(task);
+  if (stateClass === "task-chip-lapsed") return "row-state-overdue";
+  if (stateClass === "task-chip-due") return "row-state-due";
+  if (task.schedule) return "row-state-active";
+  return "";
 }
 
 function displayRoomName(roomName: string) {
