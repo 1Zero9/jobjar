@@ -585,12 +585,6 @@ select.admin-input {
   gap: 0.7rem;
 }
 
-.recorded-summary-line {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem;
-  margin-top: 0.18rem;
-}
 
 .recorded-filter-bar {
   display: grid;
@@ -652,28 +646,27 @@ select.admin-input {
 }
 
 .recorded-row {
-  --row-accent: var(--neutral-300);
+  --row-accent: #94a3b8;
+  --row-bg: var(--card);
   border: 1px solid #e6ecf5;
   border-radius: 1rem;
-  background: var(--card);
+  background: var(--row-bg);
   overflow: hidden;
-  box-shadow: inset 4px 0 0 var(--row-accent);
+  box-shadow: inset 5px 0 0 var(--row-accent);
   transition: border-color 120ms ease, box-shadow 120ms ease;
 }
 
-.recorded-row.row-state-done    { --row-accent: var(--success); }
-.recorded-row.row-state-overdue { --row-accent: var(--error); }
-.recorded-row.row-state-due     { --row-accent: var(--warning); }
-.recorded-row.row-state-active  { --row-accent: var(--accent); }
+.recorded-row.row-state-done       { --row-accent: #059669; --row-bg: #f0fdf4; }
+.recorded-row.row-state-overdue    { --row-accent: #dc2626; --row-bg: #fef2f2; }
+.recorded-row.row-state-due        { --row-accent: #ea580c; --row-bg: #fff7ed; }
+.recorded-row.row-state-active     { --row-accent: #2563ff; --row-bg: #eff6ff; }
+.recorded-row.row-state-unassigned { --row-accent: #d97706; --row-bg: #fffbeb; }
+.recorded-row.row-state-assigned   { --row-accent: #7c3aed; --row-bg: #f5f3ff; }
 
 .recorded-row[open] {
-  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
-  border-color: var(--accent-muted);
-  box-shadow: inset 4px 0 0 var(--row-accent), 0 12px 28px rgba(37, 99, 255, 0.10);
+  border-color: color-mix(in srgb, var(--row-accent) 35%, #e6ecf5);
+  box-shadow: inset 5px 0 0 var(--row-accent), 0 10px 24px rgba(0, 0, 0, 0.07);
 }
-
-/* Hide verbose frequency + on-track chips in collapsed summary — state shown by accent strip */
-.recorded-row-summary .task-chip-recurring { display: none; }
 
 .recorded-row-blue,
 .recorded-row-green,
@@ -683,60 +676,30 @@ select.admin-input {
 }
 
 .recorded-row-summary {
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-  align-items: stretch;
+  display: grid;
+  gap: 0.22rem;
   cursor: pointer;
   list-style: none;
-  padding: 0.65rem 0.85rem;
+  padding: 0.55rem 0.75rem;
 }
 
 .recorded-row-summary::-webkit-details-marker {
   display: none;
 }
 
-.recorded-row-main {
+.recorded-row-top {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   min-width: 0;
 }
 
-.recorded-row-meta {
+.recorded-row-sub {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.55rem;
-  width: 100%;
-}
-
-.recorded-row-summary-actions {
-  display: inline-flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.55rem;
-  margin-left: auto;
-}
-
-.recorded-row-edit {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 2rem;
-  min-width: 5.2rem;
-  border: 1px solid var(--neutral-300);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--card) 95%, transparent);
-  color: var(--text-secondary);
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  padding: 0.28rem 0.5rem;
-  text-transform: uppercase;
-}
-
-.recorded-row-edit-bright {
-  border-color: color-mix(in srgb, var(--accent) 42%, transparent);
-  background: color-mix(in srgb, var(--accent-soft) 78%, var(--card));
-  color: var(--accent);
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  min-width: 0;
 }
 
 .recorded-row-chevron {
@@ -777,12 +740,11 @@ select.admin-input {
 }
 
 .recorded-row-assignee {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0.42rem;
-  margin-top: 0.1rem;
+  gap: 0.3rem;
   color: var(--text-secondary);
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   font-weight: 500;
 }
 
@@ -1083,11 +1045,11 @@ select.admin-input {
   }
 
   .recorded-row-summary {
-    padding: 0.6rem 0.8rem;
+    padding: 0.5rem 0.7rem;
   }
 
   .recorded-row-detail {
-    padding: 0 0.8rem 0.8rem;
+    padding: 0 0.75rem 0.75rem;
   }
 
   .capture-footer {
@@ -1113,17 +1075,6 @@ select.admin-input {
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: end;
     gap: 0.8rem;
-  }
-
-  .recorded-row-summary {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-  }
-
-  .recorded-row-meta {
-    justify-content: flex-end;
-    width: auto;
   }
 
   .recorded-row-title {

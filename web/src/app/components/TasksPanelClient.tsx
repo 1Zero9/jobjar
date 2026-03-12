@@ -201,34 +201,26 @@ export function TasksPanelClient({
               open={task.id === initialLuckyId}
             >
               <summary className="recorded-row-summary">
-                <div className="recorded-row-main">
+                <div className="recorded-row-top">
                   <p className="recorded-row-title">{task.title}</p>
-                  <p className="recorded-row-assignee">
-                    {task.assignmentUserName ? (
-                      <>
-                        <span className="assignee-avatar" style={nameToAvatarStyle(task.assignmentUserName)}>
-                          {nameInitials(task.assignmentUserName)}
-                        </span>
-                        {task.assignmentUserName}
-                      </>
-                    ) : (
-                      <span className="assignee-unset">Unassigned</span>
-                    )}
-                  </p>
-                  <div className="recorded-summary-line">
-                    {getTaskState(task) === "done" ? <span className="task-chip task-chip-done">Completed</span> : null}
-                    {task.schedule ? <span className="task-chip task-chip-recurring">{formatRecurrenceChip(task.schedule)}</span> : null}
-                    {task.schedule?.nextDueAt ? <span className="task-chip">Due {formatShortDate(task.schedule.nextDueAt)}</span> : null}
-                    {task.schedule ? <span className={`task-chip ${recurrenceStateClassName(task)}`}>{getRecurrenceStateLabel(task)}</span> : null}
-                    {task.projectParentTitle ? <span className="task-chip">↳ {task.projectParentTitle}</span> : null}
-                  </div>
+                  <span className="recorded-row-chevron">▾</span>
                 </div>
-                <div className="recorded-row-meta">
+                <div className="recorded-row-sub">
                   <span className="recorded-row-room">{displayRoomName(task.roomName)}</span>
-                  <div className="recorded-row-summary-actions">
-                    <span className="recorded-row-edit">Edit</span>
-                    <span className="recorded-row-chevron">▾</span>
-                  </div>
+                  {task.assignmentUserName ? (
+                    <span className="recorded-row-assignee">
+                      <span className="assignee-avatar" style={nameToAvatarStyle(task.assignmentUserName)}>
+                        {nameInitials(task.assignmentUserName)}
+                      </span>
+                      {task.assignmentUserName}
+                    </span>
+                  ) : (
+                    <span className="assignee-unset">Unassigned</span>
+                  )}
+                  {getTaskState(task) === "done" ? <span className="task-chip task-chip-done">Done</span> : null}
+                  {recurrenceStateClassName(task) === "task-chip-lapsed" ? <span className="task-chip task-chip-lapsed">Lapsed</span> : null}
+                  {recurrenceStateClassName(task) === "task-chip-due" ? <span className="task-chip task-chip-due">Due today</span> : null}
+                  {task.projectParentTitle ? <span className="task-chip">↳ {task.projectParentTitle}</span> : null}
                 </div>
               </summary>
 
@@ -554,13 +546,15 @@ function rowStateClass(task: {
   captureStage: string;
   occurrences: Array<{ status: string; dueAt: string }>;
   schedule: { nextDueAt: string | null } | null;
+  assignmentUserId: string | null;
 }): string {
   if (getTaskState(task) === "done") return "row-state-done";
   const stateClass = recurrenceStateClassName(task);
   if (stateClass === "task-chip-lapsed") return "row-state-overdue";
   if (stateClass === "task-chip-due") return "row-state-due";
   if (task.schedule) return "row-state-active";
-  return "";
+  if (!task.assignmentUserId) return "row-state-unassigned";
+  return "row-state-assigned";
 }
 
 function displayRoomName(roomName: string) {
