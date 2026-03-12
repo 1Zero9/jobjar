@@ -1,5 +1,6 @@
 import { createQuickTaskAction, logoutAction } from "@/app/actions";
 import { FormActionButton } from "@/app/components/FormActionButton";
+import { LocationRoomSelect } from "@/app/components/LocationRoomSelect";
 import { SimilarTaskField } from "@/app/components/SimilarTaskField";
 import { TasksPanelClient } from "@/app/components/TasksPanelClient";
 import { ToastNotice } from "@/app/components/ToastNotice";
@@ -22,7 +23,7 @@ type SearchParams = {
 export async function LogWorkspace({ params }: { params: SearchParams }) {
   const { householdId, userId, role } = await requireSessionContext("/log");
 
-  const [currentUser, rooms, people, lookupTasks] = await Promise.all([
+  const [currentUser, rooms, people, locations, lookupTasks] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       select: { id: true, displayName: true },
@@ -30,7 +31,7 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
     prisma.room.findMany({
       where: { householdId, active: true },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-      select: { id: true, name: true, designation: true, location: { select: { name: true } } },
+      select: { id: true, name: true, designation: true, location: { select: { id: true, name: true } } },
     }),
     prisma.householdMember.findMany({
       where: { householdId },
@@ -43,6 +44,11 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
           },
         },
       },
+    }),
+    prisma.location.findMany({
+      where: { householdId, active: true },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      select: { id: true, name: true },
     }),
     prisma.task.findMany({
       where: {
@@ -67,7 +73,6 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
 
   const roomOptions = uniqueRoomsByName(rooms).filter((room) => room.name.toLowerCase() !== "unsorted");
   const peopleOptions = people.map((member) => member.user);
-  const groupedRoomOptions = groupRoomsByLocation(roomOptions);
 
   return (
     <div className="capture-shell min-h-screen px-4 py-5">
@@ -122,21 +127,7 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
               }))}
             />
 
-            <label className="capture-step">
-              <span className="capture-step-label">Room (optional)</span>
-              <select name="roomId" defaultValue="" className="capture-room-select">
-                <option value="">No room yet</option>
-                {groupedRoomOptions.map(([group, groupedRooms]) => (
-                  <optgroup key={group} label={group}>
-                    {groupedRooms.map((room) => (
-                      <option key={room.id} value={room.id}>
-                        {room.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-            </label>
+            <LocationRoomSelect locations={locations} rooms={roomOptions} />
 
             <details className="recorded-row">
               <summary className="recorded-row-summary">
