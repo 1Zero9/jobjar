@@ -254,6 +254,11 @@ select.admin-input {
   color: var(--accent);
 }
 
+.page-hero-icon.home {
+  background: color-mix(in srgb, #4a90e2 12%, transparent);
+  color: #4a90e2;
+}
+
 .page-hero-icon.tasks {
   background: color-mix(in srgb, #457b9d 12%, transparent);
   color: #457b9d;
