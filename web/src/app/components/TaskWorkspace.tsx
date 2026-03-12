@@ -100,17 +100,13 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
           </div>
         </header>
 
-        {params.added === "task" ? (
-          <div className="flex items-center gap-3">
-            <ToastNotice message="Task recorded." tone="success" />
-            {params.taskId ? (
-              <Link href={`/tasks#task-${params.taskId}`} className="action-btn subtle quiet">
-                View task
-              </Link>
-            ) : null}
-          </div>
-        ) : null}
+        {params.added === "task" ? <ToastNotice message="Task recorded." tone="success" /> : null}
         {params.added === "done" ? <ToastNotice message="Completed task recorded." tone="success" /> : null}
+        {(params.added === "task" || params.added === "done") && params.taskId ? (
+          <Link href={`/tasks#task-${params.taskId}`} className="view-task-link">
+            View the task you just logged
+          </Link>
+        ) : null}
 
         <section className="capture-panel-simple">
           <form action={createQuickTaskAction} className="capture-form-simple" id="capture-form">

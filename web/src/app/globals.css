@@ -1835,6 +1835,89 @@ select.admin-input {
   }
 }
 
+/* Post-log view task link */
+.view-task-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--accent-soft) 55%, var(--card));
+  color: var(--accent-hover);
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 0.78rem 1rem;
+  text-decoration: none;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.view-task-link:hover {
+  background: color-mix(in srgb, var(--accent-soft) 80%, var(--card));
+  border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+}
+
+.view-task-link::after {
+  content: "→";
+  font-size: 1rem;
+  opacity: 0.7;
+}
+
+/* Admin search */
+.admin-search-wrap {
+  position: relative;
+}
+
+.admin-search-input {
+  width: 100%;
+  border: 1px solid var(--neutral-300);
+  border-radius: 0.9rem;
+  background: var(--card);
+  color: var(--foreground);
+  font-size: 0.88rem;
+  padding: 0.7rem 1rem;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.admin-search-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.admin-search-input::placeholder {
+  color: var(--muted);
+}
+
+.admin-search-count {
+  position: absolute;
+  right: 0.85rem;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.18rem 0.5rem;
+  pointer-events: none;
+}
+
+/* Admin field label */
+.admin-field-label {
+  display: grid;
+  gap: 0.28rem;
+}
+
+.admin-field-label span {
+  color: var(--muted);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 @media (min-width: 640px) {
   .capture-meta-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1881,8 +1964,8 @@ select.admin-input {
 
 .admin-input {
   border-radius: 0.7rem;
-  border: 1px solid var(--border);
-  background: linear-gradient(180deg, var(--surface) 0%, var(--accent-soft) 100%);
+  border: 1px solid var(--neutral-300);
+  background: var(--card);
   color: var(--foreground);
 }
 

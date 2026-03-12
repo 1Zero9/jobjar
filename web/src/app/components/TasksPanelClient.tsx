@@ -203,9 +203,6 @@ export function TasksPanelClient({
               <summary className="recorded-row-summary">
                 <div className="recorded-row-main">
                   <p className="recorded-row-title">{task.title}</p>
-                  <p className="recorded-row-placeholder">
-                    {task.loggerName ? `Logged by ${task.loggerName}` : "Earlier task"}
-                  </p>
                   <p className="recorded-row-assignee">
                     {task.assignmentUserName ? (
                       <>
@@ -219,14 +216,11 @@ export function TasksPanelClient({
                     )}
                   </p>
                   <div className="recorded-summary-line">
-                    {getTaskState(task) !== "done" ? <span className="task-chip">Priority {task.priority}</span> : null}
-                    <span className={`task-chip ${getTaskState(task) === "done" ? "task-chip-done" : ""}`}>
-                      {getTaskState(task) === "done" ? "Completed" : "Open"}
-                    </span>
-                    {task.schedule ? <span className="task-chip">{formatRecurrenceChip(task.schedule)}</span> : null}
+                    {getTaskState(task) === "done" ? <span className="task-chip task-chip-done">Completed</span> : null}
+                    {task.schedule ? <span className="task-chip task-chip-recurring">{formatRecurrenceChip(task.schedule)}</span> : null}
                     {task.schedule?.nextDueAt ? <span className="task-chip">Due {formatShortDate(task.schedule.nextDueAt)}</span> : null}
                     {task.schedule ? <span className={`task-chip ${recurrenceStateClassName(task)}`}>{getRecurrenceStateLabel(task)}</span> : null}
-                    {task.projectParentTitle ? <span className="task-chip">Sub-task of {task.projectParentTitle}</span> : null}
+                    {task.projectParentTitle ? <span className="task-chip">↳ {task.projectParentTitle}</span> : null}
                   </div>
                 </div>
                 <div className="recorded-row-meta">
@@ -377,6 +371,7 @@ export function TasksPanelClient({
                     </label>
                   </details>
 
+                  {task.loggerName ? <p><span>Logged by</span><strong>{task.loggerName}</strong></p> : null}
                   <p><span>Recorded</span><strong>{formatRecordedAt(task.createdAt)}</strong></p>
                   {task.schedule ? (
                     <p><span>Recurring</span><strong>{formatRecurrenceChip(task.schedule)}</strong></p>
