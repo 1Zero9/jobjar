@@ -1,4 +1,4 @@
-import { MemberAudience } from "@prisma/client";
+import { MemberAudience, MemberProfileTheme } from "@prisma/client";
 
 export function isChildAudience(audienceBand: MemberAudience) {
   return audienceBand === "under_12";
@@ -39,6 +39,20 @@ export function getAudienceThemeClassName(audienceBand: MemberAudience) {
   return "audience-adult";
 }
 
+export function getProfileThemeClassName(profileTheme: MemberProfileTheme) {
+  if (profileTheme === "boy_blue") {
+    return "profile-boy-blue";
+  }
+  if (profileTheme === "girl_pink") {
+    return "profile-girl-pink";
+  }
+  return "profile-default-theme";
+}
+
+export function getMemberThemeClassName(audienceBand: MemberAudience, profileTheme: MemberProfileTheme) {
+  return `${getAudienceThemeClassName(audienceBand)} ${getProfileThemeClassName(profileTheme)}`.trim();
+}
+
 export function formatAudienceBand(audienceBand: MemberAudience) {
   if (audienceBand === "under_12") {
     return "Under 12";
@@ -47,4 +61,14 @@ export function formatAudienceBand(audienceBand: MemberAudience) {
     return "12 to 18";
   }
   return "Adult";
+}
+
+export function formatProfileTheme(profileTheme: MemberProfileTheme) {
+  if (profileTheme === "boy_blue") {
+    return "Boy / blue";
+  }
+  if (profileTheme === "girl_pink") {
+    return "Girl / pink";
+  }
+  return "Default";
 }

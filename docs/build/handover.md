@@ -16,7 +16,7 @@ Current routes:
 - `/api/health/db`: DB health check
 
 Current package version:
-- `web/package.json`: `0.4.0`
+- `web/package.json`: `0.4.1`
 
 ## Auth model
 - custom auth, not NextAuth/Auth.js
@@ -34,6 +34,10 @@ Current package version:
   - `adult`: current full household UI
   - `teen_12_18`: brighter teen-focused presentation
   - `under_12`: playful child UI limited to assigned jobs
+- profile themes:
+  - `default`: current palette
+  - `boy / blue`: blue-accent variant
+  - `girl / pink`: pink-accent variant
 
 ## Data model
 Schema source of truth:

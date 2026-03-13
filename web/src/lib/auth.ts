@@ -1,5 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { MemberAudience, MemberRole } from "@prisma/client";
+import { MemberAudience, MemberProfileTheme, MemberRole } from "@prisma/client";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -21,6 +21,7 @@ export type SessionContext = {
   householdId: string;
   role: MemberRole;
   audienceBand: MemberAudience;
+  profileTheme: MemberProfileTheme;
   allowedLocationIds: string[] | null;
 };
 
@@ -80,7 +81,7 @@ export async function getSessionContext(): Promise<SessionContext | null> {
             userId,
           },
         },
-        select: { householdId: true, role: true, audienceBand: true, locationAccess: { select: { locationId: true } } },
+        select: { householdId: true, role: true, audienceBand: true, profileTheme: true, locationAccess: { select: { locationId: true } } },
       })
     : null;
 
@@ -89,7 +90,7 @@ export async function getSessionContext(): Promise<SessionContext | null> {
     (await prisma.householdMember.findFirst({
       where: { userId },
       orderBy: { joinedAt: "asc" },
-      select: { householdId: true, role: true, audienceBand: true, locationAccess: { select: { locationId: true } } },
+      select: { householdId: true, role: true, audienceBand: true, profileTheme: true, locationAccess: { select: { locationId: true } } },
     }));
 
   if (!membership) {
@@ -101,6 +102,7 @@ export async function getSessionContext(): Promise<SessionContext | null> {
     householdId: membership.householdId,
     role: membership.role,
     audienceBand: membership.audienceBand,
+    profileTheme: membership.profileTheme,
     allowedLocationIds:
       membership.role === "admin" || membership.locationAccess.length === 0
         ? null

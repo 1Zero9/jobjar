@@ -4,7 +4,7 @@ import { AutoSubmitSelect } from "@/app/components/AutoSubmitSelect";
 import { FormActionButton } from "@/app/components/FormActionButton";
 import { isAdminRole, requireSessionContext } from "@/lib/auth";
 import { hasLocationRestrictions } from "@/lib/location-access";
-import { canAccessExtendedViews, getAudienceThemeClassName } from "@/lib/member-audience";
+import { canAccessExtendedViews, getMemberThemeClassName } from "@/lib/member-audience";
 import {
   getProjectTimelineData,
   type ProjectTimelineEvent,
@@ -28,13 +28,13 @@ export default async function ProjectsTimelinePage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const { householdId, userId, role, audienceBand, allowedLocationIds } = await requireSessionContext("/projects/timeline");
+  const { householdId, userId, role, audienceBand, profileTheme, allowedLocationIds } = await requireSessionContext("/projects/timeline");
   if (!canAccessExtendedViews(audienceBand)) {
     redirect("/tasks");
   }
   const params = await searchParams;
   const restrictedToLocations = hasLocationRestrictions(allowedLocationIds);
-  const audienceThemeClass = getAudienceThemeClassName(audienceBand);
+  const audienceThemeClass = getMemberThemeClassName(audienceBand, profileTheme);
 
   const [currentUser, locations] = await Promise.all([
     prisma.user.findUnique({

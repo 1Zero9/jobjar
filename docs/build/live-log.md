@@ -82,7 +82,11 @@
   - added playful kid and teen themes while leaving the adult presentation intact
   - limited under-12 users to assigned jobs with simpler, friendlier task wording and actions
   - redirected under-12 users away from planning/reporting routes into their task view
-- Updated product docs to match the current role model and `0.4.0` app shape.
+- Added optional blue/pink profile themes in `0.4.1`:
+  - added profile theme settings on household members
+  - let admins set the theme at create time and let power users update it later
+  - layered blue and pink accent variants on top of the existing audience themes
+- Updated product docs to match the current role model and `0.4.1` app shape.
 - Validation completed:
   - `npm run db:generate` passed
   - `npm run lint` passed

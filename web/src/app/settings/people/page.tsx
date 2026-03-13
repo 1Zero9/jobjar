@@ -4,6 +4,7 @@ import {
   removePersonAction,
   setPersonPasscodeAction,
   updatePersonAudienceAction,
+  updatePersonProfileThemeAction,
   updatePersonLocationAccessAction,
   updatePersonRoleAction,
 } from "@/app/actions";
@@ -11,7 +12,7 @@ import { AppPageHeader } from "@/app/components/AppPageHeader";
 import { FormActionButton } from "@/app/components/FormActionButton";
 import { ToastNotice } from "@/app/components/ToastNotice";
 import { isAdminRole, requireProjectManager } from "@/lib/auth";
-import { formatAudienceBand } from "@/lib/member-audience";
+import { formatAudienceBand, formatProfileTheme } from "@/lib/member-audience";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 
@@ -33,6 +34,7 @@ export default async function PeoplePage({
       select: {
         role: true,
         audienceBand: true,
+        profileTheme: true,
         locationAccess: {
           select: {
             locationId: true,
@@ -90,6 +92,7 @@ export default async function PeoplePage({
         {params.added === "person" ? <ToastNotice message="Person added." tone="success" /> : null}
         {params.updated === "role" ? <ToastNotice message="Role updated." tone="success" /> : null}
         {params.updated === "audience" ? <ToastNotice message="Age group updated." tone="success" /> : null}
+        {params.updated === "theme" ? <ToastNotice message="Profile theme updated." tone="success" /> : null}
         {params.updated === "locations" ? <ToastNotice message="Location access updated." tone="success" /> : null}
 
         <section className="settings-panel">
@@ -116,6 +119,11 @@ export default async function PeoplePage({
                 <option value="adult">Adult</option>
                 <option value="teen_12_18">12 to 18</option>
                 <option value="under_12">Under 12</option>
+              </select>
+              <select name="profileTheme" defaultValue="default_theme" className="capture-room-select">
+                <option value="default_theme">Default</option>
+                <option value="boy_blue">Boy / blue</option>
+                <option value="girl_pink">Girl / pink</option>
               </select>
               <input name="passcode" type="password" minLength={4} placeholder="Passcode" className="capture-room-select" />
               {locations.length > 0 ? (
@@ -162,6 +170,7 @@ export default async function PeoplePage({
                   <p><span>Name</span><strong>{person.user.displayName}</strong></p>
                   <p><span>Role</span><strong>{formatRole(person.role)}</strong></p>
                   <p><span>Age group</span><strong>{formatAudienceBand(person.audienceBand)}</strong></p>
+                  <p><span>Profile theme</span><strong>{formatProfileTheme(person.profileTheme)}</strong></p>
                   <p><span>Email</span><strong>{person.user.email}</strong></p>
                   <p><span>Location access</span><strong>{formatLocationAccess(person.role, person.locationAccess)}</strong></p>
                   {adminMode ? (
@@ -198,6 +207,23 @@ export default async function PeoplePage({
                     <div className="recorded-row-actions between">
                       <FormActionButton className="action-btn bright quiet" pendingLabel="Saving">
                         Save age group
+                      </FormActionButton>
+                    </div>
+                  </form>
+                  <form action={updatePersonProfileThemeAction} className="recorded-edit-form">
+                    <input type="hidden" name="userId" value={person.user.id} />
+                    <input type="hidden" name="returnTo" value="/settings/people" />
+                    <label className="recorded-field">
+                      <span>Profile theme</span>
+                      <select name="profileTheme" defaultValue={person.profileTheme} className="recorded-edit-input">
+                        <option value="default_theme">Default</option>
+                        <option value="boy_blue">Boy / blue</option>
+                        <option value="girl_pink">Girl / pink</option>
+                      </select>
+                    </label>
+                    <div className="recorded-row-actions between">
+                      <FormActionButton className="action-btn bright quiet" pendingLabel="Saving">
+                        Save profile theme
                       </FormActionButton>
                     </div>
                   </form>

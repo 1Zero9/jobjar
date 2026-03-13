@@ -8,7 +8,7 @@ import { getRoomLocationAccessWhere } from "@/lib/location-access";
 import {
   canAccessExtendedViews,
   getAudienceAssignedTaskWhere,
-  getAudienceThemeClassName,
+  getMemberThemeClassName,
   isChildAudience,
   isTeenAudience,
 } from "@/lib/member-audience";
@@ -19,8 +19,8 @@ import Link from "next/link";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const { householdId, userId, role, audienceBand, allowedLocationIds } = await requireSessionContext("/");
-  const audienceThemeClass = getAudienceThemeClassName(audienceBand);
+  const { householdId, userId, role, audienceBand, profileTheme, allowedLocationIds } = await requireSessionContext("/");
+  const audienceThemeClass = getMemberThemeClassName(audienceBand, profileTheme);
   const childMode = isChildAudience(audienceBand);
   const teenMode = isTeenAudience(audienceBand);
   const taskAudienceWhere = getAudienceAssignedTaskWhere(userId, audienceBand);

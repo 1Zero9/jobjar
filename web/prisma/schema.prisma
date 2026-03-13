@@ -21,6 +21,12 @@ enum MemberAudience {
   under_12
 }
 
+enum MemberProfileTheme {
+  default_theme
+  boy_blue
+  girl_pink
+}
+
 enum RecurrenceType {
   daily
   weekly
@@ -119,6 +125,7 @@ model HouseholdMember {
   userId      String    @db.Uuid
   role        MemberRole
   audienceBand MemberAudience @default(adult)
+  profileTheme MemberProfileTheme @default(default_theme)
   joinedAt    DateTime  @default(now())
   household   Household                     @relation(fields: [householdId], references: [id], onDelete: Cascade)
   user        User                          @relation(fields: [userId], references: [id], onDelete: Cascade)

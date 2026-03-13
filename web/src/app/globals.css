@@ -609,6 +609,62 @@ html[data-theme="dark"] .session-chip {
   box-shadow: 0 16px 30px rgba(8, 145, 178, 0.08), 0 10px 20px rgba(15, 23, 42, 0.06);
 }
 
+.profile-boy-blue .landing-title,
+.profile-boy-blue .page-hero-brand {
+  background: linear-gradient(135deg, #0f172a 0%, #2563eb 48%, #38bdf8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.profile-boy-blue .landing-hero,
+.profile-boy-blue .landing-panel,
+.profile-boy-blue .page-hero-card {
+  border-color: color-mix(in srgb, #60a5fa 28%, var(--border));
+}
+
+.profile-boy-blue .landing-action-card.log,
+.profile-boy-blue .landing-action-card.view,
+.profile-boy-blue .landing-action-card.setup,
+.profile-boy-blue .page-hero-icon.home,
+.profile-boy-blue .page-hero-icon,
+.profile-boy-blue .session-chip {
+  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.16);
+}
+
+.profile-boy-blue .page-hero-icon.home,
+.profile-boy-blue .page-hero-icon {
+  background: linear-gradient(135deg, #dbeafe, #bfdbfe 55%, #e0f2fe 100%);
+  color: #1d4ed8;
+}
+
+.profile-girl-pink .landing-title,
+.profile-girl-pink .page-hero-brand {
+  background: linear-gradient(135deg, #9d174d 0%, #ec4899 52%, #fb7185 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.profile-girl-pink .landing-hero,
+.profile-girl-pink .landing-panel,
+.profile-girl-pink .page-hero-card {
+  border-color: color-mix(in srgb, #f472b6 28%, var(--border));
+}
+
+.profile-girl-pink .landing-action-card.log,
+.profile-girl-pink .landing-action-card.view,
+.profile-girl-pink .landing-action-card.setup,
+.profile-girl-pink .page-hero-icon.home,
+.profile-girl-pink .page-hero-icon,
+.profile-girl-pink .session-chip {
+  box-shadow: 0 12px 24px rgba(236, 72, 153, 0.14);
+}
+
+.profile-girl-pink .page-hero-icon.home,
+.profile-girl-pink .page-hero-icon {
+  background: linear-gradient(135deg, #fce7f3, #fbcfe8 55%, #ffe4e6 100%);
+  color: #be185d;
+}
+
 html[data-theme="dark"] .page-hero-icon {
   background: linear-gradient(135deg, color-mix(in srgb, var(--primary-soft) 78%, var(--card)), color-mix(in srgb, var(--primary) 16%, var(--card)));
 }
@@ -684,6 +740,32 @@ html[data-theme="dark"] .page-hero-card.page-hero-teen .page-hero-brand {
   background: linear-gradient(135deg, #e2e8f0 0%, #67e8f9 52%, #fdba74 100%);
   -webkit-background-clip: text;
   background-clip: text;
+}
+
+html[data-theme="dark"] .profile-boy-blue .landing-title,
+html[data-theme="dark"] .profile-boy-blue .page-hero-brand {
+  background: linear-gradient(135deg, #e0f2fe 0%, #60a5fa 52%, #38bdf8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+html[data-theme="dark"] .profile-boy-blue .page-hero-icon.home,
+html[data-theme="dark"] .profile-boy-blue .page-hero-icon {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.28), rgba(56, 189, 248, 0.18));
+  color: #bfdbfe;
+}
+
+html[data-theme="dark"] .profile-girl-pink .landing-title,
+html[data-theme="dark"] .profile-girl-pink .page-hero-brand {
+  background: linear-gradient(135deg, #fce7f3 0%, #f472b6 48%, #fb7185 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+html[data-theme="dark"] .profile-girl-pink .page-hero-icon.home,
+html[data-theme="dark"] .profile-girl-pink .page-hero-icon {
+  background: linear-gradient(135deg, rgba(236, 72, 153, 0.26), rgba(251, 113, 133, 0.16));
+  color: #f9a8d4;
 }
 
 .landing-action-card {

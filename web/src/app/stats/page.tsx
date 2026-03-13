@@ -4,7 +4,7 @@ import { AutoSubmitSelect } from "@/app/components/AutoSubmitSelect";
 import { FormActionButton } from "@/app/components/FormActionButton";
 import { requireSessionContext } from "@/lib/auth";
 import { hasLocationRestrictions } from "@/lib/location-access";
-import { canAccessExtendedViews, getAudienceThemeClassName } from "@/lib/member-audience";
+import { canAccessExtendedViews, getMemberThemeClassName } from "@/lib/member-audience";
 import { getStatsData } from "@/lib/stats-data";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
@@ -19,13 +19,13 @@ type SearchParams = {
 };
 
 export default async function StatsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  const { householdId, allowedLocationIds, audienceBand } = await requireSessionContext("/stats");
+  const { householdId, allowedLocationIds, audienceBand, profileTheme } = await requireSessionContext("/stats");
   if (!canAccessExtendedViews(audienceBand)) {
     redirect("/tasks");
   }
   const params = await searchParams;
   const restrictedToLocations = hasLocationRestrictions(allowedLocationIds);
-  const audienceThemeClass = getAudienceThemeClassName(audienceBand);
+  const audienceThemeClass = getMemberThemeClassName(audienceBand, profileTheme);
 
   const [locations, members] = await Promise.all([
     prisma.location.findMany({

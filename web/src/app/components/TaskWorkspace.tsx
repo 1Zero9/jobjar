@@ -7,7 +7,7 @@ import { TasksPanelClient } from "@/app/components/TasksPanelClient";
 import { ToastNotice } from "@/app/components/ToastNotice";
 import { canManageProjectsRole, isAdminRole, requireSessionContext } from "@/lib/auth";
 import { getRoomLocationAccessWhere, hasLocationRestrictions } from "@/lib/location-access";
-import { canAccessExtendedViews, getAudienceAssignedTaskWhere, getAudienceThemeClassName, isChildAudience, isTeenAudience } from "@/lib/member-audience";
+import { canAccessExtendedViews, getAudienceAssignedTaskWhere, getMemberThemeClassName, isChildAudience, isTeenAudience } from "@/lib/member-audience";
 import { prisma } from "@/lib/prisma";
 import { getPrivateTaskAccessWhere, getProjectTaskWhere } from "@/lib/project-work";
 import Link from "next/link";
@@ -26,12 +26,12 @@ type SearchParams = {
 };
 
 export async function LogWorkspace({ params }: { params: SearchParams }) {
-  const { householdId, userId, role, audienceBand, allowedLocationIds } = await requireSessionContext("/log");
+  const { householdId, userId, role, audienceBand, profileTheme, allowedLocationIds } = await requireSessionContext("/log");
   if (!canAccessExtendedViews(audienceBand)) {
     redirect("/tasks");
   }
   const restrictedToLocations = hasLocationRestrictions(allowedLocationIds);
-  const audienceThemeClass = getAudienceThemeClassName(audienceBand);
+  const audienceThemeClass = getMemberThemeClassName(audienceBand, profileTheme);
 
   const [currentUser, rooms, people, locations, lookupTasks] = await Promise.all([
     prisma.user.findUnique({
@@ -261,7 +261,7 @@ export async function ProjectsWorkspace({ params }: { params: SearchParams }) {
 }
 
 async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode: "tasks" | "projects" }) {
-  const { householdId, userId, role, audienceBand, allowedLocationIds } = await requireSessionContext(mode === "projects" ? "/projects" : "/tasks");
+  const { householdId, userId, role, audienceBand, profileTheme, allowedLocationIds } = await requireSessionContext(mode === "projects" ? "/projects" : "/tasks");
   if (mode === "projects" && !canAccessExtendedViews(audienceBand)) {
     redirect("/tasks");
   }
@@ -269,7 +269,7 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
   const projectOnlyWhere = mode === "projects" ? getProjectTaskWhere() : undefined;
   const restrictedToLocations = hasLocationRestrictions(allowedLocationIds);
   const taskAudienceWhere = getAudienceAssignedTaskWhere(userId, audienceBand);
-  const audienceThemeClass = getAudienceThemeClassName(audienceBand);
+  const audienceThemeClass = getMemberThemeClassName(audienceBand, profileTheme);
   const childMode = isChildAudience(audienceBand);
   const teenMode = isTeenAudience(audienceBand);
   const taskTake = mode === "projects" ? 28 : 48;

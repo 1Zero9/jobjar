@@ -1340,6 +1340,7 @@ export async function createPersonAction(formData: FormData) {
   const passcodeInput = String(formData.get("passcode") ?? "").trim();
   const requestedRole = String(formData.get("role") ?? "").trim();
   const requestedAudienceBand = String(formData.get("audienceBand") ?? "").trim();
+  const requestedProfileTheme = String(formData.get("profileTheme") ?? "").trim();
   const requestedLocationIds = parseLocationIds(formData.getAll("locationIds"));
   const returnTo = getReturnPath(formData.get("returnTo"), "");
 
@@ -1349,6 +1350,7 @@ export async function createPersonAction(formData: FormData) {
 
   const role = parseMemberRole(requestedRole, "member");
   const audienceBand = parseMemberAudience(requestedAudienceBand, "adult");
+  const profileTheme = parseMemberProfileTheme(requestedProfileTheme, "default_theme");
 
   const email =
     emailInput || `${displayName.toLowerCase().replace(/[^a-z0-9]+/g, ".").replace(/^\.|\.$/g, "")}@jobjar.local`;
@@ -1369,12 +1371,13 @@ export async function createPersonAction(formData: FormData) {
         userId: user.id,
       },
     },
-    update: { role, audienceBand },
+    update: { role, audienceBand, profileTheme },
     create: {
       householdId,
       userId: user.id,
       role,
       audienceBand,
+      profileTheme,
     },
   });
 
@@ -1467,6 +1470,44 @@ export async function updatePersonAudienceAction(formData: FormData) {
 
   refreshViews(["/", "/log", "/tasks", "/projects", "/projects/timeline", "/stats", "/settings", "/settings/people"]);
   redirect(`${returnTo}?updated=audience`);
+}
+
+export async function updatePersonProfileThemeAction(formData: FormData) {
+  const { householdId } = await requireProjectManagerAction();
+  const userId = String(formData.get("userId") ?? "").trim();
+  const requestedProfileTheme = String(formData.get("profileTheme") ?? "").trim();
+  const profileTheme = parseMemberProfileTheme(requestedProfileTheme, "default_theme");
+  const returnTo = getReturnPath(formData.get("returnTo"), "/settings/people");
+
+  if (!userId) {
+    return;
+  }
+
+  const membership = await prisma.householdMember.findUnique({
+    where: {
+      householdId_userId: {
+        householdId,
+        userId,
+      },
+    },
+    select: { userId: true },
+  });
+  if (!membership) {
+    return;
+  }
+
+  await prisma.householdMember.update({
+    where: {
+      householdId_userId: {
+        householdId,
+        userId,
+      },
+    },
+    data: { profileTheme },
+  });
+
+  refreshViews(["/", "/log", "/tasks", "/projects", "/projects/timeline", "/stats", "/settings", "/settings/people"]);
+  redirect(`${returnTo}?updated=theme`);
 }
 
 export async function updatePersonLocationAccessAction(formData: FormData) {
@@ -1917,6 +1958,13 @@ function parseMemberRole(value: string, fallback: "admin" | "power_user" | "memb
 
 function parseMemberAudience(value: string, fallback: "adult" | "teen_12_18" | "under_12") {
   if (value === "adult" || value === "teen_12_18" || value === "under_12") {
+    return value;
+  }
+  return fallback;
+}
+
+function parseMemberProfileTheme(value: string, fallback: "default_theme" | "boy_blue" | "girl_pink") {
+  if (value === "default_theme" || value === "boy_blue" || value === "girl_pink") {
     return value;
   }
   return fallback;
