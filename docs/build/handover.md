@@ -16,7 +16,7 @@ Current routes:
 - `/api/health/db`: DB health check
 
 Current package version:
-- `web/package.json`: `0.2.3`
+- `web/package.json`: `0.2.4`
 
 ## Auth model
 - custom auth, not NextAuth/Auth.js
@@ -25,6 +25,11 @@ Current package version:
 - `SESSION_SIGNING_SECRET` must be set in production
 - `HOUSEHOLD_PASSCODE` only falls back in development; production users without stored hashes need the env var set
 - login rate limiting is in-memory per server instance
+- role model:
+  - `admin`: full setup and task management
+  - `power_user`: project planning and project management
+  - `member`: normal task usage
+  - `viewer`: read-only
 
 ## Data model
 Schema source of truth:

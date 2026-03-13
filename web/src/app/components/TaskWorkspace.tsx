@@ -4,7 +4,7 @@ import { LocationRoomSelect } from "@/app/components/LocationRoomSelect";
 import { SimilarTaskField } from "@/app/components/SimilarTaskField";
 import { TasksPanelClient } from "@/app/components/TasksPanelClient";
 import { ToastNotice } from "@/app/components/ToastNotice";
-import { requireSessionContext } from "@/lib/auth";
+import { canManageProjectsRole, isAdminRole, requireSessionContext } from "@/lib/auth";
 import { APP_VERSION } from "@/lib/app-version";
 import { prisma } from "@/lib/prisma";
 import { getPrivateTaskAccessWhere, getProjectTaskWhere } from "@/lib/project-work";
@@ -99,7 +99,7 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
             <Link href="/projects" className="action-btn subtle quiet">
               Projects
             </Link>
-            {role === "admin" ? (
+            {isAdminRole(role) ? (
               <Link href="/settings" className="action-btn subtle quiet">
                 Setup
               </Link>
@@ -251,7 +251,7 @@ export async function ProjectsWorkspace({ params }: { params: SearchParams }) {
 
 async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode: "tasks" | "projects" }) {
   const { householdId, userId, role } = await requireSessionContext(mode === "projects" ? "/projects" : "/tasks");
-  const privateTaskAccess = role === "admin" ? undefined : getPrivateTaskAccessWhere(userId);
+  const privateTaskAccess = isAdminRole(role) ? undefined : getPrivateTaskAccessWhere(userId);
   const projectOnlyWhere = mode === "projects" ? getProjectTaskWhere() : undefined;
 
   const [currentUser, rooms, people, locations, recordedTasks] = await Promise.all([
@@ -467,7 +467,7 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
                 Timeline
               </Link>
             ) : null}
-            {role === "admin" ? (
+            {isAdminRole(role) ? (
               <Link href="/settings" className="action-btn subtle quiet">
                 Setup
               </Link>
@@ -497,8 +497,8 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
           initialState={selectedState}
           initialLuckyId={params.lucky && params.lucky !== "empty" ? params.lucky : null}
           initialProjectState={selectedProjectState}
-          canManageProjects={role === "admin"}
-          canDeleteTasks={role === "admin"}
+          canManageProjects={canManageProjectsRole(role)}
+          canDeleteTasks={isAdminRole(role)}
           basePath={mode === "projects" ? "/projects" : "/tasks"}
           viewMode={mode}
           panelKicker={mode === "projects" ? "Projects" : "Tasks"}

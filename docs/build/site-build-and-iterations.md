@@ -49,6 +49,7 @@ The core product loop is:
 
 ## Key iterations to date
 - household auth and bootstrap
+- scoped role model with `power_user` project access
 - recurring schedules and occurrence tracking
 - assignment and validation rules
 - private-task visibility rules

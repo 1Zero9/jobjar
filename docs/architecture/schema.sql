@@ -1,7 +1,7 @@
 -- Reference snapshot of the current product model.
 -- Prisma remains the source of truth: web/prisma/schema.prisma
 
-CREATE TYPE "MemberRole" AS ENUM ('admin', 'member', 'viewer');
+CREATE TYPE "MemberRole" AS ENUM ('admin', 'power_user', 'member', 'viewer');
 CREATE TYPE "RecurrenceType" AS ENUM ('daily', 'weekly', 'monthly', 'custom');
 CREATE TYPE "OccurrenceStatus" AS ENUM ('pending', 'done', 'skipped', 'overdue');
 CREATE TYPE "LogAction" AS ENUM (

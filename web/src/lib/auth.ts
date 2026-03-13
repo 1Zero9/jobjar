@@ -22,6 +22,18 @@ export type SessionContext = {
   role: MemberRole;
 };
 
+export function isAdminRole(role: MemberRole) {
+  return role === "admin";
+}
+
+export function canManageProjectsRole(role: MemberRole) {
+  return role === "admin" || role === "power_user";
+}
+
+export function canUseMemberActions(role: MemberRole) {
+  return role !== "viewer";
+}
+
 export async function getSessionUserId() {
   const jar = await cookies();
   return decodeSignedValue(jar.get(SESSION_USER_COOKIE)?.value);
@@ -109,7 +121,15 @@ export async function getSessionRole() {
 
 export async function requireAdmin(nextPath = "/admin") {
   const context = await requireSessionContext(nextPath);
-  if (context.role !== "admin") {
+  if (!isAdminRole(context.role)) {
+    redirect("/");
+  }
+  return context;
+}
+
+export async function requireProjectManager(nextPath = "/projects") {
+  const context = await requireSessionContext(nextPath);
+  if (!canManageProjectsRole(context.role)) {
     redirect("/");
   }
   return context;

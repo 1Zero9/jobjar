@@ -9,7 +9,7 @@ export type TimelineEventState = "upcoming" | "overdue" | "done";
 export type ProjectTimelineFilters = {
   householdId: string;
   userId: string;
-  role: "admin" | "member" | "viewer";
+  role: "admin" | "power_user" | "member" | "viewer";
   locationId?: string;
   status?: TimelineStatus;
   window?: TimelineWindow;

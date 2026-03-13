@@ -27,6 +27,12 @@ npm run db:seed
 - `/admin`: people, room, and task shaping
 - `/settings/*`: setup sections
 
+## Roles
+- `admin`: full setup and management access
+- `power_user`: can manage projects without full admin access
+- `member`: can use normal task workflows
+- `viewer`: read-only access
+
 ## Deployment notes
 - `npm run build` regenerates the Prisma client before building
 - Vercel uses `npm run build:vercel` via `vercel.json`

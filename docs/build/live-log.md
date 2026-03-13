@@ -35,7 +35,11 @@
   - added project-level materials and shopping workflow
   - added bought vs open material tracking on project cards
   - added shopping progress into project reporting
-- Updated product docs to match the current route model and `0.2.3` app shape.
+- Extended access control to `0.2.4`:
+  - added `power_user` role
+  - allowed project management without full admin access
+  - added role editing in people setup
+- Updated product docs to match the current role model and `0.2.4` app shape.
 - Validation completed:
   - `npm run db:generate` passed
   - `npm run lint` passed

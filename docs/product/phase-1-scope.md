@@ -15,6 +15,7 @@
 - project reporting in `/stats`
 - project timeline view in `/projects/timeline`
 - shopping/materials workflow on projects
+- scoped `power_user` role for project management
 
 ## Still deferred
 - public share pages

@@ -53,6 +53,13 @@ Use it to:
 - add notes and location details
 - connect a job to a larger parent project
 
+## Roles
+
+- Admin: full setup access, including people, rooms, and task shaping.
+- Power user: can manage projects, milestones, materials, and project planning without full setup access.
+- Member: can use the normal task workflow.
+- Viewer: read-only.
+
 ## 3. Stats
 Stats is the household summary board.
 

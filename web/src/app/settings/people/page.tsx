@@ -3,6 +3,7 @@ import {
   logoutAction,
   removePersonAction,
   setPersonPasscodeAction,
+  updatePersonRoleAction,
 } from "@/app/actions";
 import { FormActionButton } from "@/app/components/FormActionButton";
 import { ToastNotice } from "@/app/components/ToastNotice";
@@ -16,7 +17,7 @@ export const dynamic = "force-dynamic";
 export default async function PeoplePage({
   searchParams,
 }: {
-  searchParams: Promise<{ added?: string }>;
+  searchParams: Promise<{ added?: string; updated?: string }>;
 }) {
   const params = await searchParams;
   const { householdId } = await requireAdmin("/settings/people");
@@ -64,6 +65,7 @@ export default async function PeoplePage({
         </header>
 
         {params.added === "person" ? <ToastNotice message="Person added." tone="success" /> : null}
+        {params.updated === "role" ? <ToastNotice message="Role updated." tone="success" /> : null}
 
         <section className="settings-panel">
           <div className="room-setup-header">
@@ -80,7 +82,9 @@ export default async function PeoplePage({
             <input name="email" type="email" placeholder="Email (optional)" className="capture-room-select" />
             <select name="role" defaultValue="member" className="capture-room-select">
               <option value="member">Member</option>
+              <option value="power_user">Power user</option>
               <option value="admin">Admin</option>
+              <option value="viewer">Viewer</option>
             </select>
             <input name="passcode" type="password" minLength={4} placeholder="Passcode" className="capture-room-select" />
             <FormActionButton className="capture-submit-btn" pendingLabel="Adding person">
@@ -97,7 +101,7 @@ export default async function PeoplePage({
                     <p className="recorded-row-placeholder">{person.user.email}</p>
                   </div>
                   <div className="recorded-row-meta">
-                    <span className="recorded-row-room">{person.role}</span>
+                    <span className="recorded-row-room">{formatRole(person.role)}</span>
                     <div className="recorded-row-summary-actions">
                       <span className="recorded-row-edit">Edit</span>
                       <span className="recorded-row-chevron">+</span>
@@ -106,8 +110,26 @@ export default async function PeoplePage({
                 </summary>
                 <div className="recorded-row-detail">
                   <p><span>Name</span><strong>{person.user.displayName}</strong></p>
-                  <p><span>Role</span><strong>{person.role}</strong></p>
+                  <p><span>Role</span><strong>{formatRole(person.role)}</strong></p>
                   <p><span>Email</span><strong>{person.user.email}</strong></p>
+                  <form action={updatePersonRoleAction} className="recorded-edit-form">
+                    <input type="hidden" name="userId" value={person.user.id} />
+                    <input type="hidden" name="returnTo" value="/settings/people" />
+                    <label className="recorded-field">
+                      <span>Role</span>
+                      <select name="role" defaultValue={person.role} className="recorded-edit-input">
+                        <option value="member">Member</option>
+                        <option value="power_user">Power user</option>
+                        <option value="admin">Admin</option>
+                        <option value="viewer">Viewer</option>
+                      </select>
+                    </label>
+                    <div className="recorded-row-actions between">
+                      <FormActionButton className="action-btn bright quiet" pendingLabel="Saving">
+                        Save role
+                      </FormActionButton>
+                    </div>
+                  </form>
                   <form action={setPersonPasscodeAction} className="recorded-edit-form">
                     <input type="hidden" name="userId" value={person.user.id} />
                     <label className="recorded-field">
@@ -139,4 +161,11 @@ export default async function PeoplePage({
 function rowTone(index: number) {
   const tones = ["blue", "green", "amber", "rose"] as const;
   return tones[index % tones.length];
+}
+
+function formatRole(role: string) {
+  if (role === "power_user") {
+    return "Power user";
+  }
+  return role[0].toUpperCase() + role.slice(1);
 }

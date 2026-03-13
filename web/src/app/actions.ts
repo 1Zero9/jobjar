@@ -1,6 +1,13 @@
 "use server";
 
-import { requireSessionContext, clearSession, getHouseholdPasscode, setSessionUserId } from "@/lib/auth";
+import {
+  canManageProjectsRole,
+  canUseMemberActions,
+  clearSession,
+  getHouseholdPasscode,
+  requireSessionContext,
+  setSessionUserId,
+} from "@/lib/auth";
 import { getOrCreateHouseholdForUser } from "@/lib/household";
 import { prisma } from "@/lib/prisma";
 import { getUserPasswordHash, setUserPasswordHash } from "@/lib/auth-store";
@@ -886,7 +893,7 @@ export async function updateTaskAction(formData: FormData) {
 }
 
 export async function promoteTaskToProjectAction(formData: FormData) {
-  const { householdId, userId: actorUserId } = await requireAdminAction();
+  const { householdId, userId: actorUserId } = await requireProjectManagerAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
   const returnTo = getReturnPath(formData.get("returnTo"), "/tasks");
   if (!taskId) {
@@ -921,7 +928,7 @@ export async function promoteTaskToProjectAction(formData: FormData) {
 }
 
 export async function updateProjectPlanAction(formData: FormData) {
-  const { householdId, userId: actorUserId } = await requireAdminAction();
+  const { householdId, userId: actorUserId } = await requireProjectManagerAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
   const returnTo = getReturnPath(formData.get("returnTo"), "/tasks");
   if (!taskId) {
@@ -963,7 +970,7 @@ export async function updateProjectPlanAction(formData: FormData) {
 }
 
 export async function createProjectChildTaskAction(formData: FormData) {
-  const { householdId, userId: actorUserId } = await requireAdminAction();
+  const { householdId, userId: actorUserId } = await requireProjectManagerAction();
   const projectId = String(formData.get("projectId") ?? "").trim();
   const title = String(formData.get("title") ?? "").trim();
   const detailNotes = String(formData.get("detailNotes") ?? "").trim() || null;
@@ -1047,7 +1054,7 @@ export async function createProjectChildTaskAction(formData: FormData) {
 }
 
 export async function createProjectCostAction(formData: FormData) {
-  const { householdId } = await requireAdminAction();
+  const { householdId } = await requireProjectManagerAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
   const title = String(formData.get("title") ?? "").trim();
   const amountCents = toCurrencyCentsOrNull(formData.get("amount"));
@@ -1081,7 +1088,7 @@ export async function createProjectCostAction(formData: FormData) {
 }
 
 export async function deleteProjectCostAction(formData: FormData) {
-  const { householdId } = await requireAdminAction();
+  const { householdId } = await requireProjectManagerAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
   const costId = String(formData.get("costId") ?? "").trim();
   const returnTo = getReturnPath(formData.get("returnTo"), "/tasks");
@@ -1112,7 +1119,7 @@ export async function deleteProjectCostAction(formData: FormData) {
 }
 
 export async function createProjectMaterialAction(formData: FormData) {
-  const { householdId } = await requireAdminAction();
+  const { householdId } = await requireProjectManagerAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
   const title = String(formData.get("title") ?? "").trim();
   const quantityLabel = String(formData.get("quantityLabel") ?? "").trim() || null;
@@ -1156,7 +1163,7 @@ export async function createProjectMaterialAction(formData: FormData) {
 }
 
 export async function toggleProjectMaterialPurchasedAction(formData: FormData) {
-  const { householdId } = await requireAdminAction();
+  const { householdId } = await requireProjectManagerAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
   const materialId = String(formData.get("materialId") ?? "").trim();
   const source = String(formData.get("source") ?? "").trim() || null;
@@ -1199,7 +1206,7 @@ export async function toggleProjectMaterialPurchasedAction(formData: FormData) {
 }
 
 export async function deleteProjectMaterialAction(formData: FormData) {
-  const { householdId } = await requireAdminAction();
+  const { householdId } = await requireProjectManagerAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
   const materialId = String(formData.get("materialId") ?? "").trim();
   const returnTo = getReturnPath(formData.get("returnTo"), "/projects");
@@ -1230,7 +1237,7 @@ export async function deleteProjectMaterialAction(formData: FormData) {
 }
 
 export async function createProjectMilestoneAction(formData: FormData) {
-  const { householdId } = await requireAdminAction();
+  const { householdId } = await requireProjectManagerAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
   const title = String(formData.get("title") ?? "").trim();
   const targetAt = toDate(formData.get("targetAt"));
@@ -1270,7 +1277,7 @@ export async function createProjectMilestoneAction(formData: FormData) {
 }
 
 export async function toggleProjectMilestoneAction(formData: FormData) {
-  const { householdId } = await requireAdminAction();
+  const { householdId } = await requireProjectManagerAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
   const milestoneId = String(formData.get("milestoneId") ?? "").trim();
   const returnTo = getReturnPath(formData.get("returnTo"), "/projects");
@@ -1302,7 +1309,7 @@ export async function toggleProjectMilestoneAction(formData: FormData) {
 }
 
 export async function deleteProjectMilestoneAction(formData: FormData) {
-  const { householdId } = await requireAdminAction();
+  const { householdId } = await requireProjectManagerAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
   const milestoneId = String(formData.get("milestoneId") ?? "").trim();
   const returnTo = getReturnPath(formData.get("returnTo"), "/projects");
@@ -1375,7 +1382,7 @@ export async function createPersonAction(formData: FormData) {
     return;
   }
 
-  const role = requestedRole === "admin" ? "admin" : "member";
+  const role = parseMemberRole(requestedRole, "member");
 
   const email =
     emailInput || `${displayName.toLowerCase().replace(/[^a-z0-9]+/g, ".").replace(/^\.|\.$/g, "")}@jobjar.local`;
@@ -1412,6 +1419,47 @@ export async function createPersonAction(formData: FormData) {
   if (returnTo) {
     redirect(`${returnTo}?added=person`);
   }
+}
+
+export async function updatePersonRoleAction(formData: FormData) {
+  const { householdId, userId: currentUserId } = await requireAdminAction();
+  const userId = String(formData.get("userId") ?? "").trim();
+  const requestedRole = String(formData.get("role") ?? "").trim();
+  const role = parseMemberRole(requestedRole, "member");
+  const returnTo = getReturnPath(formData.get("returnTo"), "/settings/people");
+  if (!userId) {
+    return;
+  }
+
+  if (userId === currentUserId && role !== "admin") {
+    return;
+  }
+
+  const membership = await prisma.householdMember.findUnique({
+    where: {
+      householdId_userId: {
+        householdId,
+        userId,
+      },
+    },
+    select: { userId: true },
+  });
+  if (!membership) {
+    return;
+  }
+
+  await prisma.householdMember.update({
+    where: {
+      householdId_userId: {
+        householdId,
+        userId,
+      },
+    },
+    data: { role },
+  });
+
+  refreshViews(["/", "/log", "/tasks", "/projects", "/projects/timeline", "/settings", "/settings/people"]);
+  redirect(`${returnTo}?updated=role`);
 }
 
 export async function removePersonAction(formData: FormData) {
@@ -1818,6 +1866,13 @@ function parseCaptureStage(value: FormDataEntryValue | null, fallback: "captured
   return fallback;
 }
 
+function parseMemberRole(value: string, fallback: "admin" | "power_user" | "member" | "viewer") {
+  if (value === "admin" || value === "power_user" || value === "member" || value === "viewer") {
+    return value;
+  }
+  return fallback;
+}
+
 function inferJobKindFromText(text: string): "upkeep" | "issue" | "project" | "clear_out" | "outdoor" | "planning" {
   const value = text.toLowerCase();
   if (value.includes("garden") || value.includes("hedge") || value.includes("grass") || value.includes("plants")) {
@@ -2012,9 +2067,17 @@ async function requireAdminAction() {
   return context;
 }
 
+async function requireProjectManagerAction() {
+  const context = await requireSessionContext("/projects");
+  if (!canManageProjectsRole(context.role)) {
+    redirect("/");
+  }
+  return context;
+}
+
 async function requireSessionMemberAction() {
   const context = await requireSessionContext("/");
-  if (context.role === "viewer") {
+  if (!canUseMemberActions(context.role)) {
     redirect("/");
   }
   return context;

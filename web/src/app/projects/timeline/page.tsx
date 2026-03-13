@@ -1,7 +1,7 @@
 import { logoutAction } from "@/app/actions";
 import { AutoSubmitSelect } from "@/app/components/AutoSubmitSelect";
 import { FormActionButton } from "@/app/components/FormActionButton";
-import { requireSessionContext } from "@/lib/auth";
+import { isAdminRole, requireSessionContext } from "@/lib/auth";
 import { APP_VERSION } from "@/lib/app-version";
 import {
   getProjectTimelineData,
@@ -92,7 +92,7 @@ export default async function ProjectsTimelinePage({
             <Link href="/stats" className="action-btn subtle quiet">
               Stats
             </Link>
-            {role === "admin" ? (
+            {isAdminRole(role) ? (
               <Link href="/settings" className="action-btn subtle quiet">
                 Setup
               </Link>

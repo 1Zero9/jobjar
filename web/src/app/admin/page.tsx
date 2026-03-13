@@ -64,9 +64,15 @@ export default async function AdminPage() {
           <h2 className="text-lg font-semibold">People</h2>
           <p className="text-xs text-muted">Add the people who will notice, own, and complete tasks.</p>
 
-          <form action={createPersonAction} className="mt-3 grid grid-cols-1 gap-2 rounded-xl border-accent-muted bg-accent-soft p-3 md:grid-cols-4">
+          <form action={createPersonAction} className="mt-3 grid grid-cols-1 gap-2 rounded-xl border-accent-muted bg-accent-soft p-3 md:grid-cols-5">
             <input name="displayName" type="text" required placeholder="Name" className="admin-input px-3 py-2 text-sm" />
             <input name="email" type="email" placeholder="Email (optional)" className="admin-input px-3 py-2 text-sm" />
+            <select name="role" defaultValue="member" className="admin-input px-3 py-2 text-sm">
+              <option value="member">Member</option>
+              <option value="power_user">Power user</option>
+              <option value="admin">Admin</option>
+              <option value="viewer">Viewer</option>
+            </select>
             <input name="passcode" type="password" minLength={4} placeholder="Passcode (min 4)" className="admin-input px-3 py-2 text-sm" />
             <button className="action-btn bright">Add person</button>
           </form>

@@ -73,7 +73,7 @@ export default async function SettingsPage() {
             <Link href="/settings/people" className="landing-action-card">
               <span className="landing-action-kicker">People</span>
               <strong>Manage people</strong>
-              <span>{peopleCount} household members and admins.</span>
+              <span>{peopleCount} household people across all roles.</span>
             </Link>
 
             <Link href="/admin" className="landing-action-card">
