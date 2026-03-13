@@ -39,7 +39,11 @@
   - added `power_user` role
   - allowed project management without full admin access
   - added role editing in people setup
-- Updated product docs to match the current role model and `0.2.4` app shape.
+- Refined page chrome in `0.2.5`:
+  - fixed the clipped home `Jobjar` title
+  - added a shared title-card header across log, tasks, projects, stats, timeline, and setup pages
+  - aligned those pages to a smaller `Jobjar` brand line with a larger page title underneath
+- Updated product docs to match the current role model and `0.2.5` app shape.
 - Validation completed:
   - `npm run db:generate` passed
   - `npm run lint` passed

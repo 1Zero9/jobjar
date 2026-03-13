@@ -1,11 +1,11 @@
 import { createQuickTaskAction, logoutAction } from "@/app/actions";
 import { FormActionButton } from "@/app/components/FormActionButton";
+import { AppPageHeader } from "@/app/components/AppPageHeader";
 import { LocationRoomSelect } from "@/app/components/LocationRoomSelect";
 import { SimilarTaskField } from "@/app/components/SimilarTaskField";
 import { TasksPanelClient } from "@/app/components/TasksPanelClient";
 import { ToastNotice } from "@/app/components/ToastNotice";
 import { canManageProjectsRole, isAdminRole, requireSessionContext } from "@/lib/auth";
-import { APP_VERSION } from "@/lib/app-version";
 import { prisma } from "@/lib/prisma";
 import { getPrivateTaskAccessWhere, getProjectTaskWhere } from "@/lib/project-work";
 import Link from "next/link";
@@ -79,38 +79,41 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
   return (
     <div className="capture-shell page-log min-h-screen px-4 py-5">
       <main className="capture-app-shell mx-auto flex w-full max-w-[28rem] flex-col gap-6">
-        <header className="capture-topbar">
-          <div>
-            <div className="capture-topline">
-              <p className="capture-kicker">Jobjar</p>
-              <span className="version-chip">{APP_VERSION}</span>
-            </div>
-            <h1 className="capture-title">Log a task</h1>
-            <p className="capture-subtitle">Keep capture fast. Task first, room second, everything else optional.</p>
-          </div>
-          <div className="capture-topbar-actions">
-            <span className="session-chip">{currentUser?.displayName ?? "You"}</span>
-            <Link href="/" className="action-btn subtle quiet">
-              Home
-            </Link>
-            <Link href="/tasks" className="action-btn subtle quiet">
-              View tasks
-            </Link>
-            <Link href="/projects" className="action-btn subtle quiet">
-              Projects
-            </Link>
-            {isAdminRole(role) ? (
-              <Link href="/settings" className="action-btn subtle quiet">
-                Setup
+        <AppPageHeader
+          title="Log task"
+          subtitle="Keep capture fast. Task first, room second, everything else optional."
+          iconClassName="log"
+          icon={
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+            </svg>
+          }
+          actions={
+            <>
+              <span className="session-chip">{currentUser?.displayName ?? "You"}</span>
+              <Link href="/" className="action-btn subtle quiet">
+                Home
               </Link>
-            ) : null}
-            <form action={logoutAction}>
-              <FormActionButton className="action-btn subtle quiet" pendingLabel="Logging out">
-                Log out
-              </FormActionButton>
-            </form>
-          </div>
-        </header>
+              <Link href="/tasks" className="action-btn subtle quiet">
+                View tasks
+              </Link>
+              <Link href="/projects" className="action-btn subtle quiet">
+                Projects
+              </Link>
+              {isAdminRole(role) ? (
+                <Link href="/settings" className="action-btn subtle quiet">
+                  Setup
+                </Link>
+              ) : null}
+              <form action={logoutAction}>
+                <FormActionButton className="action-btn subtle quiet" pendingLabel="Logging out">
+                  Log out
+                </FormActionButton>
+              </form>
+            </>
+          }
+        />
 
         {params.added === "task" ? <ToastNotice message="Task recorded." tone="success" /> : null}
         {params.added === "done" ? <ToastNotice message="Completed task recorded." tone="success" /> : null}
@@ -428,57 +431,54 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
   return (
     <div className={`capture-shell ${mode === "projects" ? "page-projects" : "page-tasks"} min-h-screen px-4 py-5`}>
       <main className="capture-app-shell mx-auto flex w-full max-w-[32rem] flex-col gap-6">
-        <header className="capture-topbar">
-          <div>
-            <div className="capture-topline">
-              <p className="capture-kicker">Jobjar</p>
-              <span className="version-chip">{APP_VERSION}</span>
-            </div>
-            <div className="page-hero-icon tasks">
-              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <line x1="8" y1="6" x2="21" y2="6"/>
-                <line x1="8" y1="12" x2="21" y2="12"/>
-                <line x1="8" y1="18" x2="21" y2="18"/>
-                <polyline points="3 6 4 7 6 4"/>
-                <polyline points="3 12 4 13 6 10"/>
-                <polyline points="3 18 4 19 6 16"/>
-              </svg>
-            </div>
-            <h1 className="capture-title">{mode === "projects" ? "Projects" : "Tasks"}</h1>
-            <p className="capture-subtitle">
-              {mode === "projects"
-                ? "Track larger household work, child tasks, dates, budget, and spend."
-                : "View, filter, prioritise, and complete what has already been logged."}
-            </p>
-          </div>
-          <div className="capture-topbar-actions">
-            <span className="session-chip">{currentUser?.displayName ?? "You"}</span>
-            <Link href="/" className="action-btn subtle quiet">
-              Home
-            </Link>
-            <Link href="/log" className="action-btn subtle quiet">
-              Log task
-            </Link>
-            <Link href={mode === "projects" ? "/tasks" : "/projects"} className="action-btn subtle quiet">
-              {mode === "projects" ? "Tasks" : "Projects"}
-            </Link>
-            {mode === "projects" ? (
-              <Link href="/projects/timeline" className="action-btn subtle quiet">
-                Timeline
+        <AppPageHeader
+          title={mode === "projects" ? "Projects" : "Tasks"}
+          subtitle={
+            mode === "projects"
+              ? "Track larger household work, child tasks, dates, budget, spend, and materials."
+              : "View, filter, prioritise, and complete what has already been logged."
+          }
+          iconClassName="tasks"
+          icon={
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <line x1="8" y1="6" x2="21" y2="6" />
+              <line x1="8" y1="12" x2="21" y2="12" />
+              <line x1="8" y1="18" x2="21" y2="18" />
+              <polyline points="3 6 4 7 6 4" />
+              <polyline points="3 12 4 13 6 10" />
+              <polyline points="3 18 4 19 6 16" />
+            </svg>
+          }
+          actions={
+            <>
+              <span className="session-chip">{currentUser?.displayName ?? "You"}</span>
+              <Link href="/" className="action-btn subtle quiet">
+                Home
               </Link>
-            ) : null}
-            {isAdminRole(role) ? (
-              <Link href="/settings" className="action-btn subtle quiet">
-                Setup
+              <Link href="/log" className="action-btn subtle quiet">
+                Log task
               </Link>
-            ) : null}
-            <form action={logoutAction}>
-              <FormActionButton className="action-btn subtle quiet" pendingLabel="Logging out">
-                Log out
-              </FormActionButton>
-            </form>
-          </div>
-        </header>
+              <Link href={mode === "projects" ? "/tasks" : "/projects"} className="action-btn subtle quiet">
+                {mode === "projects" ? "Tasks" : "Projects"}
+              </Link>
+              {mode === "projects" ? (
+                <Link href="/projects/timeline" className="action-btn subtle quiet">
+                  Timeline
+                </Link>
+              ) : null}
+              {isAdminRole(role) ? (
+                <Link href="/settings" className="action-btn subtle quiet">
+                  Setup
+                </Link>
+              ) : null}
+              <form action={logoutAction}>
+                <FormActionButton className="action-btn subtle quiet" pendingLabel="Logging out">
+                  Log out
+                </FormActionButton>
+              </form>
+            </>
+          }
+        />
 
         {params.added === "task" ? <ToastNotice message="Task recorded." tone="success" /> : null}
         {params.added === "done" ? <ToastNotice message="Completed task recorded." tone="success" /> : null}

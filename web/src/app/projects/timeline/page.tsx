@@ -1,8 +1,8 @@
 import { logoutAction } from "@/app/actions";
+import { AppPageHeader } from "@/app/components/AppPageHeader";
 import { AutoSubmitSelect } from "@/app/components/AutoSubmitSelect";
 import { FormActionButton } from "@/app/components/FormActionButton";
 import { isAdminRole, requireSessionContext } from "@/lib/auth";
-import { APP_VERSION } from "@/lib/app-version";
 import {
   getProjectTimelineData,
   type ProjectTimelineEvent,
@@ -66,44 +66,41 @@ export default async function ProjectsTimelinePage({
   return (
     <div className="capture-shell page-timeline min-h-screen px-4 py-5">
       <main className="mx-auto flex w-full max-w-[34rem] flex-col gap-6">
-        <header className="capture-topbar">
-          <div>
-            <div className="capture-topline">
-              <p className="capture-kicker">Jobjar</p>
-              <span className="version-chip">{APP_VERSION}</span>
-            </div>
-            <div className="page-hero-icon timeline">
-              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <circle cx="12" cy="12" r="9" />
-                <path d="M12 7v5l3 3" />
-              </svg>
-            </div>
-            <h1 className="capture-title">Project timeline</h1>
-            <p className="capture-subtitle">See overdue dates, upcoming checkpoints, and recent completions across project work.</p>
-          </div>
-          <div className="capture-topbar-actions">
-            <span className="session-chip">{currentUser?.displayName ?? "You"}</span>
-            <Link href="/" className="action-btn subtle quiet">
-              Home
-            </Link>
-            <Link href="/projects" className="action-btn subtle quiet">
-              Board
-            </Link>
-            <Link href="/stats" className="action-btn subtle quiet">
-              Stats
-            </Link>
-            {isAdminRole(role) ? (
-              <Link href="/settings" className="action-btn subtle quiet">
-                Setup
+        <AppPageHeader
+          title="Project timeline"
+          subtitle="See overdue dates, upcoming checkpoints, and recent completions across project work."
+          iconClassName="timeline"
+          icon={
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 7v5l3 3" />
+            </svg>
+          }
+          actions={
+            <>
+              <span className="session-chip">{currentUser?.displayName ?? "You"}</span>
+              <Link href="/" className="action-btn subtle quiet">
+                Home
               </Link>
-            ) : null}
-            <form action={logoutAction}>
-              <FormActionButton className="action-btn subtle quiet" pendingLabel="Logging out">
-                Log out
-              </FormActionButton>
-            </form>
-          </div>
-        </header>
+              <Link href="/projects" className="action-btn subtle quiet">
+                Board
+              </Link>
+              <Link href="/stats" className="action-btn subtle quiet">
+                Stats
+              </Link>
+              {isAdminRole(role) ? (
+                <Link href="/settings" className="action-btn subtle quiet">
+                  Setup
+                </Link>
+              ) : null}
+              <form action={logoutAction}>
+                <FormActionButton className="action-btn subtle quiet" pendingLabel="Logging out">
+                  Log out
+                </FormActionButton>
+              </form>
+            </>
+          }
+        />
 
         <form method="GET" className="stats-filter-bar">
           {locations.length > 1 ? (

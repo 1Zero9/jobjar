@@ -5,10 +5,10 @@ import {
   setPersonPasscodeAction,
   updatePersonRoleAction,
 } from "@/app/actions";
+import { AppPageHeader } from "@/app/components/AppPageHeader";
 import { FormActionButton } from "@/app/components/FormActionButton";
 import { ToastNotice } from "@/app/components/ToastNotice";
 import { requireAdmin } from "@/lib/auth";
-import { APP_VERSION } from "@/lib/app-version";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 
@@ -40,29 +40,34 @@ export default async function PeoplePage({
   return (
     <div className="settings-shell min-h-screen px-4 py-5">
       <main className="mx-auto flex w-full max-w-[32rem] flex-col gap-6">
-        <header className="settings-hero">
-          <div>
-            <div className="capture-topline">
-              <p className="settings-kicker">Setup / People</p>
-              <span className="version-chip">{APP_VERSION}</span>
-            </div>
-            <h1 className="settings-title">Manage people</h1>
-            <p className="settings-copy">People setup is separate now, so ownership and room configuration do not compete on the same screen.</p>
-          </div>
-          <div className="capture-topbar-actions">
-            <Link href="/settings" className="action-btn subtle quiet">
-              Setup home
-            </Link>
-            <Link href="/tasks" className="action-btn subtle quiet">
-              Tasks
-            </Link>
-            <form action={logoutAction}>
-              <FormActionButton className="action-btn subtle quiet" pendingLabel="Logging out">
-                Log out
-              </FormActionButton>
-            </form>
-          </div>
-        </header>
+        <AppPageHeader
+          title="People"
+          subtitle="People setup is separate now, so ownership and room configuration do not compete on the same screen."
+          iconClassName="people"
+          icon={
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" />
+              <circle cx="9.5" cy="7" r="3" />
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+          }
+          actions={
+            <>
+              <Link href="/settings" className="action-btn subtle quiet">
+                Setup home
+              </Link>
+              <Link href="/tasks" className="action-btn subtle quiet">
+                Tasks
+              </Link>
+              <form action={logoutAction}>
+                <FormActionButton className="action-btn subtle quiet" pendingLabel="Logging out">
+                  Log out
+                </FormActionButton>
+              </form>
+            </>
+          }
+        />
 
         {params.added === "person" ? <ToastNotice message="Person added." tone="success" /> : null}
         {params.updated === "role" ? <ToastNotice message="Role updated." tone="success" /> : null}

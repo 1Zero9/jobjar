@@ -1,8 +1,8 @@
 import { logoutAction } from "@/app/actions";
+import { AppPageHeader } from "@/app/components/AppPageHeader";
 import { AutoSubmitSelect } from "@/app/components/AutoSubmitSelect";
 import { FormActionButton } from "@/app/components/FormActionButton";
 import { requireSessionContext } from "@/lib/auth";
-import { APP_VERSION } from "@/lib/app-version";
 import { getStatsData } from "@/lib/stats-data";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
@@ -50,27 +50,32 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
   return (
     <div className="capture-shell page-stats min-h-screen px-4 py-5">
       <main className="mx-auto flex w-full max-w-[32rem] flex-col gap-6">
-        <header className="capture-topbar">
-          <div>
-            <div className="capture-topline">
-              <p className="capture-kicker">Jobjar</p>
-              <span className="version-chip">{APP_VERSION}</span>
-            </div>
-            <h1 className="capture-title">Stats</h1>
-            <p className="capture-subtitle">How the household is getting on.</p>
-          </div>
-          <div className="capture-topbar-actions">
-            <Link href="/" className="action-btn subtle quiet">Home</Link>
-            <Link href="/tasks" className="action-btn subtle quiet">Tasks</Link>
-            <Link href="/projects" className="action-btn subtle quiet">Projects</Link>
-            <Link href="/projects/timeline" className="action-btn subtle quiet">Timeline</Link>
-            <form action={logoutAction}>
-              <FormActionButton className="action-btn subtle quiet" pendingLabel="Logging out">
-                Log out
-              </FormActionButton>
-            </form>
-          </div>
-        </header>
+        <AppPageHeader
+          title="Stats"
+          subtitle="How the household is getting on."
+          iconClassName="stats"
+          icon={
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <line x1="18" y1="20" x2="18" y2="10" />
+              <line x1="12" y1="20" x2="12" y2="4" />
+              <line x1="6" y1="20" x2="6" y2="14" />
+              <line x1="2" y1="20" x2="22" y2="20" />
+            </svg>
+          }
+          actions={
+            <>
+              <Link href="/" className="action-btn subtle quiet">Home</Link>
+              <Link href="/tasks" className="action-btn subtle quiet">Tasks</Link>
+              <Link href="/projects" className="action-btn subtle quiet">Projects</Link>
+              <Link href="/projects/timeline" className="action-btn subtle quiet">Timeline</Link>
+              <form action={logoutAction}>
+                <FormActionButton className="action-btn subtle quiet" pendingLabel="Logging out">
+                  Log out
+                </FormActionButton>
+              </form>
+            </>
+          }
+        />
 
         {/* Filters */}
         <form method="GET" className="stats-filter-bar">

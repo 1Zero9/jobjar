@@ -201,7 +201,8 @@ select.admin-input {
 }
 
 .landing-hero,
-.landing-panel {
+.landing-panel,
+.page-hero-card {
   border: 1px solid var(--border);
   border-radius: 1.5rem;
   background: color-mix(in srgb, var(--card) 92%, transparent);
@@ -209,7 +210,8 @@ select.admin-input {
   padding: 1rem; /* overridden per-element below */
 }
 
-.landing-hero {
+.landing-hero,
+.page-hero-card {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -227,11 +229,61 @@ select.admin-input {
   font-size: clamp(3rem, 10vw, 4rem);
   font-weight: 900;
   letter-spacing: -0.05em;
-  line-height: 1;
+  line-height: 1.08;
+  padding-bottom: 0.08em;
   background: linear-gradient(135deg, #18324a 0%, #2563eb 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+}
+
+.page-hero-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  width: 100%;
+}
+
+.page-hero-copy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.page-hero-brand-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.page-hero-brand {
+  font-size: clamp(1.5rem, 4vw, 1.9rem);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+  padding-bottom: 0.05em;
+  background: linear-gradient(135deg, #18324a 0%, #2563eb 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.page-hero-title {
+  color: var(--text-primary);
+  font-size: clamp(2.45rem, 7vw, 3.15rem);
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  line-height: 0.95;
+}
+
+.page-hero-subtitle {
+  color: var(--text-soft);
+  font-size: 0.98rem;
+  line-height: 1.5;
+  max-width: 40rem;
 }
 
 .landing-meta-row {
@@ -301,6 +353,10 @@ select.admin-input {
   box-shadow: var(--shadow-sm);
 }
 
+.page-hero-card .page-hero-icon {
+  margin: 0;
+}
+
 .page-hero-icon.home {
   width: 5.5rem;
   height: 5.5rem;
@@ -319,6 +375,36 @@ select.admin-input {
 .page-hero-icon.timeline {
   background: linear-gradient(135deg, #ffe8d9, #fff6ef);
   color: #c2410c;
+}
+
+.page-hero-icon.log {
+  background: linear-gradient(135deg, #dbeafe, #eff6ff);
+  color: var(--primary);
+}
+
+.page-hero-icon.stats {
+  background: linear-gradient(135deg, #dcfce7, #f0fdf4);
+  color: var(--success);
+}
+
+.page-hero-icon.settings {
+  background: linear-gradient(135deg, #e2e8f0, #f8fafc);
+  color: var(--neutral-700);
+}
+
+.page-hero-icon.locations {
+  background: linear-gradient(135deg, #fef3c7, #fffbeb);
+  color: #b45309;
+}
+
+.page-hero-icon.rooms {
+  background: linear-gradient(135deg, #ede9fe, #f5f3ff);
+  color: #6d28d9;
+}
+
+.page-hero-icon.people {
+  background: linear-gradient(135deg, #fee2e2, #fff1f2);
+  color: #be123c;
 }
 
 .landing-action-card {
@@ -1131,6 +1217,18 @@ select.admin-input {
 
   .recorded-list {
     gap: 0.55rem;
+  }
+
+  .page-hero-main {
+    gap: 0.85rem;
+  }
+
+  .page-hero-title {
+    font-size: clamp(2rem, 5vw, 2.45rem);
+  }
+
+  .page-hero-subtitle {
+    font-size: 0.92rem;
   }
 
   .recorded-row-summary {
@@ -3051,6 +3149,10 @@ select.admin-input {
 .landing-action-card.stats { --card-accent: var(--success); background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%); }
 
 @media (max-width: 640px) {
+  .page-hero-main {
+    flex-direction: column;
+  }
+
   .timeline-item {
     grid-template-columns: 1fr;
   }

@@ -4,10 +4,10 @@ import {
   updateLocationAction,
   updateRoomLocationAction,
 } from "@/app/actions";
+import { AppPageHeader } from "@/app/components/AppPageHeader";
 import { FormActionButton } from "@/app/components/FormActionButton";
 import { ToastNotice } from "@/app/components/ToastNotice";
 import { requireAdmin } from "@/lib/auth";
-import { APP_VERSION } from "@/lib/app-version";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 
@@ -36,30 +36,30 @@ export default async function LocationsPage({
   return (
     <div className="settings-shell min-h-screen px-4 py-5">
       <main className="mx-auto flex w-full max-w-[32rem] flex-col gap-6">
-        <header className="settings-hero">
-          <div>
-            <div className="capture-topline">
-              <p className="settings-kicker">Setup / Locations</p>
-              <span className="version-chip">{APP_VERSION}</span>
-            </div>
-            <h1 className="settings-title">Manage locations</h1>
-            <p className="settings-copy">
-              Locations are the properties or places where you do work — your home, a second property, or anywhere else.
-              Each location groups its own rooms.
-            </p>
-          </div>
-          <div className="capture-topbar-actions">
-            <Link href="/settings" className="action-btn subtle quiet">
-              Setup home
-            </Link>
-            <Link href="/settings/rooms" className="action-btn subtle quiet">
-              Rooms
-            </Link>
-            <Link href="/tasks" className="action-btn subtle quiet">
-              Tasks
-            </Link>
-          </div>
-        </header>
+        <AppPageHeader
+          title="Locations"
+          subtitle="Locations are the properties or places where you do work. Each location groups its own rooms."
+          iconClassName="locations"
+          icon={
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 21s-6-4.35-6-10a6 6 0 1 1 12 0c0 5.65-6 10-6 10z" />
+              <circle cx="12" cy="11" r="2.5" />
+            </svg>
+          }
+          actions={
+            <>
+              <Link href="/settings" className="action-btn subtle quiet">
+                Setup home
+              </Link>
+              <Link href="/settings/rooms" className="action-btn subtle quiet">
+                Rooms
+              </Link>
+              <Link href="/tasks" className="action-btn subtle quiet">
+                Tasks
+              </Link>
+            </>
+          }
+        />
 
         {params.added === "location" ? <ToastNotice message="Location added." tone="success" /> : null}
         {params.duplicate === "location" ? <ToastNotice message="That location name already exists." tone="info" /> : null}

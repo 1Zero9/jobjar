@@ -1,8 +1,8 @@
 import { createRoomAction, deleteRoomAction, logoutAction, updateRoomAction, updateRoomLocationAction } from "@/app/actions";
+import { AppPageHeader } from "@/app/components/AppPageHeader";
 import { FormActionButton } from "@/app/components/FormActionButton";
 import { ToastNotice } from "@/app/components/ToastNotice";
 import { requireAdmin } from "@/lib/auth";
-import { APP_VERSION } from "@/lib/app-version";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 
@@ -55,29 +55,33 @@ export default async function RoomsPage({
   return (
     <div className="settings-shell min-h-screen px-4 py-5">
       <main className="mx-auto flex w-full max-w-[32rem] flex-col gap-6">
-        <header className="settings-hero">
-          <div>
-            <div className="capture-topline">
-              <p className="settings-kicker">Setup / Rooms</p>
-              <span className="version-chip">{APP_VERSION}</span>
-            </div>
-            <h1 className="settings-title">Manage rooms</h1>
-            <p className="settings-copy">Only room setup lives here. Keep spaces tidy and the recorder dropdown stays fast.</p>
-          </div>
-          <div className="capture-topbar-actions">
-            <Link href="/settings" className="action-btn subtle quiet">
-              Setup home
-            </Link>
-            <Link href="/tasks" className="action-btn subtle quiet">
-              Tasks
-            </Link>
-            <form action={logoutAction}>
-              <FormActionButton className="action-btn subtle quiet" pendingLabel="Logging out">
-                Log out
-              </FormActionButton>
-            </form>
-          </div>
-        </header>
+        <AppPageHeader
+          title="Rooms"
+          subtitle="Only room setup lives here. Keep spaces tidy and the recorder dropdown stays fast."
+          iconClassName="rooms"
+          icon={
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M3 21h18" />
+              <path d="M5 21V7l7-4 7 4v14" />
+              <path d="M9 21v-6h6v6" />
+            </svg>
+          }
+          actions={
+            <>
+              <Link href="/settings" className="action-btn subtle quiet">
+                Setup home
+              </Link>
+              <Link href="/tasks" className="action-btn subtle quiet">
+                Tasks
+              </Link>
+              <form action={logoutAction}>
+                <FormActionButton className="action-btn subtle quiet" pendingLabel="Logging out">
+                  Log out
+                </FormActionButton>
+              </form>
+            </>
+          }
+        />
 
         {params.added === "room" ? <ToastNotice message="Room added." tone="success" /> : null}
         {params.duplicate === "room" ? <ToastNotice message="That room name already exists." tone="info" /> : null}
