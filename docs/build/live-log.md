@@ -60,7 +60,12 @@
   - filtered home, log, tasks, projects, stats, and timeline to the member's allowed locations
   - enforced the same location scope in task and project actions
   - added location access controls on `/settings/people`
-- Updated product docs to match the current role model and `0.3.0` app shape.
+- Polished mobile and tablet behaviour in `0.3.1`:
+  - tightened shared phone spacing and iPhone safe-area handling across the main app shells
+  - widened the app shell on iPad-sized screens so pages use the space better without losing the aligned card layout
+  - made the signed-in user chip more vibrant so the current person stands out immediately
+  - trimmed the initial `/tasks` payload slightly to improve mobile route transitions
+- Updated product docs to match the current role model and `0.3.1` app shape.
 - Validation completed:
   - `npm run db:generate` passed
   - `npm run lint` passed

@@ -259,6 +259,9 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
   const privateTaskAccess = isAdminRole(role) ? undefined : getPrivateTaskAccessWhere(userId);
   const projectOnlyWhere = mode === "projects" ? getProjectTaskWhere() : undefined;
   const restrictedToLocations = hasLocationRestrictions(allowedLocationIds);
+  const taskTake = mode === "projects" ? 28 : 48;
+  const parentOccurrenceTake = mode === "projects" ? 8 : 6;
+  const childOccurrenceTake = 2;
 
   const [currentUser, rooms, people, locations, recordedTasks] = await Promise.all([
     prisma.user.findUnique({
@@ -297,7 +300,7 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
         ],
       },
       orderBy: [{ room: { sortOrder: "asc" } }, { priority: "asc" }, { createdAt: "desc" }],
-      take: 60,
+      take: taskTake,
       include: {
         room: {
           select: { name: true, location: { select: { id: true, name: true } } },
@@ -338,11 +341,10 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
             },
             occurrences: {
               orderBy: { dueAt: "desc" },
-              take: 3,
+              take: childOccurrenceTake,
               select: {
                 status: true,
                 dueAt: true,
-                completedAt: true,
               },
             },
           },
@@ -400,7 +402,7 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
         },
         occurrences: {
           orderBy: { dueAt: "desc" },
-          take: 10,
+          take: parentOccurrenceTake,
           include: {
             completer: {
               select: {
@@ -538,7 +540,6 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
               occurrences: child.occurrences.map((occurrence) => ({
                 status: occurrence.status,
                 dueAt: occurrence.dueAt.toISOString(),
-                completedAt: occurrence.completedAt?.toISOString() ?? null,
               })),
             })),
             projectCosts: task.projectCosts.map((cost) => ({

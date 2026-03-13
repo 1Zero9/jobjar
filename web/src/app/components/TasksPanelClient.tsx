@@ -67,7 +67,6 @@ type TaskItem = {
     occurrences: Array<{
       status: string;
       dueAt: string;
-      completedAt: string | null;
     }>;
   }>;
   projectCosts: Array<{
