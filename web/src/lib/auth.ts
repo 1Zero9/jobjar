@@ -1,5 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { MemberRole } from "@prisma/client";
+import { MemberAudience, MemberRole } from "@prisma/client";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -20,6 +20,7 @@ export type SessionContext = {
   userId: string;
   householdId: string;
   role: MemberRole;
+  audienceBand: MemberAudience;
   allowedLocationIds: string[] | null;
 };
 
@@ -79,7 +80,7 @@ export async function getSessionContext(): Promise<SessionContext | null> {
             userId,
           },
         },
-        select: { householdId: true, role: true, locationAccess: { select: { locationId: true } } },
+        select: { householdId: true, role: true, audienceBand: true, locationAccess: { select: { locationId: true } } },
       })
     : null;
 
@@ -88,7 +89,7 @@ export async function getSessionContext(): Promise<SessionContext | null> {
     (await prisma.householdMember.findFirst({
       where: { userId },
       orderBy: { joinedAt: "asc" },
-      select: { householdId: true, role: true, locationAccess: { select: { locationId: true } } },
+      select: { householdId: true, role: true, audienceBand: true, locationAccess: { select: { locationId: true } } },
     }));
 
   if (!membership) {
@@ -99,6 +100,7 @@ export async function getSessionContext(): Promise<SessionContext | null> {
     userId,
     householdId: membership.householdId,
     role: membership.role,
+    audienceBand: membership.audienceBand,
     allowedLocationIds:
       membership.role === "admin" || membership.locationAccess.length === 0
         ? null

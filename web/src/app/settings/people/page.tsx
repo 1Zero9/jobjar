@@ -3,13 +3,15 @@ import {
   logoutAction,
   removePersonAction,
   setPersonPasscodeAction,
+  updatePersonAudienceAction,
   updatePersonLocationAccessAction,
   updatePersonRoleAction,
 } from "@/app/actions";
 import { AppPageHeader } from "@/app/components/AppPageHeader";
 import { FormActionButton } from "@/app/components/FormActionButton";
 import { ToastNotice } from "@/app/components/ToastNotice";
-import { requireAdmin } from "@/lib/auth";
+import { isAdminRole, requireProjectManager } from "@/lib/auth";
+import { formatAudienceBand } from "@/lib/member-audience";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 
@@ -21,7 +23,8 @@ export default async function PeoplePage({
   searchParams: Promise<{ added?: string; updated?: string }>;
 }) {
   const params = await searchParams;
-  const { householdId } = await requireAdmin("/settings/people");
+  const { householdId, role } = await requireProjectManager("/settings/people");
+  const adminMode = isAdminRole(role);
 
   const [people, locations] = await Promise.all([
     prisma.householdMember.findMany({
@@ -29,6 +32,7 @@ export default async function PeoplePage({
       orderBy: { joinedAt: "asc" },
       select: {
         role: true,
+        audienceBand: true,
         locationAccess: {
           select: {
             locationId: true,
@@ -68,8 +72,8 @@ export default async function PeoplePage({
           }
           actions={
             <>
-              <Link href="/settings" className="action-btn subtle quiet">
-                Setup home
+              <Link href={adminMode ? "/settings" : "/"} className="action-btn subtle quiet">
+                {adminMode ? "Setup home" : "Home"}
               </Link>
               <Link href="/tasks" className="action-btn subtle quiet">
                 Tasks
@@ -85,6 +89,7 @@ export default async function PeoplePage({
 
         {params.added === "person" ? <ToastNotice message="Person added." tone="success" /> : null}
         {params.updated === "role" ? <ToastNotice message="Role updated." tone="success" /> : null}
+        {params.updated === "audience" ? <ToastNotice message="Age group updated." tone="success" /> : null}
         {params.updated === "locations" ? <ToastNotice message="Location access updated." tone="success" /> : null}
 
         <section className="settings-panel">
@@ -96,35 +101,46 @@ export default async function PeoplePage({
             <span className="recorded-count">{people.length}</span>
           </div>
 
-          <form action={createPersonAction} className="capture-form-simple">
-            <input type="hidden" name="returnTo" value="/settings/people" />
-            <input name="displayName" type="text" required placeholder="Name" className="capture-main-input" />
-            <input name="email" type="email" placeholder="Email (optional)" className="capture-room-select" />
-            <select name="role" defaultValue="member" className="capture-room-select">
-              <option value="member">Member</option>
-              <option value="power_user">Power user</option>
-              <option value="admin">Admin</option>
-              <option value="viewer">Viewer</option>
-            </select>
-            <input name="passcode" type="password" minLength={4} placeholder="Passcode" className="capture-room-select" />
-            {locations.length > 0 ? (
-              <fieldset className="location-access-fieldset">
-                <legend className="capture-step-label">Location access</legend>
-                <p className="recorded-row-placeholder">Leave blank for all locations. Admins always see everything.</p>
-                <div className="location-access-grid">
-                  {locations.map((location) => (
-                    <label key={location.id} className="location-access-option">
-                      <input type="checkbox" name="locationIds" value={location.id} />
-                      <span>{location.name}</span>
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
-            ) : null}
-            <FormActionButton className="capture-submit-btn" pendingLabel="Adding person">
-              Add person
-            </FormActionButton>
-          </form>
+          {adminMode ? (
+            <form action={createPersonAction} className="capture-form-simple">
+              <input type="hidden" name="returnTo" value="/settings/people" />
+              <input name="displayName" type="text" required placeholder="Name" className="capture-main-input" />
+              <input name="email" type="email" placeholder="Email (optional)" className="capture-room-select" />
+              <select name="role" defaultValue="member" className="capture-room-select">
+                <option value="member">Member</option>
+                <option value="power_user">Power user</option>
+                <option value="admin">Admin</option>
+                <option value="viewer">Viewer</option>
+              </select>
+              <select name="audienceBand" defaultValue="adult" className="capture-room-select">
+                <option value="adult">Adult</option>
+                <option value="teen_12_18">12 to 18</option>
+                <option value="under_12">Under 12</option>
+              </select>
+              <input name="passcode" type="password" minLength={4} placeholder="Passcode" className="capture-room-select" />
+              {locations.length > 0 ? (
+                <fieldset className="location-access-fieldset">
+                  <legend className="capture-step-label">Location access</legend>
+                  <p className="recorded-row-placeholder">Leave blank for all locations. Admins always see everything.</p>
+                  <div className="location-access-grid">
+                    {locations.map((location) => (
+                      <label key={location.id} className="location-access-option">
+                        <input type="checkbox" name="locationIds" value={location.id} />
+                        <span>{location.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+              ) : null}
+              <FormActionButton className="capture-submit-btn" pendingLabel="Adding person">
+                Add person
+              </FormActionButton>
+            </form>
+          ) : (
+            <p className="recorded-row-placeholder">
+              Power users can set the age group for each person here. Admin-only controls such as roles, passcodes, and location access stay with admins.
+            </p>
+          )}
 
           <div className="recorded-list">
             {people.map((person, index) => (
@@ -145,27 +161,47 @@ export default async function PeoplePage({
                 <div className="recorded-row-detail">
                   <p><span>Name</span><strong>{person.user.displayName}</strong></p>
                   <p><span>Role</span><strong>{formatRole(person.role)}</strong></p>
+                  <p><span>Age group</span><strong>{formatAudienceBand(person.audienceBand)}</strong></p>
                   <p><span>Email</span><strong>{person.user.email}</strong></p>
                   <p><span>Location access</span><strong>{formatLocationAccess(person.role, person.locationAccess)}</strong></p>
-                  <form action={updatePersonRoleAction} className="recorded-edit-form">
+                  {adminMode ? (
+                    <form action={updatePersonRoleAction} className="recorded-edit-form">
+                      <input type="hidden" name="userId" value={person.user.id} />
+                      <input type="hidden" name="returnTo" value="/settings/people" />
+                      <label className="recorded-field">
+                        <span>Role</span>
+                        <select name="role" defaultValue={person.role} className="recorded-edit-input">
+                          <option value="member">Member</option>
+                          <option value="power_user">Power user</option>
+                          <option value="admin">Admin</option>
+                          <option value="viewer">Viewer</option>
+                        </select>
+                      </label>
+                      <div className="recorded-row-actions between">
+                        <FormActionButton className="action-btn bright quiet" pendingLabel="Saving">
+                          Save role
+                        </FormActionButton>
+                      </div>
+                    </form>
+                  ) : null}
+                  <form action={updatePersonAudienceAction} className="recorded-edit-form">
                     <input type="hidden" name="userId" value={person.user.id} />
                     <input type="hidden" name="returnTo" value="/settings/people" />
                     <label className="recorded-field">
-                      <span>Role</span>
-                      <select name="role" defaultValue={person.role} className="recorded-edit-input">
-                        <option value="member">Member</option>
-                        <option value="power_user">Power user</option>
-                        <option value="admin">Admin</option>
-                        <option value="viewer">Viewer</option>
+                      <span>Age group</span>
+                      <select name="audienceBand" defaultValue={person.audienceBand} className="recorded-edit-input">
+                        <option value="adult">Adult</option>
+                        <option value="teen_12_18">12 to 18</option>
+                        <option value="under_12">Under 12</option>
                       </select>
                     </label>
                     <div className="recorded-row-actions between">
                       <FormActionButton className="action-btn bright quiet" pendingLabel="Saving">
-                        Save role
+                        Save age group
                       </FormActionButton>
                     </div>
                   </form>
-                  {locations.length > 0 ? (
+                  {adminMode && locations.length > 0 ? (
                     <form action={updatePersonLocationAccessAction} className="recorded-edit-form">
                       <input type="hidden" name="userId" value={person.user.id} />
                       <input type="hidden" name="returnTo" value="/settings/people" />
@@ -193,24 +229,28 @@ export default async function PeoplePage({
                       </div>
                     </form>
                   ) : null}
-                  <form action={setPersonPasscodeAction} className="recorded-edit-form">
-                    <input type="hidden" name="userId" value={person.user.id} />
-                    <label className="recorded-field">
-                      <span>Reset passcode</span>
-                      <input name="passcode" type="password" minLength={4} placeholder="New passcode" className="recorded-edit-input" />
-                    </label>
-                    <div className="recorded-row-actions between">
-                      <FormActionButton className="action-btn bright quiet" pendingLabel="Saving">
-                        Save passcode
-                      </FormActionButton>
-                    </div>
-                  </form>
-                  <form action={removePersonAction} className="recorded-row-actions">
-                    <input type="hidden" name="userId" value={person.user.id} />
-                    <FormActionButton className="action-btn warn quiet" pendingLabel="Removing">
-                      Remove person
-                    </FormActionButton>
-                  </form>
+                  {adminMode ? (
+                    <>
+                      <form action={setPersonPasscodeAction} className="recorded-edit-form">
+                        <input type="hidden" name="userId" value={person.user.id} />
+                        <label className="recorded-field">
+                          <span>Reset passcode</span>
+                          <input name="passcode" type="password" minLength={4} placeholder="New passcode" className="recorded-edit-input" />
+                        </label>
+                        <div className="recorded-row-actions between">
+                          <FormActionButton className="action-btn bright quiet" pendingLabel="Saving">
+                            Save passcode
+                          </FormActionButton>
+                        </div>
+                      </form>
+                      <form action={removePersonAction} className="recorded-row-actions">
+                        <input type="hidden" name="userId" value={person.user.id} />
+                        <FormActionButton className="action-btn warn quiet" pendingLabel="Removing">
+                          Remove person
+                        </FormActionButton>
+                      </form>
+                    </>
+                  ) : null}
                 </div>
               </details>
             ))}

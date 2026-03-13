@@ -9,11 +9,12 @@ type Props = {
   icon?: ReactNode;
   iconClassName?: string;
   actions?: ReactNode;
+  className?: string;
 };
 
-export function AppPageHeader({ title, subtitle, icon, iconClassName = "", actions }: Props) {
+export function AppPageHeader({ title, subtitle, icon, iconClassName = "", actions, className = "" }: Props) {
   return (
-    <header className="page-hero-card">
+    <header className={`page-hero-card ${className}`.trim()}>
       <div className="hero-corner-tools">
         <ResetViewButton />
         <ThemeToggle compact />

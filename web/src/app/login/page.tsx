@@ -1,6 +1,4 @@
 import { bootstrapOwnerAction, loginAction } from "@/app/actions";
-import { ResetViewButton } from "@/app/components/ResetViewButton";
-import { ThemeToggle } from "@/app/components/ThemeToggle";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -55,10 +53,6 @@ export default async function LoginPage({
     <div className="login-screen task-shell min-h-screen px-4 py-6">
       <main className="login-main">
         <section className="login-shell board-shell login-card-shell">
-          <div className="hero-corner-tools">
-            <ResetViewButton />
-            <ThemeToggle compact />
-          </div>
           <div className="login-header-row">
             <div className="login-brand-row">
               <div className="page-hero-icon home">
@@ -71,11 +65,14 @@ export default async function LoginPage({
               <span className="login-brand-title">Jobjar</span>
             </div>
           </div>
+          <p className="login-kicker">{needsSetup ? "Welcome to your household workspace" : "Welcome back"}</p>
           <h1 className="login-heading">
-            {needsSetup ? "Create Admin" : "Sign In"}
+            {needsSetup ? "Set up the first home base." : "Ready to get today's work moving?"}
           </h1>
           <p className="login-copy">
-            {needsSetup ? "Set up the first admin account to start using the household task app." : "Choose your name and enter your personal passcode."}
+            {needsSetup
+              ? "Create the first admin account to open Jobjar for your household, organise spaces, and start logging work."
+              : "Choose your name, enter your passcode, and pick up where you left off."}
           </p>
           {dbError ? (
             <div className="login-alert">

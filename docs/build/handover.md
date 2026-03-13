@@ -16,7 +16,7 @@ Current routes:
 - `/api/health/db`: DB health check
 
 Current package version:
-- `web/package.json`: `0.3.2`
+- `web/package.json`: `0.4.0`
 
 ## Auth model
 - custom auth, not NextAuth/Auth.js
@@ -30,6 +30,10 @@ Current package version:
   - `power_user`: project planning and project management
   - `member`: normal task usage
   - `viewer`: read-only
+- audience bands:
+  - `adult`: current full household UI
+  - `teen_12_18`: brighter teen-focused presentation
+  - `under_12`: playful child UI limited to assigned jobs
 
 ## Data model
 Schema source of truth:

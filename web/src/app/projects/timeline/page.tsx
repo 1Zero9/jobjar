@@ -4,6 +4,7 @@ import { AutoSubmitSelect } from "@/app/components/AutoSubmitSelect";
 import { FormActionButton } from "@/app/components/FormActionButton";
 import { isAdminRole, requireSessionContext } from "@/lib/auth";
 import { hasLocationRestrictions } from "@/lib/location-access";
+import { canAccessExtendedViews, getAudienceThemeClassName } from "@/lib/member-audience";
 import {
   getProjectTimelineData,
   type ProjectTimelineEvent,
@@ -12,6 +13,7 @@ import {
 } from "@/lib/project-timeline";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -26,9 +28,13 @@ export default async function ProjectsTimelinePage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const { householdId, userId, role, allowedLocationIds } = await requireSessionContext("/projects/timeline");
+  const { householdId, userId, role, audienceBand, allowedLocationIds } = await requireSessionContext("/projects/timeline");
+  if (!canAccessExtendedViews(audienceBand)) {
+    redirect("/tasks");
+  }
   const params = await searchParams;
   const restrictedToLocations = hasLocationRestrictions(allowedLocationIds);
+  const audienceThemeClass = getAudienceThemeClassName(audienceBand);
 
   const [currentUser, locations] = await Promise.all([
     prisma.user.findUnique({
@@ -67,7 +73,7 @@ export default async function ProjectsTimelinePage({
   const doneEvents = timeline.events.filter((event) => event.state === "done");
 
   return (
-    <div className="capture-shell page-timeline min-h-screen px-4 py-5">
+    <div className={`capture-shell page-timeline ${audienceThemeClass} min-h-screen px-4 py-5`}>
       <main className="mx-auto flex w-full max-w-[34rem] flex-col gap-6">
         <AppPageHeader
           title="Project timeline"

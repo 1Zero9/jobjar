@@ -10,6 +10,7 @@ import {
 } from "@/lib/auth";
 import { getOrCreateHouseholdForUser } from "@/lib/household";
 import { hasLocationRestrictions } from "@/lib/location-access";
+import { canAccessExtendedViews, getAudienceAssignedTaskWhere } from "@/lib/member-audience";
 import { prisma } from "@/lib/prisma";
 import { getUserPasswordHash, setUserPasswordHash } from "@/lib/auth-store";
 import { hashPassword, verifyPassword } from "@/lib/password";
@@ -1338,6 +1339,7 @@ export async function createPersonAction(formData: FormData) {
   const emailInput = String(formData.get("email") ?? "").trim();
   const passcodeInput = String(formData.get("passcode") ?? "").trim();
   const requestedRole = String(formData.get("role") ?? "").trim();
+  const requestedAudienceBand = String(formData.get("audienceBand") ?? "").trim();
   const requestedLocationIds = parseLocationIds(formData.getAll("locationIds"));
   const returnTo = getReturnPath(formData.get("returnTo"), "");
 
@@ -1346,6 +1348,7 @@ export async function createPersonAction(formData: FormData) {
   }
 
   const role = parseMemberRole(requestedRole, "member");
+  const audienceBand = parseMemberAudience(requestedAudienceBand, "adult");
 
   const email =
     emailInput || `${displayName.toLowerCase().replace(/[^a-z0-9]+/g, ".").replace(/^\.|\.$/g, "")}@jobjar.local`;
@@ -1366,11 +1369,12 @@ export async function createPersonAction(formData: FormData) {
         userId: user.id,
       },
     },
-    update: { role },
+    update: { role, audienceBand },
     create: {
       householdId,
       userId: user.id,
       role,
+      audienceBand,
     },
   });
 
@@ -1425,6 +1429,44 @@ export async function updatePersonRoleAction(formData: FormData) {
 
   refreshViews(["/", "/log", "/tasks", "/projects", "/projects/timeline", "/settings", "/settings/people"]);
   redirect(`${returnTo}?updated=role`);
+}
+
+export async function updatePersonAudienceAction(formData: FormData) {
+  const { householdId } = await requireProjectManagerAction();
+  const userId = String(formData.get("userId") ?? "").trim();
+  const requestedAudienceBand = String(formData.get("audienceBand") ?? "").trim();
+  const audienceBand = parseMemberAudience(requestedAudienceBand, "adult");
+  const returnTo = getReturnPath(formData.get("returnTo"), "/settings/people");
+
+  if (!userId) {
+    return;
+  }
+
+  const membership = await prisma.householdMember.findUnique({
+    where: {
+      householdId_userId: {
+        householdId,
+        userId,
+      },
+    },
+    select: { userId: true },
+  });
+  if (!membership) {
+    return;
+  }
+
+  await prisma.householdMember.update({
+    where: {
+      householdId_userId: {
+        householdId,
+        userId,
+      },
+    },
+    data: { audienceBand },
+  });
+
+  refreshViews(["/", "/log", "/tasks", "/projects", "/projects/timeline", "/stats", "/settings", "/settings/people"]);
+  redirect(`${returnTo}?updated=audience`);
 }
 
 export async function updatePersonLocationAccessAction(formData: FormData) {
@@ -1521,7 +1563,7 @@ export async function setPersonPasscodeAction(formData: FormData) {
 }
 
 export async function startTaskAction(formData: FormData) {
-  const { householdId, userId: actorUserId, allowedLocationIds } = await requireSessionMemberAction();
+  const { householdId, userId: actorUserId, allowedLocationIds, audienceBand } = await requireSessionMemberAction({ allowRestrictedChildAudience: true });
   const taskId = String(formData.get("taskId") ?? "").trim();
   if (!taskId) {
     return;
@@ -1532,6 +1574,7 @@ export async function startTaskAction(formData: FormData) {
       id: taskId,
       active: true,
       room: getAccessibleRoomWhere(householdId, allowedLocationIds),
+      ...getAudienceAssignedTaskWhere(actorUserId, audienceBand),
     },
     select: { id: true },
   });
@@ -1557,7 +1600,7 @@ export async function startTaskAction(formData: FormData) {
 }
 
 export async function completeTaskAction(formData: FormData) {
-  const { userId: currentUserId, householdId, allowedLocationIds } = await requireSessionMemberAction();
+  const { userId: currentUserId, householdId, allowedLocationIds, audienceBand } = await requireSessionMemberAction({ allowRestrictedChildAudience: true });
   const taskId = String(formData.get("taskId") ?? "").trim();
   const note = String(formData.get("note") ?? "").trim();
   if (!taskId) {
@@ -1569,6 +1612,7 @@ export async function completeTaskAction(formData: FormData) {
     where: {
       id: taskId,
       room: getAccessibleRoomWhere(householdId, allowedLocationIds),
+      ...getAudienceAssignedTaskWhere(currentUserId, audienceBand),
     },
     select: {
       id: true,
@@ -1651,7 +1695,7 @@ export async function completeTaskAction(formData: FormData) {
 }
 
 export async function reopenTaskAction(formData: FormData) {
-  const { householdId, userId: actorUserId, allowedLocationIds } = await requireSessionMemberAction();
+  const { householdId, userId: actorUserId, allowedLocationIds, audienceBand } = await requireSessionMemberAction({ allowRestrictedChildAudience: true });
   const taskId = String(formData.get("taskId") ?? "").trim();
   if (!taskId) {
     return;
@@ -1661,6 +1705,7 @@ export async function reopenTaskAction(formData: FormData) {
     where: {
       id: taskId,
       room: getAccessibleRoomWhere(householdId, allowedLocationIds),
+      ...getAudienceAssignedTaskWhere(actorUserId, audienceBand),
     },
     select: { id: true },
   });
@@ -1865,6 +1910,13 @@ function parseCaptureStage(value: FormDataEntryValue | null, fallback: "captured
 
 function parseMemberRole(value: string, fallback: "admin" | "power_user" | "member" | "viewer") {
   if (value === "admin" || value === "power_user" || value === "member" || value === "viewer") {
+    return value;
+  }
+  return fallback;
+}
+
+function parseMemberAudience(value: string, fallback: "adult" | "teen_12_18" | "under_12") {
+  if (value === "adult" || value === "teen_12_18" || value === "under_12") {
     return value;
   }
   return fallback;
@@ -2163,10 +2215,13 @@ async function requireProjectManagerAction() {
   return context;
 }
 
-async function requireSessionMemberAction() {
+async function requireSessionMemberAction(options?: { allowRestrictedChildAudience?: boolean }) {
   const context = await requireSessionContext("/");
   if (!canUseMemberActions(context.role)) {
     redirect("/");
+  }
+  if (!options?.allowRestrictedChildAudience && !canAccessExtendedViews(context.audienceBand)) {
+    redirect("/tasks");
   }
   return context;
 }

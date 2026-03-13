@@ -1,6 +1,8 @@
 "use client";
 
+import type { MemberAudience } from "@prisma/client";
 import {
+  completeTaskAction,
   createProjectChildTaskAction,
   createProjectCostAction,
   createProjectMaterialAction,
@@ -11,6 +13,8 @@ import {
   deleteTaskAction,
   luckyDipAction,
   promoteTaskToProjectAction,
+  reopenTaskAction,
+  startTaskAction,
   toggleProjectMaterialPurchasedAction,
   toggleProjectMilestoneAction,
   updateProjectPlanAction,
@@ -110,6 +114,7 @@ type Props = {
   peopleOptions: PersonOption[];
   locationOptions: LocationOption[];
   tasks: TaskItem[];
+  audienceBand: MemberAudience;
   initialRoomId: string;
   initialAssigneeId: string;
   initialLocationId: string;
@@ -132,6 +137,7 @@ export function TasksPanelClient({
   peopleOptions,
   locationOptions,
   tasks,
+  audienceBand,
   initialRoomId,
   initialAssigneeId,
   initialLocationId,
@@ -154,6 +160,8 @@ export function TasksPanelClient({
 
   const groupedRoomOptions = groupRoomsByLocation(roomOptions);
   const projectMode = viewMode === "projects";
+  const childMode = audienceBand === "under_12";
+  const teenMode = audienceBand === "teen_12_18";
 
   const visibleTasks = useMemo(() => {
     return tasks.filter((task) => {
@@ -211,7 +219,7 @@ export function TasksPanelClient({
 
       <div className="recorded-toolbar">
         <div className="recorded-filter-bar">
-          {locationOptions.length > 1 ? (
+          {!childMode && locationOptions.length > 1 ? (
             <label className="recorded-filter-field">
               <span>Location</span>
               <select
@@ -226,53 +234,57 @@ export function TasksPanelClient({
               </select>
             </label>
           ) : null}
+          {!childMode ? (
+            <label className="recorded-filter-field">
+              <span>Room</span>
+              <select
+                value={selectedRoomId}
+                onChange={(event) => setSelectedRoomId(event.target.value)}
+                className={`recorded-filter-select${selectedRoomId ? " filter-active" : ""}`}
+              >
+                <option value="">All rooms</option>
+                {groupedRoomOptions.map(([group, groupedRooms]) => (
+                  <optgroup key={group} label={group}>
+                    {groupedRooms.map((room) => (
+                      <option key={room.id} value={room.id}>
+                        {room.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </label>
+          ) : null}
           <label className="recorded-filter-field">
-            <span>Room</span>
-            <select
-              value={selectedRoomId}
-              onChange={(event) => setSelectedRoomId(event.target.value)}
-              className={`recorded-filter-select${selectedRoomId ? " filter-active" : ""}`}
-            >
-              <option value="">All rooms</option>
-              {groupedRoomOptions.map(([group, groupedRooms]) => (
-                <optgroup key={group} label={group}>
-                  {groupedRooms.map((room) => (
-                    <option key={room.id} value={room.id}>
-                      {room.name}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
-          </label>
-          <label className="recorded-filter-field">
-            <span>State</span>
+            <span>{childMode ? "Show" : "State"}</span>
             <select
               value={selectedState}
               onChange={(event) => setSelectedState(event.target.value as "all" | "open" | "done")}
               className={`recorded-filter-select${selectedState !== "all" ? " filter-active" : ""}`}
             >
-              <option value="all">All states</option>
-              <option value="open">Open</option>
-              <option value="done">Completed</option>
+              <option value="all">{childMode ? "Everything" : "All states"}</option>
+              <option value="open">{childMode ? "Ready to do" : "Open"}</option>
+              <option value="done">{childMode ? "Finished" : "Completed"}</option>
             </select>
           </label>
-          <label className="recorded-filter-field">
-            <span>Assigned</span>
-            <select
-              value={selectedAssigneeId}
-              onChange={(event) => setSelectedAssigneeId(event.target.value)}
-              className={`recorded-filter-select${selectedAssigneeId ? " filter-active" : ""}`}
-            >
-              <option value="">Anyone</option>
-              {peopleOptions.map((person) => (
-                <option key={person.id} value={person.id}>
-                  {person.displayName}
-                </option>
-              ))}
-            </select>
-          </label>
-          {projectMode ? (
+          {!childMode ? (
+            <label className="recorded-filter-field">
+              <span>Assigned</span>
+              <select
+                value={selectedAssigneeId}
+                onChange={(event) => setSelectedAssigneeId(event.target.value)}
+                className={`recorded-filter-select${selectedAssigneeId ? " filter-active" : ""}`}
+              >
+                <option value="">Anyone</option>
+                {peopleOptions.map((person) => (
+                  <option key={person.id} value={person.id}>
+                    {person.displayName}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+          {projectMode && !childMode ? (
             <label className="recorded-filter-field">
               <span>Project state</span>
               <select
@@ -304,17 +316,17 @@ export function TasksPanelClient({
                 setSelectedProjectState("all");
               }}
             >
-              Clear filters
+              {childMode ? "Reset view" : "Clear filters"}
             </button>
           ) : (
-            <span className="recorded-toolbar-hint">Filters update instantly.</span>
+            <span className="recorded-toolbar-hint">{childMode ? "Your jobs update right away." : "Filters update instantly."}</span>
           )}
 
-          {!projectMode ? (
+          {!projectMode && !childMode ? (
             <form action={luckyDipAction}>
               <input type="hidden" name="returnTo" value="/tasks" />
               <FormActionButton className="action-btn subtle quiet" pendingLabel="Choosing task">
-                Lucky dip
+                {teenMode ? "Pick one" : "Lucky dip"}
               </FormActionButton>
             </form>
           ) : null}
@@ -325,7 +337,7 @@ export function TasksPanelClient({
         {visibleTasks.length === 0 ? (
           <p className="recorded-empty">
             {selectedRoomId || selectedAssigneeId || selectedState !== "all" || (projectMode && selectedProjectState !== "all")
-              ? "No tasks match these filters."
+              ? childMode ? "No jobs match this view." : "No tasks match these filters."
               : emptyMessage}
           </p>
         ) : (
@@ -351,7 +363,7 @@ export function TasksPanelClient({
                       <span className="recorded-row-location">{task.locationName}</span>
                     ) : null}
                     <span className="recorded-row-room">{displayRoomName(task.roomName)}</span>
-                    {task.assignmentUserName ? (
+                    {task.assignmentUserName && !childMode ? (
                       <span className="recorded-row-assignee">
                         <span className="assignee-avatar" style={nameToAvatarStyle(task.assignmentUserName)}>
                           {nameInitials(task.assignmentUserName)}
@@ -359,13 +371,13 @@ export function TasksPanelClient({
                         {task.assignmentUserName}
                       </span>
                     ) : (
-                      <span className="assignee-unset">Unassigned</span>
+                      !childMode ? <span className="assignee-unset">Unassigned</span> : null
                     )}
-                    <span className="task-chip task-chip-kind">{formatJobKind(task.jobKind)}</span>
-                    {getTaskState(task) === "done" ? <span className="task-chip task-chip-done">Done</span> : null}
-                    {recurrenceStateClassName(task) === "task-chip-lapsed" ? <span className="task-chip task-chip-lapsed">Lapsed</span> : null}
-                    {recurrenceStateClassName(task) === "task-chip-due" ? <span className="task-chip task-chip-due">Due today</span> : null}
-                    {task.isPrivate ? <span className="task-chip task-chip-private">Private</span> : null}
+                    {!childMode ? <span className="task-chip task-chip-kind">{formatJobKind(task.jobKind)}</span> : null}
+                    {getTaskState(task) === "done" ? <span className="task-chip task-chip-done">{childMode ? "Finished" : "Done"}</span> : null}
+                    {recurrenceStateClassName(task) === "task-chip-lapsed" ? <span className="task-chip task-chip-lapsed">{childMode ? "Needs attention" : "Lapsed"}</span> : null}
+                    {recurrenceStateClassName(task) === "task-chip-due" ? <span className="task-chip task-chip-due">{childMode ? "Due today" : "Due today"}</span> : null}
+                    {task.isPrivate && !childMode ? <span className="task-chip task-chip-private">Private</span> : null}
                     {task.projectParentTitle ? <span className="task-chip">↳ {task.projectParentTitle}</span> : null}
                     {isProject ? <span className="task-chip task-chip-streak">{projectSummary.progressLabel}</span> : null}
                     {isProject && projectSummary.atRisk ? <span className="task-chip task-chip-lapsed">At risk</span> : null}
@@ -378,6 +390,49 @@ export function TasksPanelClient({
                 </summary>
 
                 <div className="recorded-row-detail">
+                  {childMode ? (
+                    <section className="kid-task-panel">
+                      {task.detailNotes ? (
+                        <p className="kid-task-copy">{task.detailNotes}</p>
+                      ) : (
+                        <p className="kid-task-copy">Pick this job up when you are ready.</p>
+                      )}
+                      <div className="kid-task-meta">
+                        <p><span>Where</span><strong>{displayRoomName(task.roomName)}</strong></p>
+                        <p><span>Status</span><strong>{getTaskState(task) === "done" ? "Finished" : task.captureStage === "active" ? "In progress" : "Ready to go"}</strong></p>
+                        {task.schedule?.nextDueAt ? <p><span>Due</span><strong>{formatRecordedAt(task.schedule.nextDueAt)}</strong></p> : null}
+                        {latestCompleted?.completedAt ? <p><span>Last finished</span><strong>{formatRecordedAt(latestCompleted.completedAt)}</strong></p> : null}
+                      </div>
+                      <div className="recorded-row-actions kid-task-actions">
+                        {getTaskState(task) === "done" ? (
+                          <form action={reopenTaskAction}>
+                            <input type="hidden" name="taskId" value={task.id} />
+                            <FormActionButton className="action-btn subtle quiet" pendingLabel="Opening">
+                              Not done yet
+                            </FormActionButton>
+                          </form>
+                        ) : (
+                          <>
+                            {task.captureStage !== "active" ? (
+                              <form action={startTaskAction}>
+                                <input type="hidden" name="taskId" value={task.id} />
+                                <FormActionButton className="action-btn subtle quiet" pendingLabel="Starting">
+                                  Start job
+                                </FormActionButton>
+                              </form>
+                            ) : null}
+                            <form action={completeTaskAction}>
+                              <input type="hidden" name="taskId" value={task.id} />
+                              <input type="hidden" name="note" value="" />
+                              <FormActionButton className="action-btn bright quiet" pendingLabel="Finishing">
+                                I finished this
+                              </FormActionButton>
+                            </form>
+                          </>
+                        )}
+                      </div>
+                    </section>
+                  ) : (
                   <form action={updateRecordedTaskAction} className="recorded-edit-form">
                     <input type="hidden" name="taskId" value={task.id} />
                     <input type="hidden" name="returnTo" value={basePath} />
@@ -558,8 +613,9 @@ export function TasksPanelClient({
                       </FormActionButton>
                     </div>
                   </form>
+                  )}
 
-                  {isProject ? (
+                  {!childMode && isProject ? (
                     <section className="rounded-xl border border-border bg-surface p-3">
                       <div className="room-setup-header">
                         <div>
@@ -914,7 +970,7 @@ export function TasksPanelClient({
                         )}
                       </div>
                     </section>
-                  ) : canManageProjects ? (
+                  ) : !childMode && canManageProjects ? (
                     <form action={promoteTaskToProjectAction} className="recorded-row-actions">
                       <input type="hidden" name="taskId" value={task.id} />
                       <input type="hidden" name="returnTo" value={basePath} />
@@ -924,7 +980,7 @@ export function TasksPanelClient({
                     </form>
                   ) : null}
 
-                  {canDeleteTasks ? (
+                  {!childMode && canDeleteTasks ? (
                     <form action={deleteTaskAction} className="recorded-row-actions">
                       <input type="hidden" name="taskId" value={task.id} />
                       <FormActionButton className="action-btn warn quiet" pendingLabel="Deleting">

@@ -7,9 +7,11 @@ import { TasksPanelClient } from "@/app/components/TasksPanelClient";
 import { ToastNotice } from "@/app/components/ToastNotice";
 import { canManageProjectsRole, isAdminRole, requireSessionContext } from "@/lib/auth";
 import { getRoomLocationAccessWhere, hasLocationRestrictions } from "@/lib/location-access";
+import { canAccessExtendedViews, getAudienceAssignedTaskWhere, getAudienceThemeClassName, isChildAudience, isTeenAudience } from "@/lib/member-audience";
 import { prisma } from "@/lib/prisma";
 import { getPrivateTaskAccessWhere, getProjectTaskWhere } from "@/lib/project-work";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 type SearchParams = {
   added?: string;
@@ -24,8 +26,12 @@ type SearchParams = {
 };
 
 export async function LogWorkspace({ params }: { params: SearchParams }) {
-  const { householdId, userId, role, allowedLocationIds } = await requireSessionContext("/log");
+  const { householdId, userId, role, audienceBand, allowedLocationIds } = await requireSessionContext("/log");
+  if (!canAccessExtendedViews(audienceBand)) {
+    redirect("/tasks");
+  }
   const restrictedToLocations = hasLocationRestrictions(allowedLocationIds);
+  const audienceThemeClass = getAudienceThemeClassName(audienceBand);
 
   const [currentUser, rooms, people, locations, lookupTasks] = await Promise.all([
     prisma.user.findUnique({
@@ -79,7 +85,7 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
   const peopleOptions = people.map((member) => member.user);
 
   return (
-    <div className="capture-shell page-log min-h-screen px-4 py-5">
+    <div className={`capture-shell page-log ${audienceThemeClass} min-h-screen px-4 py-5`}>
       <main className="capture-app-shell mx-auto flex w-full max-w-[28rem] flex-col gap-6">
         <AppPageHeader
           title="Log task"
@@ -255,10 +261,17 @@ export async function ProjectsWorkspace({ params }: { params: SearchParams }) {
 }
 
 async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode: "tasks" | "projects" }) {
-  const { householdId, userId, role, allowedLocationIds } = await requireSessionContext(mode === "projects" ? "/projects" : "/tasks");
+  const { householdId, userId, role, audienceBand, allowedLocationIds } = await requireSessionContext(mode === "projects" ? "/projects" : "/tasks");
+  if (mode === "projects" && !canAccessExtendedViews(audienceBand)) {
+    redirect("/tasks");
+  }
   const privateTaskAccess = isAdminRole(role) ? undefined : getPrivateTaskAccessWhere(userId);
   const projectOnlyWhere = mode === "projects" ? getProjectTaskWhere() : undefined;
   const restrictedToLocations = hasLocationRestrictions(allowedLocationIds);
+  const taskAudienceWhere = getAudienceAssignedTaskWhere(userId, audienceBand);
+  const audienceThemeClass = getAudienceThemeClassName(audienceBand);
+  const childMode = isChildAudience(audienceBand);
+  const teenMode = isTeenAudience(audienceBand);
   const taskTake = mode === "projects" ? 28 : 48;
   const parentOccurrenceTake = mode === "projects" ? 8 : 6;
   const childOccurrenceTake = 2;
@@ -294,6 +307,7 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
       where: {
         active: true,
         room: { householdId, ...getRoomLocationAccessWhere(allowedLocationIds) },
+        ...taskAudienceWhere,
         AND: [
           ...(privateTaskAccess ? [{ OR: privateTaskAccess }] : []),
           ...(projectOnlyWhere ? [projectOnlyWhere] : []),
@@ -434,15 +448,28 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
     : null;
 
   return (
-    <div className={`capture-shell ${mode === "projects" ? "page-projects" : "page-tasks"} min-h-screen px-4 py-5`}>
+    <div className={`capture-shell ${mode === "projects" ? "page-projects" : "page-tasks"} ${audienceThemeClass} min-h-screen px-4 py-5`}>
       <main className="capture-app-shell mx-auto flex w-full max-w-[32rem] flex-col gap-6">
         <AppPageHeader
-          title={mode === "projects" ? "Projects" : "Tasks"}
-          subtitle={
-            mode === "projects"
-              ? "Track larger household work, project steps, dates, budget, spend, and materials."
-              : "View, filter, prioritise, and complete what has already been logged."
+          title={
+            childMode
+              ? "My jobs"
+              : mode === "projects"
+                ? "Projects"
+                : teenMode
+                  ? "Task board"
+                  : "Tasks"
           }
+          subtitle={
+            childMode
+              ? "See the jobs picked for you, start one, and mark it finished when you are done."
+              : mode === "projects"
+              ? "Track larger household work, project steps, dates, budget, spend, and materials."
+              : teenMode
+                ? "See what is assigned, what is due, and what is ready to finish."
+                : "View, filter, prioritise, and complete what has already been logged."
+          }
+          className={childMode ? "page-hero-kid" : teenMode ? "page-hero-teen" : ""}
           iconClassName="tasks"
           icon={
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -460,21 +487,25 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
               <Link href="/" className="action-btn subtle quiet">
                 Home
               </Link>
-              <Link href="/log" className="action-btn subtle quiet">
-                Log task
-              </Link>
-              <Link href={mode === "projects" ? "/tasks" : "/projects"} prefetch className="action-btn subtle quiet">
-                {mode === "projects" ? "Tasks" : "Projects"}
-              </Link>
-              {mode === "projects" ? (
-                <Link href="/projects/timeline" className="action-btn subtle quiet">
-                  Timeline
-                </Link>
-              ) : null}
-              {isAdminRole(role) ? (
-                <Link href="/settings" className="action-btn subtle quiet">
-                  Setup
-                </Link>
+              {canAccessExtendedViews(audienceBand) ? (
+                <>
+                  <Link href="/log" className="action-btn subtle quiet">
+                    {teenMode ? "Log job" : "Log task"}
+                  </Link>
+                  <Link href={mode === "projects" ? "/tasks" : "/projects"} prefetch className="action-btn subtle quiet">
+                    {mode === "projects" ? (teenMode ? "Board" : "Tasks") : "Projects"}
+                  </Link>
+                  {mode === "projects" ? (
+                    <Link href="/projects/timeline" className="action-btn subtle quiet">
+                      Timeline
+                    </Link>
+                  ) : null}
+                  {isAdminRole(role) ? (
+                    <Link href="/settings" className="action-btn subtle quiet">
+                      Setup
+                    </Link>
+                  ) : null}
+                </>
               ) : null}
               <form action={logoutAction}>
                 <FormActionButton className="action-btn subtle quiet" pendingLabel="Logging out">
@@ -502,13 +533,24 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
           initialState={selectedState}
           initialLuckyId={params.lucky && params.lucky !== "empty" ? params.lucky : null}
           initialProjectState={selectedProjectState}
+          audienceBand={audienceBand}
           canManageProjects={canManageProjectsRole(role)}
           canDeleteTasks={isAdminRole(role)}
           basePath={mode === "projects" ? "/projects" : "/tasks"}
           viewMode={mode}
-          panelKicker={mode === "projects" ? "Projects" : "Tasks"}
-          panelTitle={mode === "projects" ? "Project board" : "Logged tasks"}
-          emptyMessage={mode === "projects" ? "No projects yet. Promote a task or add project steps from an existing project." : "No tasks recorded yet."}
+          panelKicker={
+            childMode ? "My jobs" : mode === "projects" ? "Projects" : teenMode ? "My board" : "Tasks"
+          }
+          panelTitle={
+            childMode ? "Jobs picked for you" : mode === "projects" ? "Project board" : teenMode ? "Task board" : "Logged tasks"
+          }
+          emptyMessage={
+            childMode
+              ? "No jobs waiting right now. Nice work."
+              : mode === "projects"
+                ? "No projects yet. Promote a task or add project steps from an existing project."
+                : "No tasks recorded yet."
+          }
           tasks={recordedTasks.map((task) => ({
             id: task.id,
             title: task.title,

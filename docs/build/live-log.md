@@ -69,7 +69,20 @@
   - placed a compact reset-view button beside the theme toggle across the main title cards
   - reset now clears query and hash state on filter-driven pages like tasks, projects, stats, and timeline
   - on simpler screens it acts as a clean refresh and scroll-to-top control
-- Updated product docs to match the current role model and `0.3.2` app shape.
+- Refined the login screen in `0.3.3`:
+  - removed the reset and theme toggles from login so the sign-in card stays focused
+  - enlarged the `Jobjar` title and strengthened the welcome treatment
+  - rewrote the login copy to feel more welcoming and less system-like
+- Corrected the home layout on iPhone in `0.3.4`:
+  - restored the main post-login action cards to a two-column grid on small screens
+  - kept the tighter mobile spacing from the broader responsive pass
+- Added audience-based household views in `0.4.0`:
+  - added adult, 12 to 18, and under-12 audience bands on household memberships
+  - let admins create audience bands and let power users update them from `/settings/people`
+  - added playful kid and teen themes while leaving the adult presentation intact
+  - limited under-12 users to assigned jobs with simpler, friendlier task wording and actions
+  - redirected under-12 users away from planning/reporting routes into their task view
+- Updated product docs to match the current role model and `0.4.0` app shape.
 - Validation completed:
   - `npm run db:generate` passed
   - `npm run lint` passed

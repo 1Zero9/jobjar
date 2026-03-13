@@ -15,6 +15,12 @@ enum MemberRole {
   viewer
 }
 
+enum MemberAudience {
+  adult
+  teen_12_18
+  under_12
+}
+
 enum RecurrenceType {
   daily
   weekly
@@ -112,6 +118,7 @@ model HouseholdMember {
   householdId String    @db.Uuid
   userId      String    @db.Uuid
   role        MemberRole
+  audienceBand MemberAudience @default(adult)
   joinedAt    DateTime  @default(now())
   household   Household                     @relation(fields: [householdId], references: [id], onDelete: Cascade)
   user        User                          @relation(fields: [userId], references: [id], onDelete: Cascade)
