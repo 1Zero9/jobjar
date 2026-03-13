@@ -1952,6 +1952,24 @@ select.admin-input {
   text-transform: uppercase;
 }
 
+.login-brand-row {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.login-brand-title {
+  background: linear-gradient(135deg, var(--text-primary) 0%, var(--primary) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
 .login-heading {
   color: var(--text-primary);
   font-size: 1.9rem;

@@ -53,7 +53,16 @@ export default async function LoginPage({
     <div className="login-screen task-shell min-h-screen px-4 py-6">
       <main className="login-main">
         <section className="login-shell board-shell">
-          <p className="login-kicker">Jobjar</p>
+          <div className="login-brand-row">
+            <div className="page-hero-icon home">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
+                <path d="m3.3 7 8.7 5 8.7-5"/>
+                <path d="M12 22V12"/>
+              </svg>
+            </div>
+            <span className="login-brand-title">Jobjar</span>
+          </div>
           <h1 className="login-heading">
             {needsSetup ? "Create Admin" : "Sign In"}
           </h1>
