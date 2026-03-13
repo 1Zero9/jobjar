@@ -336,6 +336,7 @@ export async function createQuickTaskAction(formData: FormData) {
   const requestedPriority = toPositiveIntOrNull(formData.get("priority"));
   const detailNotes = String(formData.get("detailNotes") ?? "").trim() || null;
   const assignedToUserId = String(formData.get("assignedToUserId") ?? "").trim();
+  const isPrivate = formData.get("isPrivate") === "true";
   const recordStatus = String(formData.get("recordStatus") ?? "open").trim();
   const completedByUserId = String(formData.get("completedByUserId") ?? "").trim();
   const resolvedAt = toDate(formData.get("resolvedAt")) ?? new Date();
@@ -375,6 +376,7 @@ export async function createQuickTaskAction(formData: FormData) {
       captureStage: recordStatus === "done" && !recurrenceType ? "done" : "captured",
       detailNotes,
       priority: recordStatus === "done" && !recurrenceType ? 999 : 1,
+      isPrivate,
     },
     select: { id: true },
   });
@@ -459,6 +461,7 @@ export async function updateRecordedTaskAction(formData: FormData) {
   const requestedRoomId = String(formData.get("roomId") ?? "").trim();
   const requestedPriority = toPositiveIntOrNull(formData.get("priority"));
   const assigneeUserId = String(formData.get("assigneeUserId") ?? "").trim();
+  const isPrivate = formData.get("isPrivate") === "true";
   const detailNotes = String(formData.get("detailNotes") ?? "").trim() || null;
   const recordStatus = String(formData.get("recordStatus") ?? "open").trim();
   const completedByUserId = String(formData.get("completedByUserId") ?? "").trim();
@@ -517,6 +520,7 @@ export async function updateRecordedTaskAction(formData: FormData) {
       title,
       roomId,
       detailNotes,
+      isPrivate,
       captureStage: recordStatus === "done" && !recurrenceType ? "done" : "captured",
       priority: recordStatus === "done" && !recurrenceType ? existingTask.priority : 1,
     },

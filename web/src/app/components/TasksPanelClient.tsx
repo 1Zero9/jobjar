@@ -34,6 +34,7 @@ type TaskItem = {
   assignmentUserName: string | null;
   detailNotes: string | null;
   priority: number;
+  isPrivate: boolean;
   captureStage: string;
   createdAt: string;
   schedule: {
@@ -255,6 +256,7 @@ export function TasksPanelClient({
                   {getTaskState(task) === "done" ? <span className="task-chip task-chip-done">Done</span> : null}
                   {recurrenceStateClassName(task) === "task-chip-lapsed" ? <span className="task-chip task-chip-lapsed">Lapsed</span> : null}
                   {recurrenceStateClassName(task) === "task-chip-due" ? <span className="task-chip task-chip-due">Due today</span> : null}
+                  {task.isPrivate ? <span className="task-chip task-chip-private">Private</span> : null}
                   {task.projectParentTitle ? <span className="task-chip">↳ {task.projectParentTitle}</span> : null}
                   {task.schedule && computeStreak(task.occurrences) >= 2 ? (
                     <span className="task-chip task-chip-streak">{computeStreak(task.occurrences)} in a row</span>
@@ -308,6 +310,15 @@ export function TasksPanelClient({
                       defaultValue={task.detailNotes ?? ""}
                       className="recorded-edit-input recorded-edit-textarea"
                     />
+                  </label>
+
+                  <label className="recorded-field recorded-field-toggle">
+                    <span>Private</span>
+                    <span className="recorded-toggle-wrap">
+                      <input type="checkbox" name="isPrivate" value="true" defaultChecked={task.isPrivate} className="recorded-toggle-check" />
+                      <input type="hidden" name="isPrivate" value="false" />
+                      <span className="recorded-toggle-hint">Only visible to you and the assigned person</span>
+                    </span>
                   </label>
 
                   <label className="recorded-field">
@@ -585,14 +596,16 @@ function rowStateClass(task: {
   occurrences: Array<{ status: string; dueAt: string }>;
   schedule: { nextDueAt: string | null } | null;
   assignmentUserId: string | null;
+  isPrivate: boolean;
 }): string {
-  if (getTaskState(task) === "done") return "row-state-done";
+  const privateClass = task.isPrivate ? " row-state-private" : "";
+  if (getTaskState(task) === "done") return `row-state-done${privateClass}`;
   const stateClass = recurrenceStateClassName(task);
-  if (stateClass === "task-chip-lapsed") return "row-state-overdue";
-  if (stateClass === "task-chip-due") return "row-state-due";
-  if (task.schedule) return "row-state-active";
-  if (!task.assignmentUserId) return "row-state-unassigned";
-  return "row-state-assigned";
+  if (stateClass === "task-chip-lapsed") return `row-state-overdue${privateClass}`;
+  if (stateClass === "task-chip-due") return `row-state-due${privateClass}`;
+  if (task.schedule) return `row-state-active${privateClass}`;
+  if (!task.assignmentUserId) return `row-state-unassigned${privateClass}`;
+  return `row-state-assigned${privateClass}`;
 }
 
 function computeStreak(occurrences: Array<{ status: string }>) {

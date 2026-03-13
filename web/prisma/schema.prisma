@@ -151,6 +151,7 @@ model Task {
   validationMode   String           @default("basic")
   minimumMinutes   Int              @default(0)
   active           Boolean          @default(true)
+  isPrivate        Boolean          @default(false)
   createdAt        DateTime         @default(now())
   room             Room             @relation(fields: [roomId], references: [id], onDelete: Cascade)
   logger           User?            @relation("TaskLogger", fields: [createdByUserId], references: [id], onDelete: SetNull)

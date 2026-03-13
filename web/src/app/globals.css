@@ -712,6 +712,7 @@ select.admin-input {
 .recorded-row.row-state-active     { --row-accent: #2563eb; --row-bg: #fafcff; }
 .recorded-row.row-state-unassigned { --row-accent: #f59e0b; --row-bg: #fffdf8; }
 .recorded-row.row-state-assigned   { --row-accent: #14b8a6; --row-bg: #f8fffe; }
+.recorded-row.row-state-private    { --row-accent: #7c3aed; --row-bg: #faf5ff; }
 
 .recorded-row[open] {
   background: #ffffff;
@@ -2854,6 +2855,63 @@ select.admin-input {
   color: #92630a;
   border-color: rgba(245, 158, 11, 0.4);
   font-weight: 700;
+}
+
+.task-chip-private {
+  background: #f5f3ff;
+  color: #5b21b6;
+  border-color: rgba(124, 58, 237, 0.3);
+  font-weight: 700;
+}
+
+.capture-private-row {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+}
+
+.capture-private-check {
+  accent-color: #7c3aed;
+  cursor: pointer;
+  height: 1.1rem;
+  width: 1.1rem;
+}
+
+.capture-private-hint {
+  color: var(--text-soft);
+  flex-basis: 100%;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  padding-left: 1.6rem;
+}
+
+.recorded-field-toggle {
+  align-items: flex-start;
+}
+
+.recorded-toggle-wrap {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.recorded-toggle-check {
+  accent-color: #7c3aed;
+  cursor: pointer;
+  height: 1.1rem;
+  margin-top: 0.1rem;
+  width: 1.1rem;
+}
+
+.recorded-toggle-hint {
+  color: var(--text-soft);
+  flex-basis: 100%;
+  font-size: 0.78rem;
+  line-height: 1.4;
 }
 
 .landing-action-card.stats { --card-accent: var(--success); background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%); }

@@ -144,6 +144,15 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
               </label>
             </div>
 
+            <div className="capture-step">
+              <label className="capture-private-row">
+                <input type="checkbox" name="isPrivate" value="true" className="capture-private-check" />
+                <input type="hidden" name="isPrivate" value="false" />
+                <span className="capture-step-label">Private</span>
+                <span className="capture-private-hint">Only visible to you and the assigned person</span>
+              </label>
+            </div>
+
             <details className="recorded-row">
               <summary className="recorded-row-summary">
                 <div className="min-w-0">
@@ -261,6 +270,11 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
       where: {
         active: true,
         room: { householdId },
+        OR: [
+          { isPrivate: false },
+          { isPrivate: true, createdByUserId: userId },
+          { isPrivate: true, assignments: { some: { userId, assignedTo: null } } },
+        ],
       },
       orderBy: [{ room: { sortOrder: "asc" } }, { priority: "asc" }, { createdAt: "desc" }],
       take: 60,
@@ -393,6 +407,7 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
             assignmentUserName: task.assignments[0]?.user?.displayName ?? null,
             detailNotes: task.detailNotes ?? null,
             priority: task.priority,
+            isPrivate: task.isPrivate,
             captureStage: task.captureStage,
             createdAt: task.createdAt.toISOString(),
             schedule: task.schedule
