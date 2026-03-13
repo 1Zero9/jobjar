@@ -11,7 +11,7 @@
 - assignment history
 - strict validation mode
 - stats and recurring health
-- project planning fields, child tasks, cost lines, and milestones
+- project planning fields, project steps, cost lines, and milestones
 - project reporting in `/stats`
 - project timeline view in `/projects/timeline`
 - shopping/materials workflow on projects

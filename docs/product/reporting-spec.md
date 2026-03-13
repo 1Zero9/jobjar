@@ -10,7 +10,7 @@
 7. recurring streaks
 8. project health summary
 9. planned vs actual project spend
-10. overdue child-task count by project
+10. overdue project step count by project
 11. milestone completion by project
 12. project timeline view for targets, milestones, and child due dates
 13. project shopping progress

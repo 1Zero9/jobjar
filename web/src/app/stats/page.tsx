@@ -140,7 +140,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
               <div>
                 <h2 className="recorded-title">Project health</h2>
                 <p className="text-sm text-muted">
-                  Budget, milestones, and overdue child work across the current project board.
+                  Budget, milestones, and overdue project steps across the current project board.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -206,7 +206,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
                       <p className="mt-1 text-sm text-muted">{project.roomName}</p>
                     </div>
                     <span className="text-sm font-semibold text-foreground">
-                      {project.totalChildren > 0 ? `${project.completedChildren}/${project.totalChildren} tasks` : "No child tasks"}
+                      {project.totalChildren > 0 ? `${project.completedChildren}/${project.totalChildren} steps` : "No project steps"}
                     </span>
                   </div>
 
@@ -226,7 +226,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
                       {project.totalMaterials > 0 ? `${project.purchasedMaterials}/${project.totalMaterials} bought` : "No materials"}
                     </p>
                     <p>
-                      <span className="font-semibold text-foreground">Overdue child tasks</span> {project.overdueChildren}
+                      <span className="font-semibold text-foreground">Overdue project steps</span> {project.overdueChildren}
                     </p>
                     <p>
                       <span className="font-semibold text-foreground">Target</span>{" "}

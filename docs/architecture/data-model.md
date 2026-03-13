@@ -28,7 +28,7 @@ A task can represent:
 - an issue
 - a planning item
 - a project parent
-- a child task inside a project
+- a project step inside a project
 
 Project behavior is modeled inside `Task` using:
 - `jobKind`
@@ -43,4 +43,4 @@ Project checkpoints are stored separately in `ProjectMilestone`.
 ## Operational notes
 - RAG status is derived from due date and grace window.
 - Room status is rolled up from underlying tasks.
-- Project progress is derived from child task and milestone completion, not a separate project state table.
+- Project progress is derived from project step and milestone completion, not a separate project state table.

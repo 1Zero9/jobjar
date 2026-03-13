@@ -13,12 +13,12 @@
 - Added server actions to:
   - promote tasks into projects
   - save project target date and budget
-  - create child tasks from a project
+  - create project steps from a project
   - add and remove project cost lines
 - Added dedicated `/projects` route and board:
   - project-only filtering
   - project-state filter
-  - child-task rollups
+  - project step rollups
   - budget vs spend visibility
 - Extended project delivery to `0.2.1`:
   - added `ProjectMilestone`
@@ -28,7 +28,7 @@
 - Extended project delivery to `0.2.2`:
   - added `/projects/timeline`
   - added timeline filters for location, state, and date window
-  - added upcoming, overdue, and recently done project events from milestones, child tasks, and target dates
+  - added upcoming, overdue, and recently done project events from milestones, project steps, and target dates
   - centralized project-shape detection to avoid route drift
 - Extended project delivery to `0.2.3`:
   - added `ProjectMaterial`
@@ -43,7 +43,11 @@
   - fixed the clipped home `Jobjar` title
   - added a shared title-card header across log, tasks, projects, stats, timeline, and setup pages
   - aligned those pages to a smaller `Jobjar` brand line with a larger page title underneath
-- Updated product docs to match the current role model and `0.2.5` app shape.
+- Added theme switching in `0.2.6`:
+  - added a persistent light/dark mode toggle across home, shared page headers, admin, and login
+  - bootstrapped the saved theme before hydration to avoid a flash of the wrong mode on load
+  - tuned dark-mode tokens, gradients, hero cards, and task rows for a proper dark theme pass
+- Updated product docs to match the current role model and `0.2.6` app shape.
 - Validation completed:
   - `npm run db:generate` passed
   - `npm run lint` passed

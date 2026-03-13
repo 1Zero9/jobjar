@@ -9,6 +9,7 @@ import {
   updateRoomAction,
 } from "@/app/actions";
 import { AdminTasksClient } from "@/app/components/AdminTasksClient";
+import { ThemeToggle } from "@/app/components/ThemeToggle";
 import { requireAdmin } from "@/lib/auth";
 import { getAdminData } from "@/lib/admin-data";
 import Link from "next/link";
@@ -30,9 +31,12 @@ export default async function AdminPage() {
               <h1 className="mt-1 text-2xl font-bold text-foreground sm:text-3xl">Admin Workspace</h1>
               <p className="mt-1 text-sm text-muted">Manage people, rooms, and tasks for the household.</p>
             </div>
-            <form action={logoutAction}>
-              <button className="action-btn warn">Log out</button>
-            </form>
+            <div className="capture-topbar-actions">
+              <ThemeToggle />
+              <form action={logoutAction}>
+                <button className="action-btn warn">Log out</button>
+              </form>
+            </div>
           </div>
 
           <div className="mt-3 grid grid-cols-2 gap-2 sm:w-[28rem]">

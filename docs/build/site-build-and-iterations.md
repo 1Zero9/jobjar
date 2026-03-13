@@ -8,7 +8,7 @@ The core product loop is:
 2. capture it quickly
 3. shape it into a task
 4. promote larger work into a project when needed
-5. break projects into child tasks
+5. break projects into project steps
 6. review progress and spend
 
 ## Current surfaces
@@ -27,7 +27,7 @@ The core product loop is:
 - dedicated project board
 - project-state filters
 - project target date and budget
-- child task creation
+- project step creation
 - cost line tracking
 - materials and shopping list
 - milestone tracking

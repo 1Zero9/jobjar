@@ -80,7 +80,7 @@ Use it for:
 - promoting a task into a project
 - setting a target date
 - setting a rough budget
-- adding child tasks
+- adding project steps
 - recording spend as simple cost lines
 - tracking materials to buy
 - tracking milestones
@@ -92,7 +92,7 @@ Use it for:
 
 - seeing what is overdue
 - seeing what is coming up next
-- reviewing recent milestone and child-task completions
+- reviewing recent milestone and project step completions
 - spotting projects with no dates at all
 
 ## First-Time Setup
@@ -155,7 +155,7 @@ Then:
 
 - add a target date
 - add a rough budget if useful
-- break the work into child tasks
+- break the work into project steps
 - record spend as the project moves
 - add materials that still need to be bought
 - add milestones when you want checkpoints

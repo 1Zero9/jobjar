@@ -162,7 +162,7 @@ export default async function ProjectsTimelinePage({
             <p className="settings-kicker">Timeline</p>
             <h2 className="recorded-title">Nothing scheduled yet</h2>
             <p className="recorded-empty">
-              Add target dates, milestone dates, or child task due dates from the project board to build the timeline.
+              Add target dates, milestone dates, or project step due dates from the project board to build the timeline.
             </p>
           </section>
         ) : (

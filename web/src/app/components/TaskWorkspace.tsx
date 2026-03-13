@@ -435,7 +435,7 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
           title={mode === "projects" ? "Projects" : "Tasks"}
           subtitle={
             mode === "projects"
-              ? "Track larger household work, child tasks, dates, budget, spend, and materials."
+              ? "Track larger household work, project steps, dates, budget, spend, and materials."
               : "View, filter, prioritise, and complete what has already been logged."
           }
           iconClassName="tasks"
@@ -503,7 +503,7 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
           viewMode={mode}
           panelKicker={mode === "projects" ? "Projects" : "Tasks"}
           panelTitle={mode === "projects" ? "Project board" : "Logged tasks"}
-          emptyMessage={mode === "projects" ? "No projects yet. Promote a task or create child work from an existing project." : "No tasks recorded yet."}
+          emptyMessage={mode === "projects" ? "No projects yet. Promote a task or add project steps from an existing project." : "No tasks recorded yet."}
           tasks={recordedTasks.map((task) => ({
             id: task.id,
             title: task.title,

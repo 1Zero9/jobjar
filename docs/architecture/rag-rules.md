@@ -6,9 +6,9 @@
 - `red`: overdue beyond grace window.
 
 ## Project usage
-- Projects currently inherit urgency from their underlying child tasks and due dates.
+- Projects currently inherit urgency from their underlying project steps and due dates.
 - There is no separate stored project RAG field yet.
-- A future project dashboard can roll up child-task RAG into a parent-project health state.
+- A future project dashboard can roll up project step RAG into a parent-project health state.
 
 ## Room rollup
 - If any room task is red, room is red.

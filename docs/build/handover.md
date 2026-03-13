@@ -16,7 +16,7 @@ Current routes:
 - `/api/health/db`: DB health check
 
 Current package version:
-- `web/package.json`: `0.2.5`
+- `web/package.json`: `0.2.6`
 
 ## Auth model
 - custom auth, not NextAuth/Auth.js

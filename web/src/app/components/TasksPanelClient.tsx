@@ -625,7 +625,7 @@ export function TasksPanelClient({
                             <input type="hidden" name="projectId" value={task.id} />
                             <input type="hidden" name="returnTo" value={basePath} />
                             <label className="recorded-field">
-                              <span>New child task</span>
+                              <span>New project step</span>
                               <input name="title" type="text" required placeholder="Patch walls" className="recorded-edit-input" />
                             </label>
                             <label className="recorded-field">
@@ -654,8 +654,8 @@ export function TasksPanelClient({
                               <input name="dueAt" type="datetime-local" className="recorded-edit-input" />
                             </label>
                             <div className="recorded-row-actions between">
-                              <FormActionButton className="action-btn bright quiet" pendingLabel="Adding child">
-                                Add child task
+                              <FormActionButton className="action-btn bright quiet" pendingLabel="Adding step">
+                                Add project step
                               </FormActionButton>
                             </div>
                           </form>
@@ -727,7 +727,7 @@ export function TasksPanelClient({
                       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                         <p><span>Project state</span><strong>{projectSummary.statusLabel}</strong></p>
                         <p><span>Milestones</span><strong>{projectSummary.milestoneLabel ?? "No milestones"}</strong></p>
-                        <p><span>Overdue child tasks</span><strong>{projectSummary.overdueChildren}</strong></p>
+                        <p><span>Overdue project steps</span><strong>{projectSummary.overdueChildren}</strong></p>
                         <p><span>Spend vs budget</span><strong>{formatSpendSummary(projectSummary.spentCents, task.projectBudgetCents)}</strong></p>
                         <p><span>Materials</span><strong>{projectSummary.materialsLabel ?? "No materials"}</strong></p>
                         <p><span>Bought materials</span><strong>{projectSummary.materialSpendLabel}</strong></p>
@@ -863,9 +863,9 @@ export function TasksPanelClient({
                       </div>
 
                       <div className="space-y-2">
-                        <p className="capture-step-label">Child tasks</p>
+                        <p className="capture-step-label">Project steps</p>
                         {task.projectChildren.length === 0 ? (
-                          <p className="recorded-empty">No child tasks yet.</p>
+                          <p className="recorded-empty">No project steps yet.</p>
                         ) : (
                           task.projectChildren.map((child) => (
                             <a key={child.id} href={`#task-${child.id}`} className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm text-foreground">

@@ -1,5 +1,6 @@
 import { APP_VERSION } from "@/lib/app-version";
 import type { ReactNode } from "react";
+import { ThemeToggle } from "./ThemeToggle";
 
 type Props = {
   title: string;
@@ -23,7 +24,10 @@ export function AppPageHeader({ title, subtitle, icon, iconClassName = "", actio
           <p className="page-hero-subtitle">{subtitle}</p>
         </div>
       </div>
-      {actions ? <div className="capture-topbar-actions">{actions}</div> : null}
+      <div className="capture-topbar-actions">
+        <ThemeToggle />
+        {actions}
+      </div>
     </header>
   );
 }

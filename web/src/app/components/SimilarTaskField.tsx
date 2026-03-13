@@ -61,7 +61,7 @@ export function SimilarTaskField({ tasks, defaultTitle = "" }: SimilarTaskFieldP
 
       {parentTask ? (
         <div className="lookup-parent-banner">
-          <span>Creating sub-task under</span>
+          <span>Adding project step under</span>
           <strong>{parentTask.title}</strong>
           <button type="button" className="action-btn subtle quiet" onClick={() => setParentTask(null)}>
             Clear

@@ -1,5 +1,6 @@
 import { luckyDipAction, logoutAction } from "@/app/actions";
 import { FormActionButton } from "@/app/components/FormActionButton";
+import { ThemeToggle } from "@/app/components/ThemeToggle";
 import { requireSessionContext } from "@/lib/auth";
 import { APP_VERSION } from "@/lib/app-version";
 import { prisma } from "@/lib/prisma";
@@ -44,6 +45,7 @@ export default async function HomePage() {
           </div>
           <div className="landing-meta-row">
             <span className="session-chip">{currentUser?.displayName ?? "You"}</span>
+            <ThemeToggle />
             <form action={logoutAction}>
               <FormActionButton className="action-btn subtle quiet" pendingLabel="Logging out">
                 Log out
