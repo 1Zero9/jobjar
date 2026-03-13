@@ -72,7 +72,7 @@ export default async function HomePage() {
               <strong>Log task</strong>
             </Link>
 
-            <Link href="/tasks" className="landing-action-card view">
+            <Link href="/tasks" prefetch className="landing-action-card view">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <line x1="8" y1="6" x2="21" y2="6"/>
                 <line x1="8" y1="12" x2="21" y2="12"/>

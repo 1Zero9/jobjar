@@ -65,8 +65,8 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
           actions={
             <>
               <Link href="/" className="action-btn subtle quiet">Home</Link>
-              <Link href="/tasks" className="action-btn subtle quiet">Tasks</Link>
-              <Link href="/projects" className="action-btn subtle quiet">Projects</Link>
+              <Link href="/tasks" prefetch className="action-btn subtle quiet">Tasks</Link>
+              <Link href="/projects" prefetch className="action-btn subtle quiet">Projects</Link>
               <Link href="/projects/timeline" className="action-btn subtle quiet">Timeline</Link>
               <form action={logoutAction}>
                 <FormActionButton className="action-btn subtle quiet" pendingLabel="Logging out">

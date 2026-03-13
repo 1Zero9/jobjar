@@ -16,16 +16,16 @@ export function AppPageHeader({ title, subtitle, icon, iconClassName = "", actio
       <div className="hero-corner-toggle">
         <ThemeToggle compact />
       </div>
-      <div className="page-hero-main">
+      <div className="page-hero-topline">
         {icon ? <div className={`page-hero-icon ${iconClassName}`.trim()}>{icon}</div> : null}
-        <div className="page-hero-copy">
-          <div className="page-hero-brand-row">
-            <p className="page-hero-brand">Jobjar</p>
-            <span className="version-chip">{APP_VERSION}</span>
-          </div>
-          <h1 className="page-hero-title">{title}</h1>
-          <p className="page-hero-subtitle">{subtitle}</p>
+        <div className="page-hero-brand-row">
+          <p className="page-hero-brand">Jobjar</p>
+          <span className="version-chip">{APP_VERSION}</span>
         </div>
+      </div>
+      <div className="page-hero-copy">
+        <h1 className="page-hero-title">{title}</h1>
+        <p className="page-hero-subtitle">{subtitle}</p>
       </div>
       <div className="capture-topbar-actions">{actions}</div>
     </header>

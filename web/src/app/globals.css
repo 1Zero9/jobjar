@@ -318,19 +318,18 @@ html[data-theme="dark"] .admin-shell {
   -webkit-text-fill-color: transparent;
 }
 
-.page-hero-main {
+.page-hero-topline {
   display: flex;
-  align-items: flex-start;
-  gap: 1rem;
+  align-items: center;
+  gap: 0.9rem;
   width: 100%;
 }
 
 .page-hero-copy {
   display: flex;
-  flex: 1;
   flex-direction: column;
-  gap: 0.35rem;
-  min-width: 0;
+  gap: 0.45rem;
+  width: 100%;
 }
 
 .page-hero-brand-row {
@@ -338,6 +337,7 @@ html[data-theme="dark"] .admin-shell {
   align-items: center;
   flex-wrap: wrap;
   gap: 0.55rem;
+  min-width: 0;
 }
 
 .page-hero-brand {
@@ -365,12 +365,14 @@ html[data-theme="dark"] .page-hero-brand {
   font-weight: 900;
   letter-spacing: -0.05em;
   line-height: 0.95;
+  margin: 0;
 }
 
 .page-hero-subtitle {
   color: var(--text-soft);
   font-size: 0.98rem;
   line-height: 1.55;
+  margin: 0;
   padding-bottom: 0.05em;
   max-width: 40rem;
 }
@@ -3375,15 +3377,18 @@ html[data-theme="dark"] .landing-action-card.stats {
 }
 
 @media (max-width: 640px) {
-  .page-hero-main {
-    align-items: flex-start;
-    gap: 0.8rem;
+  .page-hero-topline {
+    gap: 0.75rem;
   }
 
   .page-hero-card .page-hero-icon {
     width: 3.1rem;
     height: 3.1rem;
     flex-shrink: 0;
+  }
+
+  .page-hero-brand {
+    font-size: clamp(1.35rem, 4vw, 1.6rem);
   }
 
   .page-hero-title {

@@ -51,7 +51,11 @@
   - moved the theme toggle into the top-right corner of the title cards
   - brightened the logged-in person chip so the active user stands out more clearly
   - corrected the mobile page header layout so `Jobjar` stays above the main title instead of dropping below the icon
-- Updated product docs to match the current role model and `0.2.7` app shape.
+- Tightened navigation and page chrome in `0.2.8`:
+  - reworked the shared page header into a cleaner two-row layout with title and description under the icon line
+  - added loading states for `/tasks` and `/projects`
+  - enabled explicit prefetch on key task/project navigation links for quicker route transitions
+- Updated product docs to match the current role model and `0.2.8` app shape.
 - Validation completed:
   - `npm run db:generate` passed
   - `npm run lint` passed

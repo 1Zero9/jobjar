@@ -95,7 +95,7 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
               <Link href="/" className="action-btn subtle quiet">
                 Home
               </Link>
-              <Link href="/tasks" className="action-btn subtle quiet">
+              <Link href="/tasks" prefetch className="action-btn subtle quiet">
                 View tasks
               </Link>
               <Link href="/projects" className="action-btn subtle quiet">
@@ -458,7 +458,7 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
               <Link href="/log" className="action-btn subtle quiet">
                 Log task
               </Link>
-              <Link href={mode === "projects" ? "/tasks" : "/projects"} className="action-btn subtle quiet">
+              <Link href={mode === "projects" ? "/tasks" : "/projects"} prefetch className="action-btn subtle quiet">
                 {mode === "projects" ? "Tasks" : "Projects"}
               </Link>
               {mode === "projects" ? (
