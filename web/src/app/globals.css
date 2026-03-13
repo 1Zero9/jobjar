@@ -213,6 +213,12 @@ select.admin-input {
   padding: 1.5rem;
 }
 
+.landing-brand-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
 .landing-title {
   font-size: clamp(3rem, 10vw, 4rem);
   font-weight: 900;
