@@ -9,6 +9,7 @@ import {
   setSessionUserId,
 } from "@/lib/auth";
 import { getOrCreateHouseholdForUser } from "@/lib/household";
+import { hasLocationRestrictions } from "@/lib/location-access";
 import { prisma } from "@/lib/prisma";
 import { getUserPasswordHash, setUserPasswordHash } from "@/lib/auth-store";
 import { hashPassword, verifyPassword } from "@/lib/password";
@@ -311,15 +312,7 @@ export async function createTaskAction(formData: FormData) {
   }
 
   if (assigneeUserId) {
-    const assigneeMembership = await prisma.householdMember.findUnique({
-      where: {
-        householdId_userId: {
-          householdId,
-          userId: assigneeUserId,
-        },
-      },
-      select: { userId: true },
-    });
+    const assigneeMembership = await resolveAssignableMemberUserId(householdId, assigneeUserId, room.id);
 
     if (assigneeMembership) {
       await prisma.taskAssignment.create({
@@ -340,7 +333,7 @@ export async function createTaskAction(formData: FormData) {
 }
 
 export async function createQuickTaskAction(formData: FormData) {
-  const { householdId, userId } = await requireSessionMemberAction();
+  const { householdId, userId, allowedLocationIds } = await requireSessionMemberAction();
   const title = String(formData.get("title") ?? "").trim();
   const projectParentIdInput = String(formData.get("projectParentId") ?? "").trim();
   const requestedRoomId = String(formData.get("roomId") ?? "").trim();
@@ -359,12 +352,13 @@ export async function createQuickTaskAction(formData: FormData) {
     return;
   }
 
-  let roomId = await getOrCreateUnsortedRoomId(householdId);
+  const restrictedToLocations = hasLocationRestrictions(allowedLocationIds);
+  let roomId = restrictedToLocations ? null : await getOrCreateUnsortedRoomId(householdId);
   if (requestedRoomId) {
     const room = await prisma.room.findFirst({
       where: {
         id: requestedRoomId,
-        householdId,
+        ...getAccessibleRoomWhere(householdId, allowedLocationIds),
         active: true,
       },
       select: { id: true },
@@ -374,8 +368,11 @@ export async function createQuickTaskAction(formData: FormData) {
       roomId = room.id;
     }
   }
+  if (!roomId) {
+    return;
+  }
 
-  const projectParentId = await resolveProjectParentId(projectParentIdInput, householdId);
+  const projectParentId = await resolveProjectParentId(projectParentIdInput, householdId, undefined, allowedLocationIds);
 
   const task = await prisma.task.create({
     data: {
@@ -397,10 +394,7 @@ export async function createQuickTaskAction(formData: FormData) {
   }
 
   if (assignedToUserId && recordStatus !== "done") {
-    const assigneeMember = await prisma.householdMember.findUnique({
-      where: { householdId_userId: { householdId, userId: assignedToUserId } },
-      select: { userId: true },
-    });
+    const assigneeMember = await resolveAssignableMemberUserId(householdId, assignedToUserId, roomId);
     if (assigneeMember) {
       await prisma.taskAssignment.create({
         data: { taskId: task.id, userId: assignedToUserId, assignedFrom: new Date() },
@@ -443,7 +437,7 @@ export async function createQuickTaskAction(formData: FormData) {
 }
 
 export async function luckyDipAction(formData?: FormData) {
-  const { householdId } = await requireSessionMemberAction();
+  const { householdId, allowedLocationIds } = await requireSessionMemberAction();
   const returnTo = getReturnPath(formData?.get("returnTo"), "/tasks");
 
   const tasks = await prisma.task.findMany({
@@ -451,7 +445,7 @@ export async function luckyDipAction(formData?: FormData) {
       active: true,
       captureStage: { not: "done" },
       schedule: null,
-      room: { householdId },
+      room: getAccessibleRoomWhere(householdId, allowedLocationIds),
     },
     orderBy: { createdAt: "desc" },
     select: { id: true },
@@ -466,7 +460,7 @@ export async function luckyDipAction(formData?: FormData) {
 }
 
 export async function updateRecordedTaskAction(formData: FormData) {
-  const { householdId } = await requireSessionMemberAction();
+  const { householdId, allowedLocationIds } = await requireSessionMemberAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
   const title = String(formData.get("title") ?? "").trim();
   const requestedRoomId = String(formData.get("roomId") ?? "").trim();
@@ -490,7 +484,7 @@ export async function updateRecordedTaskAction(formData: FormData) {
     where: {
       id: taskId,
       active: true,
-      room: { householdId },
+      room: getAccessibleRoomWhere(householdId, allowedLocationIds),
     },
     select: {
       id: true,
@@ -513,7 +507,7 @@ export async function updateRecordedTaskAction(formData: FormData) {
     const room = await prisma.room.findFirst({
       where: {
         id: requestedRoomId,
-        householdId,
+        ...getAccessibleRoomWhere(householdId, allowedLocationIds),
         active: true,
       },
       select: { id: true },
@@ -521,7 +515,7 @@ export async function updateRecordedTaskAction(formData: FormData) {
     if (room) {
       roomId = room.id;
     }
-  } else {
+  } else if (!hasLocationRestrictions(allowedLocationIds)) {
     roomId = await getOrCreateUnsortedRoomId(householdId);
   }
 
@@ -548,15 +542,7 @@ export async function updateRecordedTaskAction(formData: FormData) {
   });
 
   if (assigneeUserId) {
-    const member = await prisma.householdMember.findUnique({
-      where: {
-        householdId_userId: {
-          householdId,
-          userId: assigneeUserId,
-        },
-      },
-      select: { userId: true },
-    });
+    const member = await resolveAssignableMemberUserId(householdId, assigneeUserId, roomId);
 
     if (member) {
       await prisma.taskAssignment.create({
@@ -650,7 +636,7 @@ export async function updateRecordedTaskAction(formData: FormData) {
 }
 
 export async function updateTaskAssigneeAction(formData: FormData) {
-  const { householdId, userId: actorUserId } = await requireSessionMemberAction();
+  const { householdId, userId: actorUserId, allowedLocationIds } = await requireSessionMemberAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
   const assigneeUserId = String(formData.get("assigneeUserId") ?? "").trim();
   const returnTo = getReturnPath(formData.get("returnTo"), "/tasks");
@@ -663,9 +649,9 @@ export async function updateTaskAssigneeAction(formData: FormData) {
     where: {
       id: taskId,
       active: true,
-      room: { householdId },
+      room: getAccessibleRoomWhere(householdId, allowedLocationIds),
     },
-    select: { id: true },
+    select: { id: true, roomId: true },
   });
   if (!task) {
     return;
@@ -682,15 +668,7 @@ export async function updateTaskAssigneeAction(formData: FormData) {
   });
 
   if (assigneeUserId) {
-    const member = await prisma.householdMember.findUnique({
-      where: {
-        householdId_userId: {
-          householdId,
-          userId: assigneeUserId,
-        },
-      },
-      select: { userId: true },
-    });
+    const member = await resolveAssignableMemberUserId(householdId, assigneeUserId, task.roomId);
 
     if (member) {
       await prisma.taskAssignment.create({
@@ -868,15 +846,7 @@ export async function updateTaskAction(formData: FormData) {
   });
 
   if (assigneeUserId) {
-    const assigneeMembership = await prisma.householdMember.findUnique({
-      where: {
-        householdId_userId: {
-          householdId,
-          userId: assigneeUserId,
-        },
-      },
-      select: { userId: true },
-    });
+    const assigneeMembership = await resolveAssignableMemberUserId(householdId, assigneeUserId, roomId);
 
     if (assigneeMembership) {
       await prisma.taskAssignment.create({
@@ -893,7 +863,7 @@ export async function updateTaskAction(formData: FormData) {
 }
 
 export async function promoteTaskToProjectAction(formData: FormData) {
-  const { householdId, userId: actorUserId } = await requireProjectManagerAction();
+  const { householdId, userId: actorUserId, allowedLocationIds } = await requireProjectManagerAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
   const returnTo = getReturnPath(formData.get("returnTo"), "/tasks");
   if (!taskId) {
@@ -904,7 +874,7 @@ export async function promoteTaskToProjectAction(formData: FormData) {
     where: {
       id: taskId,
       active: true,
-      room: { householdId },
+      room: getAccessibleRoomWhere(householdId, allowedLocationIds),
     },
     select: { id: true, title: true, jobKind: true },
   });
@@ -928,7 +898,7 @@ export async function promoteTaskToProjectAction(formData: FormData) {
 }
 
 export async function updateProjectPlanAction(formData: FormData) {
-  const { householdId, userId: actorUserId } = await requireProjectManagerAction();
+  const { householdId, userId: actorUserId, allowedLocationIds } = await requireProjectManagerAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
   const returnTo = getReturnPath(formData.get("returnTo"), "/tasks");
   if (!taskId) {
@@ -939,7 +909,7 @@ export async function updateProjectPlanAction(formData: FormData) {
     where: {
       id: taskId,
       active: true,
-      room: { householdId },
+      room: getAccessibleRoomWhere(householdId, allowedLocationIds),
     },
     select: { id: true, estimatedMinutes: true },
   });
@@ -970,7 +940,7 @@ export async function updateProjectPlanAction(formData: FormData) {
 }
 
 export async function createProjectChildTaskAction(formData: FormData) {
-  const { householdId, userId: actorUserId } = await requireProjectManagerAction();
+  const { householdId, userId: actorUserId, allowedLocationIds } = await requireProjectManagerAction();
   const projectId = String(formData.get("projectId") ?? "").trim();
   const title = String(formData.get("title") ?? "").trim();
   const detailNotes = String(formData.get("detailNotes") ?? "").trim() || null;
@@ -986,7 +956,7 @@ export async function createProjectChildTaskAction(formData: FormData) {
     where: {
       id: projectId,
       active: true,
-      room: { householdId },
+      room: getAccessibleRoomWhere(householdId, allowedLocationIds),
     },
     select: { id: true, roomId: true, title: true },
   });
@@ -1024,15 +994,7 @@ export async function createProjectChildTaskAction(formData: FormData) {
   }
 
   if (assigneeUserId) {
-    const assigneeMembership = await prisma.householdMember.findUnique({
-      where: {
-        householdId_userId: {
-          householdId,
-          userId: assigneeUserId,
-        },
-      },
-      select: { userId: true },
-    });
+    const assigneeMembership = await resolveAssignableMemberUserId(householdId, assigneeUserId, project.roomId);
 
     if (assigneeMembership) {
       await prisma.taskAssignment.create({
@@ -1054,7 +1016,7 @@ export async function createProjectChildTaskAction(formData: FormData) {
 }
 
 export async function createProjectCostAction(formData: FormData) {
-  const { householdId } = await requireProjectManagerAction();
+  const { householdId, allowedLocationIds } = await requireProjectManagerAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
   const title = String(formData.get("title") ?? "").trim();
   const amountCents = toCurrencyCentsOrNull(formData.get("amount"));
@@ -1067,7 +1029,7 @@ export async function createProjectCostAction(formData: FormData) {
     where: {
       id: taskId,
       active: true,
-      room: { householdId },
+      room: getAccessibleRoomWhere(householdId, allowedLocationIds),
     },
     select: { id: true },
   });
@@ -1088,7 +1050,7 @@ export async function createProjectCostAction(formData: FormData) {
 }
 
 export async function deleteProjectCostAction(formData: FormData) {
-  const { householdId } = await requireProjectManagerAction();
+  const { householdId, allowedLocationIds } = await requireProjectManagerAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
   const costId = String(formData.get("costId") ?? "").trim();
   const returnTo = getReturnPath(formData.get("returnTo"), "/tasks");
@@ -1101,7 +1063,7 @@ export async function deleteProjectCostAction(formData: FormData) {
       id: costId,
       taskId,
       task: {
-        room: { householdId },
+        room: getAccessibleRoomWhere(householdId, allowedLocationIds),
       },
     },
     select: { id: true, taskId: true },
@@ -1119,7 +1081,7 @@ export async function deleteProjectCostAction(formData: FormData) {
 }
 
 export async function createProjectMaterialAction(formData: FormData) {
-  const { householdId } = await requireProjectManagerAction();
+  const { householdId, allowedLocationIds } = await requireProjectManagerAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
   const title = String(formData.get("title") ?? "").trim();
   const quantityLabel = String(formData.get("quantityLabel") ?? "").trim() || null;
@@ -1134,7 +1096,7 @@ export async function createProjectMaterialAction(formData: FormData) {
     where: {
       id: taskId,
       active: true,
-      room: { householdId },
+      room: getAccessibleRoomWhere(householdId, allowedLocationIds),
     },
     select: { id: true },
   });
@@ -1163,7 +1125,7 @@ export async function createProjectMaterialAction(formData: FormData) {
 }
 
 export async function toggleProjectMaterialPurchasedAction(formData: FormData) {
-  const { householdId } = await requireProjectManagerAction();
+  const { householdId, allowedLocationIds } = await requireProjectManagerAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
   const materialId = String(formData.get("materialId") ?? "").trim();
   const source = String(formData.get("source") ?? "").trim() || null;
@@ -1178,7 +1140,7 @@ export async function toggleProjectMaterialPurchasedAction(formData: FormData) {
       id: materialId,
       taskId,
       task: {
-        room: { householdId },
+        room: getAccessibleRoomWhere(householdId, allowedLocationIds),
       },
     },
     select: { id: true, taskId: true, purchasedAt: true, source: true },
@@ -1206,7 +1168,7 @@ export async function toggleProjectMaterialPurchasedAction(formData: FormData) {
 }
 
 export async function deleteProjectMaterialAction(formData: FormData) {
-  const { householdId } = await requireProjectManagerAction();
+  const { householdId, allowedLocationIds } = await requireProjectManagerAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
   const materialId = String(formData.get("materialId") ?? "").trim();
   const returnTo = getReturnPath(formData.get("returnTo"), "/projects");
@@ -1219,7 +1181,7 @@ export async function deleteProjectMaterialAction(formData: FormData) {
       id: materialId,
       taskId,
       task: {
-        room: { householdId },
+        room: getAccessibleRoomWhere(householdId, allowedLocationIds),
       },
     },
     select: { id: true, taskId: true },
@@ -1237,7 +1199,7 @@ export async function deleteProjectMaterialAction(formData: FormData) {
 }
 
 export async function createProjectMilestoneAction(formData: FormData) {
-  const { householdId } = await requireProjectManagerAction();
+  const { householdId, allowedLocationIds } = await requireProjectManagerAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
   const title = String(formData.get("title") ?? "").trim();
   const targetAt = toDate(formData.get("targetAt"));
@@ -1250,7 +1212,7 @@ export async function createProjectMilestoneAction(formData: FormData) {
     where: {
       id: taskId,
       active: true,
-      room: { householdId },
+      room: getAccessibleRoomWhere(householdId, allowedLocationIds),
     },
     select: { id: true },
   });
@@ -1277,7 +1239,7 @@ export async function createProjectMilestoneAction(formData: FormData) {
 }
 
 export async function toggleProjectMilestoneAction(formData: FormData) {
-  const { householdId } = await requireProjectManagerAction();
+  const { householdId, allowedLocationIds } = await requireProjectManagerAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
   const milestoneId = String(formData.get("milestoneId") ?? "").trim();
   const returnTo = getReturnPath(formData.get("returnTo"), "/projects");
@@ -1290,7 +1252,7 @@ export async function toggleProjectMilestoneAction(formData: FormData) {
       id: milestoneId,
       taskId,
       task: {
-        room: { householdId },
+        room: getAccessibleRoomWhere(householdId, allowedLocationIds),
       },
     },
     select: { id: true, taskId: true, completedAt: true },
@@ -1309,7 +1271,7 @@ export async function toggleProjectMilestoneAction(formData: FormData) {
 }
 
 export async function deleteProjectMilestoneAction(formData: FormData) {
-  const { householdId } = await requireProjectManagerAction();
+  const { householdId, allowedLocationIds } = await requireProjectManagerAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
   const milestoneId = String(formData.get("milestoneId") ?? "").trim();
   const returnTo = getReturnPath(formData.get("returnTo"), "/projects");
@@ -1322,7 +1284,7 @@ export async function deleteProjectMilestoneAction(formData: FormData) {
       id: milestoneId,
       taskId,
       task: {
-        room: { householdId },
+        room: getAccessibleRoomWhere(householdId, allowedLocationIds),
       },
     },
     select: { id: true, taskId: true },
@@ -1376,6 +1338,7 @@ export async function createPersonAction(formData: FormData) {
   const emailInput = String(formData.get("email") ?? "").trim();
   const passcodeInput = String(formData.get("passcode") ?? "").trim();
   const requestedRole = String(formData.get("role") ?? "").trim();
+  const requestedLocationIds = parseLocationIds(formData.getAll("locationIds"));
   const returnTo = getReturnPath(formData.get("returnTo"), "");
 
   if (!displayName) {
@@ -1410,6 +1373,8 @@ export async function createPersonAction(formData: FormData) {
       role,
     },
   });
+
+  await replaceMemberLocationAccess(householdId, user.id, requestedLocationIds);
 
   if (passcodeInput.length >= 4) {
     await setUserPasswordHash(user.id, hashPassword(passcodeInput));
@@ -1460,6 +1425,38 @@ export async function updatePersonRoleAction(formData: FormData) {
 
   refreshViews(["/", "/log", "/tasks", "/projects", "/projects/timeline", "/settings", "/settings/people"]);
   redirect(`${returnTo}?updated=role`);
+}
+
+export async function updatePersonLocationAccessAction(formData: FormData) {
+  const { householdId, userId: currentUserId } = await requireAdminAction();
+  const userId = String(formData.get("userId") ?? "").trim();
+  const returnTo = getReturnPath(formData.get("returnTo"), "/settings/people");
+  const requestedLocationIds = parseLocationIds(formData.getAll("locationIds"));
+  if (!userId) {
+    return;
+  }
+
+  if (userId === currentUserId) {
+    return;
+  }
+
+  const membership = await prisma.householdMember.findUnique({
+    where: {
+      householdId_userId: {
+        householdId,
+        userId,
+      },
+    },
+    select: { userId: true },
+  });
+  if (!membership) {
+    return;
+  }
+
+  await replaceMemberLocationAccess(householdId, userId, requestedLocationIds);
+
+  refreshViews(["/", "/log", "/tasks", "/projects", "/projects/timeline", "/stats", "/settings", "/settings/people"]);
+  redirect(`${returnTo}?updated=locations`);
 }
 
 export async function removePersonAction(formData: FormData) {
@@ -1524,7 +1521,7 @@ export async function setPersonPasscodeAction(formData: FormData) {
 }
 
 export async function startTaskAction(formData: FormData) {
-  const { householdId, userId: actorUserId } = await requireSessionMemberAction();
+  const { householdId, userId: actorUserId, allowedLocationIds } = await requireSessionMemberAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
   if (!taskId) {
     return;
@@ -1534,7 +1531,7 @@ export async function startTaskAction(formData: FormData) {
     where: {
       id: taskId,
       active: true,
-      room: { householdId },
+      room: getAccessibleRoomWhere(householdId, allowedLocationIds),
     },
     select: { id: true },
   });
@@ -1560,7 +1557,7 @@ export async function startTaskAction(formData: FormData) {
 }
 
 export async function completeTaskAction(formData: FormData) {
-  const { userId: currentUserId, householdId } = await requireSessionMemberAction();
+  const { userId: currentUserId, householdId, allowedLocationIds } = await requireSessionMemberAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
   const note = String(formData.get("note") ?? "").trim();
   if (!taskId) {
@@ -1571,7 +1568,7 @@ export async function completeTaskAction(formData: FormData) {
   const task = await prisma.task.findFirst({
     where: {
       id: taskId,
-      room: { householdId },
+      room: getAccessibleRoomWhere(householdId, allowedLocationIds),
     },
     select: {
       id: true,
@@ -1654,7 +1651,7 @@ export async function completeTaskAction(formData: FormData) {
 }
 
 export async function reopenTaskAction(formData: FormData) {
-  const { householdId, userId: actorUserId } = await requireSessionMemberAction();
+  const { householdId, userId: actorUserId, allowedLocationIds } = await requireSessionMemberAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
   if (!taskId) {
     return;
@@ -1663,7 +1660,7 @@ export async function reopenTaskAction(formData: FormData) {
   const task = await prisma.task.findFirst({
     where: {
       id: taskId,
-      room: { householdId },
+      room: getAccessibleRoomWhere(householdId, allowedLocationIds),
     },
     select: { id: true },
   });
@@ -1893,7 +1890,12 @@ function inferJobKindFromText(text: string): "upkeep" | "issue" | "project" | "c
   return "upkeep";
 }
 
-async function resolveProjectParentId(projectParentId: string, householdId: string, currentTaskId?: string) {
+async function resolveProjectParentId(
+  projectParentId: string,
+  householdId: string,
+  currentTaskId?: string,
+  allowedLocationIds?: string[] | null,
+) {
   if (!projectParentId || projectParentId === currentTaskId) {
     return null;
   }
@@ -1902,7 +1904,7 @@ async function resolveProjectParentId(projectParentId: string, householdId: stri
     where: {
       id: projectParentId,
       active: true,
-      room: { householdId },
+      room: getAccessibleRoomWhere(householdId, allowedLocationIds),
     },
     select: { id: true },
   });
@@ -1940,6 +1942,92 @@ async function resolveMemberUserId(householdId: string, userId: string) {
   });
 
   return member?.userId ?? null;
+}
+
+function getAccessibleRoomWhere(householdId: string, allowedLocationIds: string[] | null | undefined) {
+  return {
+    householdId,
+    ...(hasLocationRestrictions(allowedLocationIds) ? { locationId: { in: allowedLocationIds! } } : {}),
+  };
+}
+
+function parseLocationIds(values: FormDataEntryValue[]) {
+  return Array.from(
+    new Set(
+      values
+        .map((value) => String(value ?? "").trim())
+        .filter(Boolean),
+    ),
+  );
+}
+
+async function replaceMemberLocationAccess(householdId: string, userId: string, requestedLocationIds: string[]) {
+  const validLocationIds = requestedLocationIds.length === 0
+    ? []
+    : (await prisma.location.findMany({
+        where: {
+          householdId,
+          active: true,
+          id: { in: requestedLocationIds },
+        },
+        select: { id: true },
+      })).map((location) => location.id);
+
+  await prisma.householdMemberLocationAccess.deleteMany({
+    where: { householdId, userId },
+  });
+
+  if (validLocationIds.length > 0) {
+    await prisma.householdMemberLocationAccess.createMany({
+      data: validLocationIds.map((locationId) => ({
+        householdId,
+        userId,
+        locationId,
+      })),
+    });
+  }
+}
+
+async function resolveAssignableMemberUserId(householdId: string, userId: string, roomId: string) {
+  if (!userId) {
+    return null;
+  }
+
+  const [membership, room] = await Promise.all([
+    prisma.householdMember.findUnique({
+      where: {
+        householdId_userId: {
+          householdId,
+          userId,
+        },
+      },
+      select: {
+        userId: true,
+        role: true,
+        locationAccess: {
+          select: { locationId: true },
+        },
+      },
+    }),
+    prisma.room.findFirst({
+      where: { id: roomId, householdId, active: true },
+      select: { locationId: true },
+    }),
+  ]);
+
+  if (!membership || !room) {
+    return null;
+  }
+
+  if (membership.role === "admin" || membership.locationAccess.length === 0) {
+    return membership.userId;
+  }
+
+  if (!room.locationId) {
+    return null;
+  }
+
+  return membership.locationAccess.some((entry) => entry.locationId === room.locationId) ? membership.userId : null;
 }
 
 async function moveOpenTaskToPriority(taskId: string, roomId: string, desiredPriority: number | null) {

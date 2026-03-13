@@ -3,6 +3,7 @@ import { AppPageHeader } from "@/app/components/AppPageHeader";
 import { AutoSubmitSelect } from "@/app/components/AutoSubmitSelect";
 import { FormActionButton } from "@/app/components/FormActionButton";
 import { requireSessionContext } from "@/lib/auth";
+import { hasLocationRestrictions } from "@/lib/location-access";
 import { getStatsData } from "@/lib/stats-data";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
@@ -16,12 +17,13 @@ type SearchParams = {
 };
 
 export default async function StatsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  const { householdId } = await requireSessionContext("/stats");
+  const { householdId, allowedLocationIds } = await requireSessionContext("/stats");
   const params = await searchParams;
+  const restrictedToLocations = hasLocationRestrictions(allowedLocationIds);
 
   const [locations, members] = await Promise.all([
     prisma.location.findMany({
-      where: { householdId, active: true },
+      where: { householdId, active: true, ...(restrictedToLocations ? { id: { in: allowedLocationIds! } } : {}) },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
       select: { id: true, name: true },
     }),
@@ -41,6 +43,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
 
   const stats = await getStatsData(householdId, {
     locationId: selectedLocationId || undefined,
+    allowedLocationIds,
     userId: selectedUserId || undefined,
     period: selectedPeriod,
   });

@@ -6,6 +6,7 @@ import { SimilarTaskField } from "@/app/components/SimilarTaskField";
 import { TasksPanelClient } from "@/app/components/TasksPanelClient";
 import { ToastNotice } from "@/app/components/ToastNotice";
 import { canManageProjectsRole, isAdminRole, requireSessionContext } from "@/lib/auth";
+import { getRoomLocationAccessWhere, hasLocationRestrictions } from "@/lib/location-access";
 import { prisma } from "@/lib/prisma";
 import { getPrivateTaskAccessWhere, getProjectTaskWhere } from "@/lib/project-work";
 import Link from "next/link";
@@ -23,7 +24,8 @@ type SearchParams = {
 };
 
 export async function LogWorkspace({ params }: { params: SearchParams }) {
-  const { householdId, userId, role } = await requireSessionContext("/log");
+  const { householdId, userId, role, allowedLocationIds } = await requireSessionContext("/log");
+  const restrictedToLocations = hasLocationRestrictions(allowedLocationIds);
 
   const [currentUser, rooms, people, locations, lookupTasks] = await Promise.all([
     prisma.user.findUnique({
@@ -31,7 +33,7 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
       select: { id: true, displayName: true },
     }),
     prisma.room.findMany({
-      where: { householdId, active: true },
+      where: { householdId, active: true, ...getRoomLocationAccessWhere(allowedLocationIds) },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
       select: { id: true, name: true, designation: true, location: { select: { id: true, name: true } } },
     }),
@@ -48,14 +50,14 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
       },
     }),
     prisma.location.findMany({
-      where: { householdId, active: true },
+      where: { householdId, active: true, ...(restrictedToLocations ? { id: { in: allowedLocationIds! } } : {}) },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
       select: { id: true, name: true },
     }),
     prisma.task.findMany({
       where: {
         active: true,
-        room: { householdId },
+        room: { householdId, ...getRoomLocationAccessWhere(allowedLocationIds) },
       },
       orderBy: { createdAt: "desc" },
       take: 40,
@@ -136,7 +138,7 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
               }))}
             />
 
-            <LocationRoomSelect locations={locations} rooms={roomOptions} />
+            <LocationRoomSelect locations={locations} rooms={roomOptions} requireRoom={restrictedToLocations} />
 
             <div className="capture-step">
               <label className="capture-step-inner">
@@ -253,9 +255,10 @@ export async function ProjectsWorkspace({ params }: { params: SearchParams }) {
 }
 
 async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode: "tasks" | "projects" }) {
-  const { householdId, userId, role } = await requireSessionContext(mode === "projects" ? "/projects" : "/tasks");
+  const { householdId, userId, role, allowedLocationIds } = await requireSessionContext(mode === "projects" ? "/projects" : "/tasks");
   const privateTaskAccess = isAdminRole(role) ? undefined : getPrivateTaskAccessWhere(userId);
   const projectOnlyWhere = mode === "projects" ? getProjectTaskWhere() : undefined;
+  const restrictedToLocations = hasLocationRestrictions(allowedLocationIds);
 
   const [currentUser, rooms, people, locations, recordedTasks] = await Promise.all([
     prisma.user.findUnique({
@@ -263,7 +266,7 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
       select: { displayName: true },
     }),
     prisma.room.findMany({
-      where: { householdId, active: true },
+      where: { householdId, active: true, ...getRoomLocationAccessWhere(allowedLocationIds) },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
       select: { id: true, name: true, designation: true, locationId: true, location: { select: { id: true, name: true } } },
     }),
@@ -280,14 +283,14 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
       },
     }),
     prisma.location.findMany({
-      where: { householdId, active: true },
+      where: { householdId, active: true, ...(restrictedToLocations ? { id: { in: allowedLocationIds! } } : {}) },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
       select: { id: true, name: true },
     }),
     prisma.task.findMany({
       where: {
         active: true,
-        room: { householdId },
+        room: { householdId, ...getRoomLocationAccessWhere(allowedLocationIds) },
         AND: [
           ...(privateTaskAccess ? [{ OR: privateTaskAccess }] : []),
           ...(projectOnlyWhere ? [projectOnlyWhere] : []),

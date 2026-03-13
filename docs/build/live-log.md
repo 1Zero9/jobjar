@@ -55,7 +55,12 @@
   - reworked the shared page header into a cleaner two-row layout with title and description under the icon line
   - added loading states for `/tasks` and `/projects`
   - enabled explicit prefetch on key task/project navigation links for quicker route transitions
-- Updated product docs to match the current role model and `0.2.8` app shape.
+- Added location-scoped access in `0.3.0`:
+  - added member-to-location access rules so a person can be limited to one or many locations
+  - filtered home, log, tasks, projects, stats, and timeline to the member's allowed locations
+  - enforced the same location scope in task and project actions
+  - added location access controls on `/settings/people`
+- Updated product docs to match the current role model and `0.3.0` app shape.
 - Validation completed:
   - `npm run db:generate` passed
   - `npm run lint` passed

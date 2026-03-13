@@ -101,8 +101,9 @@ model Location {
   sortOrder   Int      @default(0)
   active      Boolean  @default(true)
   createdAt   DateTime @default(now())
-  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  household   Household                @relation(fields: [householdId], references: [id], onDelete: Cascade)
   rooms       Room[]
+  memberAccess HouseholdMemberLocationAccess[]
 
   @@index([householdId])
 }
@@ -112,10 +113,23 @@ model HouseholdMember {
   userId      String    @db.Uuid
   role        MemberRole
   joinedAt    DateTime  @default(now())
-  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  household   Household                     @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  user        User                          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  locationAccess HouseholdMemberLocationAccess[]
 
   @@id([householdId, userId])
+}
+
+model HouseholdMemberLocationAccess {
+  householdId String   @db.Uuid
+  userId      String   @db.Uuid
+  locationId  String   @db.Uuid
+  createdAt   DateTime @default(now())
+  member      HouseholdMember @relation(fields: [householdId, userId], references: [householdId, userId], onDelete: Cascade)
+  location    Location        @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@id([householdId, userId, locationId])
+  @@index([locationId])
 }
 
 model Room {

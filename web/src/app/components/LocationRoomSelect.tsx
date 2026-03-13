@@ -16,9 +16,10 @@ type RoomOption = {
 type Props = {
   locations: LocationOption[];
   rooms: RoomOption[];
+  requireRoom?: boolean;
 };
 
-export function LocationRoomSelect({ locations, rooms }: Props) {
+export function LocationRoomSelect({ locations, rooms, requireRoom = false }: Props) {
   const [selectedLocationId, setSelectedLocationId] = useState(
     locations.length > 0 ? locations[0].id : ""
   );
@@ -48,9 +49,9 @@ export function LocationRoomSelect({ locations, rooms }: Props) {
       ) : null}
 
       <label className="capture-step-inner">
-        <span className="capture-step-label">Room (optional)</span>
-        <select name="roomId" defaultValue="" className="capture-room-select">
-          <option value="">No room yet</option>
+        <span className="capture-step-label">Room {requireRoom ? "" : "(optional)"}</span>
+        <select name="roomId" defaultValue="" required={requireRoom} className="capture-room-select">
+          <option value="">{requireRoom ? "Pick a room" : "No room yet"}</option>
           {visibleRooms.map((room) => (
             <option key={room.id} value={room.id}>
               {room.name}

@@ -11,6 +11,7 @@ export type ProjectTimelineFilters = {
   userId: string;
   role: "admin" | "power_user" | "member" | "viewer";
   locationId?: string;
+  allowedLocationIds?: string[] | null;
   status?: TimelineStatus;
   window?: TimelineWindow;
 };
@@ -45,6 +46,7 @@ export async function getProjectTimelineData({
   userId,
   role,
   locationId,
+  allowedLocationIds,
   status = "all",
   window = "30",
 }: ProjectTimelineFilters): Promise<ProjectTimelineData> {
@@ -58,7 +60,11 @@ export async function getProjectTimelineData({
       active: true,
       room: {
         householdId,
-        ...(locationId ? { locationId } : {}),
+        ...(locationId
+          ? { locationId }
+          : allowedLocationIds && allowedLocationIds.length > 0
+            ? { locationId: { in: allowedLocationIds } }
+            : {}),
       },
       AND: [
         ...(privateTaskAccess ? [{ OR: privateTaskAccess }] : []),

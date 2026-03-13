@@ -7,6 +7,7 @@ Prisma schema source of truth: `web/prisma/schema.prisma`
 - `AuthCredential`
 - `Household`
 - `HouseholdMember`
+- `HouseholdMemberLocationAccess`
 - `Location`
 - `Room`
 - `Task`
@@ -44,3 +45,4 @@ Project checkpoints are stored separately in `ProjectMilestone`.
 - RAG status is derived from due date and grace window.
 - Room status is rolled up from underlying tasks.
 - Project progress is derived from project step and milestone completion, not a separate project state table.
+- Location restrictions are optional. No location rows means full household access; explicit rows limit the member to those locations.

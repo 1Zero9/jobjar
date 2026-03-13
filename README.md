@@ -6,6 +6,7 @@ It started as a task tracker and now supports:
 - quick capture on `/log`
 - shared task management on `/tasks`
 - project planning on `/projects`
+- location-scoped views and people access controls
 - stats on `/stats`
 - admin shaping on `/admin`
 - setup routes under `/settings/*`
@@ -15,7 +16,7 @@ It started as a task tracker and now supports:
 - `docs/`: product, architecture, build, and handover notes
 
 ## Current app version
-- `web/package.json` is currently `0.2.8`
+- `web/package.json` is currently `0.3.0`
 
 ## Key routes
 - `/login`

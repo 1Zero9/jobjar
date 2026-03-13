@@ -3,6 +3,7 @@ import { FormActionButton } from "@/app/components/FormActionButton";
 import { ThemeToggle } from "@/app/components/ThemeToggle";
 import { requireSessionContext } from "@/lib/auth";
 import { APP_VERSION } from "@/lib/app-version";
+import { getRoomLocationAccessWhere } from "@/lib/location-access";
 import { prisma } from "@/lib/prisma";
 import { getProjectTaskWhere } from "@/lib/project-work";
 import Link from "next/link";
@@ -10,7 +11,7 @@ import Link from "next/link";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const { householdId, userId, role } = await requireSessionContext("/");
+  const { householdId, userId, role, allowedLocationIds } = await requireSessionContext("/");
 
   const [currentUser, taskCount, projectCount] = await Promise.all([
     prisma.user.findUnique({
@@ -18,12 +19,12 @@ export default async function HomePage() {
       select: { displayName: true },
     }),
     prisma.task.count({
-      where: { active: true, room: { householdId } },
+      where: { active: true, room: { householdId, ...getRoomLocationAccessWhere(allowedLocationIds) } },
     }),
     prisma.task.count({
       where: {
         active: true,
-        room: { householdId },
+        room: { householdId, ...getRoomLocationAccessWhere(allowedLocationIds) },
         ...getProjectTaskWhere(),
       },
     }),

@@ -3,6 +3,7 @@ import { AppPageHeader } from "@/app/components/AppPageHeader";
 import { AutoSubmitSelect } from "@/app/components/AutoSubmitSelect";
 import { FormActionButton } from "@/app/components/FormActionButton";
 import { isAdminRole, requireSessionContext } from "@/lib/auth";
+import { hasLocationRestrictions } from "@/lib/location-access";
 import {
   getProjectTimelineData,
   type ProjectTimelineEvent,
@@ -25,8 +26,9 @@ export default async function ProjectsTimelinePage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const { householdId, userId, role } = await requireSessionContext("/projects/timeline");
+  const { householdId, userId, role, allowedLocationIds } = await requireSessionContext("/projects/timeline");
   const params = await searchParams;
+  const restrictedToLocations = hasLocationRestrictions(allowedLocationIds);
 
   const [currentUser, locations] = await Promise.all([
     prisma.user.findUnique({
@@ -34,7 +36,7 @@ export default async function ProjectsTimelinePage({
       select: { displayName: true },
     }),
     prisma.location.findMany({
-      where: { householdId, active: true },
+      where: { householdId, active: true, ...(restrictedToLocations ? { id: { in: allowedLocationIds! } } : {}) },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
       select: { id: true, name: true },
     }),
@@ -55,6 +57,7 @@ export default async function ProjectsTimelinePage({
     userId,
     role,
     locationId: selectedLocationId || undefined,
+    allowedLocationIds,
     status: selectedStatus,
     window: selectedWindow,
   });

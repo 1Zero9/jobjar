@@ -56,8 +56,8 @@ Use it to:
 ## Roles
 
 - Admin: full setup access, including people, rooms, and task shaping.
-- Power user: can manage projects, milestones, materials, and project planning without full setup access.
-- Member: can use the normal task workflow.
+- Power user: can manage projects, milestones, materials, and project planning without full setup access, and can be limited to specific locations.
+- Member: can use the normal task workflow and can be limited to specific locations.
 - Viewer: read-only.
 
 ## 3. Stats

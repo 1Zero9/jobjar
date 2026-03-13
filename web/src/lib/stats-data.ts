@@ -15,6 +15,7 @@ function startOfThisMonth() {
 
 export type StatsFilters = {
   locationId?: string;
+  allowedLocationIds?: string[] | null;
   userId?: string;
   period?: "week" | "month" | "all";
 };
@@ -92,19 +93,24 @@ export async function getStatsData(householdId: string, filters: StatsFilters = 
   const now = new Date();
   const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
 
-  const { locationId, userId, period = "month" } = filters;
+  const { locationId, allowedLocationIds, userId, period = "month" } = filters;
+  const restrictedLocationFilter = locationId
+    ? { locationId }
+    : allowedLocationIds && allowedLocationIds.length > 0
+      ? { locationId: { in: allowedLocationIds } }
+      : {};
 
   const periodStart = period === "week" ? weekStart : period === "month" ? monthStart : undefined;
 
   const roomWhere = {
     householdId,
-    ...(locationId ? { locationId } : {}),
+    ...restrictedLocationFilter,
   };
 
   const taskRoomWhere = {
     room: {
       householdId,
-      ...(locationId ? { locationId } : {}),
+      ...restrictedLocationFilter,
     },
   };
 

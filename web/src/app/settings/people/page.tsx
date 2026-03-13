@@ -3,6 +3,7 @@ import {
   logoutAction,
   removePersonAction,
   setPersonPasscodeAction,
+  updatePersonLocationAccessAction,
   updatePersonRoleAction,
 } from "@/app/actions";
 import { AppPageHeader } from "@/app/components/AppPageHeader";
@@ -22,20 +23,33 @@ export default async function PeoplePage({
   const params = await searchParams;
   const { householdId } = await requireAdmin("/settings/people");
 
-  const people = await prisma.householdMember.findMany({
-    where: { householdId },
-    orderBy: { joinedAt: "asc" },
-    select: {
-      role: true,
-      user: {
-        select: {
-          id: true,
-          displayName: true,
-          email: true,
+  const [people, locations] = await Promise.all([
+    prisma.householdMember.findMany({
+      where: { householdId },
+      orderBy: { joinedAt: "asc" },
+      select: {
+        role: true,
+        locationAccess: {
+          select: {
+            locationId: true,
+            location: { select: { name: true } },
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            displayName: true,
+            email: true,
+          },
         },
       },
-    },
-  });
+    }),
+    prisma.location.findMany({
+      where: { householdId, active: true },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      select: { id: true, name: true },
+    }),
+  ]);
 
   return (
     <div className="settings-shell min-h-screen px-4 py-5">
@@ -71,6 +85,7 @@ export default async function PeoplePage({
 
         {params.added === "person" ? <ToastNotice message="Person added." tone="success" /> : null}
         {params.updated === "role" ? <ToastNotice message="Role updated." tone="success" /> : null}
+        {params.updated === "locations" ? <ToastNotice message="Location access updated." tone="success" /> : null}
 
         <section className="settings-panel">
           <div className="room-setup-header">
@@ -92,6 +107,20 @@ export default async function PeoplePage({
               <option value="viewer">Viewer</option>
             </select>
             <input name="passcode" type="password" minLength={4} placeholder="Passcode" className="capture-room-select" />
+            {locations.length > 0 ? (
+              <fieldset className="location-access-fieldset">
+                <legend className="capture-step-label">Location access</legend>
+                <p className="recorded-row-placeholder">Leave blank for all locations. Admins always see everything.</p>
+                <div className="location-access-grid">
+                  {locations.map((location) => (
+                    <label key={location.id} className="location-access-option">
+                      <input type="checkbox" name="locationIds" value={location.id} />
+                      <span>{location.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+            ) : null}
             <FormActionButton className="capture-submit-btn" pendingLabel="Adding person">
               Add person
             </FormActionButton>
@@ -117,6 +146,7 @@ export default async function PeoplePage({
                   <p><span>Name</span><strong>{person.user.displayName}</strong></p>
                   <p><span>Role</span><strong>{formatRole(person.role)}</strong></p>
                   <p><span>Email</span><strong>{person.user.email}</strong></p>
+                  <p><span>Location access</span><strong>{formatLocationAccess(person.role, person.locationAccess)}</strong></p>
                   <form action={updatePersonRoleAction} className="recorded-edit-form">
                     <input type="hidden" name="userId" value={person.user.id} />
                     <input type="hidden" name="returnTo" value="/settings/people" />
@@ -135,6 +165,34 @@ export default async function PeoplePage({
                       </FormActionButton>
                     </div>
                   </form>
+                  {locations.length > 0 ? (
+                    <form action={updatePersonLocationAccessAction} className="recorded-edit-form">
+                      <input type="hidden" name="userId" value={person.user.id} />
+                      <input type="hidden" name="returnTo" value="/settings/people" />
+                      <fieldset className="location-access-fieldset">
+                        <legend className="capture-step-label">Allowed locations</legend>
+                        <p className="recorded-row-placeholder">Leave all unchecked for full access. Admins always see everything.</p>
+                        <div className="location-access-grid">
+                          {locations.map((location) => (
+                            <label key={location.id} className="location-access-option">
+                              <input
+                                type="checkbox"
+                                name="locationIds"
+                                value={location.id}
+                                defaultChecked={person.locationAccess.some((entry) => entry.locationId === location.id)}
+                              />
+                              <span>{location.name}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </fieldset>
+                      <div className="recorded-row-actions between">
+                        <FormActionButton className="action-btn bright quiet" pendingLabel="Saving">
+                          Save location access
+                        </FormActionButton>
+                      </div>
+                    </form>
+                  ) : null}
                   <form action={setPersonPasscodeAction} className="recorded-edit-form">
                     <input type="hidden" name="userId" value={person.user.id} />
                     <label className="recorded-field">
@@ -173,4 +231,17 @@ function formatRole(role: string) {
     return "Power user";
   }
   return role[0].toUpperCase() + role.slice(1);
+}
+
+function formatLocationAccess(
+  role: string,
+  locationAccess: Array<{ location: { name: string } }>,
+) {
+  if (role === "admin") {
+    return "All locations";
+  }
+  if (locationAccess.length === 0) {
+    return "All locations";
+  }
+  return locationAccess.map((entry) => entry.location.name).join(", ");
 }
