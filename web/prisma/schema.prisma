@@ -147,6 +147,8 @@ model Task {
   projectParentId  String?          @db.Uuid
   priority         Int              @default(3)
   estimatedMinutes Int              @default(15)
+  projectTargetAt  DateTime?
+  projectBudgetCents Int?
   graceHours       Int              @default(12)
   validationMode   String           @default("basic")
   minimumMinutes   Int              @default(0)
@@ -159,6 +161,9 @@ model Task {
   occurrences      TaskOccurrence[]
   logs             TaskLog[]
   assignments      TaskAssignment[]
+  projectCosts     ProjectCost[]
+  projectMaterials ProjectMaterial[]
+  projectMilestones ProjectMilestone[]
   projectParent    Task?            @relation("TaskProjectChildren", fields: [projectParentId], references: [id], onDelete: SetNull)
   projectChildren  Task[]           @relation("TaskProjectChildren")
 
@@ -218,6 +223,46 @@ model TaskAssignment {
   createdAt    DateTime @default(now())
   task         Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ProjectCost {
+  id          String   @id @default(uuid()) @db.Uuid
+  taskId       String   @db.Uuid
+  title       String
+  amountCents Int
+  notedAt     DateTime @default(now())
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+}
+
+model ProjectMaterial {
+  id                 String   @id @default(uuid()) @db.Uuid
+  taskId             String   @db.Uuid
+  title              String
+  quantityLabel      String?
+  source             String?
+  estimatedCostCents Int?
+  actualCostCents    Int?
+  purchasedAt        DateTime?
+  sortOrder          Int      @default(0)
+  createdAt          DateTime @default(now())
+  task               Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+}
+
+model ProjectMilestone {
+  id          String   @id @default(uuid()) @db.Uuid
+  taskId      String   @db.Uuid
+  title       String
+  targetAt    DateTime?
+  completedAt DateTime?
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
 }
 
 model ShareLink {

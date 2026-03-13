@@ -276,15 +276,19 @@ export async function createTaskAction(formData: FormData) {
       graceHours,
       validationMode,
       minimumMinutes,
-      schedule: {
-        create: {
-          recurrenceType,
-          intervalCount: recurrenceInterval,
-          timeOfDay: recurrenceTime,
-          nextDueAt: dueAt,
-          daysOfWeek: [],
-        },
-      },
+      ...(recurrenceType
+        ? {
+            schedule: {
+              create: {
+                recurrenceType,
+                intervalCount: recurrenceInterval,
+                timeOfDay: recurrenceTime,
+                nextDueAt: dueAt,
+                daysOfWeek: [],
+              },
+            },
+          }
+        : {}),
     },
     select: { id: true },
   });
@@ -765,7 +769,7 @@ export async function updateTaskAction(formData: FormData) {
 
   const recurrenceType = formData.get("recurrenceType")
     ? parseRecurrenceType(formData.get("recurrenceType"))
-    : (existing.schedule?.recurrenceType ?? "weekly");
+    : (existing.schedule?.recurrenceType ?? null);
   const recurrenceInterval = toPositiveInt(formData.get("recurrenceInterval"), existing.schedule?.intervalCount ?? 1);
   const recurrenceTime = String(formData.get("recurrenceTime") ?? existing.schedule?.timeOfDay ?? "09:00").trim() || "09:00";
   const currentAssigneeUserId = existing.assignments[0]?.userId ?? "";
@@ -795,23 +799,29 @@ export async function updateTaskAction(formData: FormData) {
     data: { taskId, action: "task_updated", actorUserId },
   });
 
-  await prisma.taskSchedule.upsert({
-    where: { taskId },
-    create: {
-      taskId,
-      recurrenceType,
-      intervalCount: recurrenceInterval,
-      timeOfDay: recurrenceTime,
-      nextDueAt: dueAt,
-      daysOfWeek: [],
-    },
-    update: {
-      recurrenceType,
-      intervalCount: recurrenceInterval,
-      timeOfDay: recurrenceTime,
-      ...(dueWasSupplied ? { nextDueAt: dueAt } : {}),
-    },
-  });
+  if (recurrenceType) {
+    await prisma.taskSchedule.upsert({
+      where: { taskId },
+      create: {
+        taskId,
+        recurrenceType,
+        intervalCount: recurrenceInterval,
+        timeOfDay: recurrenceTime,
+        nextDueAt: dueAt,
+        daysOfWeek: [],
+      },
+      update: {
+        recurrenceType,
+        intervalCount: recurrenceInterval,
+        timeOfDay: recurrenceTime,
+        ...(dueWasSupplied ? { nextDueAt: dueAt } : {}),
+      },
+    });
+  } else {
+    await prisma.taskSchedule.deleteMany({
+      where: { taskId },
+    });
+  }
 
   if (dueAt) {
     const latestOccurrence = await prisma.taskOccurrence.findFirst({
@@ -875,8 +885,455 @@ export async function updateTaskAction(formData: FormData) {
   refreshViews(["/", "/log", "/tasks"]);
 }
 
+export async function promoteTaskToProjectAction(formData: FormData) {
+  const { householdId, userId: actorUserId } = await requireAdminAction();
+  const taskId = String(formData.get("taskId") ?? "").trim();
+  const returnTo = getReturnPath(formData.get("returnTo"), "/tasks");
+  if (!taskId) {
+    return;
+  }
+
+  const task = await prisma.task.findFirst({
+    where: {
+      id: taskId,
+      active: true,
+      room: { householdId },
+    },
+    select: { id: true, title: true, jobKind: true },
+  });
+  if (!task) {
+    return;
+  }
+
+  if (task.jobKind !== "project") {
+    await prisma.task.update({
+      where: { id: task.id },
+      data: { jobKind: "project" },
+    });
+
+    await prisma.taskLog.create({
+      data: { taskId: task.id, action: "task_updated", actorUserId, note: "Promoted to project" },
+    });
+  }
+
+  refreshViews(["/", "/tasks", "/projects", "/projects/timeline", "/stats", "/admin"]);
+  redirect(`${returnTo}#task-${task.id}`);
+}
+
+export async function updateProjectPlanAction(formData: FormData) {
+  const { householdId, userId: actorUserId } = await requireAdminAction();
+  const taskId = String(formData.get("taskId") ?? "").trim();
+  const returnTo = getReturnPath(formData.get("returnTo"), "/tasks");
+  if (!taskId) {
+    return;
+  }
+
+  const task = await prisma.task.findFirst({
+    where: {
+      id: taskId,
+      active: true,
+      room: { householdId },
+    },
+    select: { id: true, estimatedMinutes: true },
+  });
+  if (!task) {
+    return;
+  }
+
+  const projectTargetAt = toDate(formData.get("projectTargetAt"));
+  const projectBudgetCents = toCurrencyCentsOrNull(formData.get("projectBudget"));
+  const estimatedMinutes = toPositiveInt(formData.get("estimatedMinutes"), task.estimatedMinutes);
+
+  await prisma.task.update({
+    where: { id: task.id },
+    data: {
+      jobKind: "project",
+      estimatedMinutes,
+      projectTargetAt,
+      projectBudgetCents,
+    },
+  });
+
+  await prisma.taskLog.create({
+    data: { taskId: task.id, action: "task_updated", actorUserId, note: "Updated project plan" },
+  });
+
+  refreshViews(["/", "/tasks", "/projects", "/projects/timeline", "/stats", "/admin"]);
+  redirect(`${returnTo}#task-${task.id}`);
+}
+
+export async function createProjectChildTaskAction(formData: FormData) {
+  const { householdId, userId: actorUserId } = await requireAdminAction();
+  const projectId = String(formData.get("projectId") ?? "").trim();
+  const title = String(formData.get("title") ?? "").trim();
+  const detailNotes = String(formData.get("detailNotes") ?? "").trim() || null;
+  const assigneeUserId = String(formData.get("assigneeUserId") ?? "").trim();
+  const dueAt = toDate(formData.get("dueAt"));
+  const estimatedMinutes = toPositiveInt(formData.get("estimatedMinutes"), 30);
+  const returnTo = getReturnPath(formData.get("returnTo"), "/tasks");
+  if (!projectId || !title) {
+    return;
+  }
+
+  const project = await prisma.task.findFirst({
+    where: {
+      id: projectId,
+      active: true,
+      room: { householdId },
+    },
+    select: { id: true, roomId: true, title: true },
+  });
+  if (!project) {
+    return;
+  }
+
+  await prisma.task.update({
+    where: { id: project.id },
+    data: { jobKind: "project" },
+  });
+
+  const childTask = await prisma.task.create({
+    data: {
+      title,
+      roomId: project.roomId,
+      createdByUserId: actorUserId,
+      detailNotes,
+      jobKind: inferJobKindFromText(title),
+      captureStage: "shaped",
+      projectParentId: project.id,
+      estimatedMinutes,
+    },
+    select: { id: true },
+  });
+
+  if (dueAt) {
+    await prisma.taskOccurrence.create({
+      data: {
+        taskId: childTask.id,
+        dueAt,
+        status: "pending",
+      },
+    });
+  }
+
+  if (assigneeUserId) {
+    const assigneeMembership = await prisma.householdMember.findUnique({
+      where: {
+        householdId_userId: {
+          householdId,
+          userId: assigneeUserId,
+        },
+      },
+      select: { userId: true },
+    });
+
+    if (assigneeMembership) {
+      await prisma.taskAssignment.create({
+        data: {
+          taskId: childTask.id,
+          userId: assigneeUserId,
+          assignedFrom: new Date(),
+        },
+      });
+    }
+  }
+
+  await prisma.taskLog.create({
+    data: { taskId: childTask.id, action: "task_created", actorUserId, note: `Child of ${project.title}` },
+  });
+
+  refreshViews(["/", "/tasks", "/projects", "/projects/timeline", "/stats", "/admin"]);
+  redirect(`${returnTo}#task-${project.id}`);
+}
+
+export async function createProjectCostAction(formData: FormData) {
+  const { householdId } = await requireAdminAction();
+  const taskId = String(formData.get("taskId") ?? "").trim();
+  const title = String(formData.get("title") ?? "").trim();
+  const amountCents = toCurrencyCentsOrNull(formData.get("amount"));
+  const returnTo = getReturnPath(formData.get("returnTo"), "/tasks");
+  if (!taskId || !title || amountCents === null || amountCents <= 0) {
+    return;
+  }
+
+  const task = await prisma.task.findFirst({
+    where: {
+      id: taskId,
+      active: true,
+      room: { householdId },
+    },
+    select: { id: true },
+  });
+  if (!task) {
+    return;
+  }
+
+  await prisma.projectCost.create({
+    data: {
+      taskId: task.id,
+      title,
+      amountCents,
+    },
+  });
+
+  refreshViews(["/", "/tasks", "/projects", "/projects/timeline", "/stats", "/admin"]);
+  redirect(`${returnTo}#task-${task.id}`);
+}
+
+export async function deleteProjectCostAction(formData: FormData) {
+  const { householdId } = await requireAdminAction();
+  const taskId = String(formData.get("taskId") ?? "").trim();
+  const costId = String(formData.get("costId") ?? "").trim();
+  const returnTo = getReturnPath(formData.get("returnTo"), "/tasks");
+  if (!taskId || !costId) {
+    return;
+  }
+
+  const cost = await prisma.projectCost.findFirst({
+    where: {
+      id: costId,
+      taskId,
+      task: {
+        room: { householdId },
+      },
+    },
+    select: { id: true, taskId: true },
+  });
+  if (!cost) {
+    return;
+  }
+
+  await prisma.projectCost.delete({
+    where: { id: cost.id },
+  });
+
+  refreshViews(["/", "/tasks", "/projects", "/projects/timeline", "/stats", "/admin"]);
+  redirect(`${returnTo}#task-${cost.taskId}`);
+}
+
+export async function createProjectMaterialAction(formData: FormData) {
+  const { householdId } = await requireAdminAction();
+  const taskId = String(formData.get("taskId") ?? "").trim();
+  const title = String(formData.get("title") ?? "").trim();
+  const quantityLabel = String(formData.get("quantityLabel") ?? "").trim() || null;
+  const source = String(formData.get("source") ?? "").trim() || null;
+  const estimatedCostCents = toCurrencyCentsOrNull(formData.get("estimatedCost"));
+  const returnTo = getReturnPath(formData.get("returnTo"), "/projects");
+  if (!taskId || !title) {
+    return;
+  }
+
+  const task = await prisma.task.findFirst({
+    where: {
+      id: taskId,
+      active: true,
+      room: { householdId },
+    },
+    select: { id: true },
+  });
+  if (!task) {
+    return;
+  }
+
+  const maxSort = await prisma.projectMaterial.aggregate({
+    where: { taskId: task.id },
+    _max: { sortOrder: true },
+  });
+
+  await prisma.projectMaterial.create({
+    data: {
+      taskId: task.id,
+      title,
+      quantityLabel,
+      source,
+      estimatedCostCents,
+      sortOrder: (maxSort._max.sortOrder ?? 0) + 1,
+    },
+  });
+
+  refreshViews(["/", "/tasks", "/projects", "/projects/timeline", "/stats", "/admin"]);
+  redirect(`${returnTo}#task-${task.id}`);
+}
+
+export async function toggleProjectMaterialPurchasedAction(formData: FormData) {
+  const { householdId } = await requireAdminAction();
+  const taskId = String(formData.get("taskId") ?? "").trim();
+  const materialId = String(formData.get("materialId") ?? "").trim();
+  const source = String(formData.get("source") ?? "").trim() || null;
+  const actualCostCents = toCurrencyCentsOrNull(formData.get("actualCost"));
+  const returnTo = getReturnPath(formData.get("returnTo"), "/projects");
+  if (!taskId || !materialId) {
+    return;
+  }
+
+  const material = await prisma.projectMaterial.findFirst({
+    where: {
+      id: materialId,
+      taskId,
+      task: {
+        room: { householdId },
+      },
+    },
+    select: { id: true, taskId: true, purchasedAt: true, source: true },
+  });
+  if (!material) {
+    return;
+  }
+
+  await prisma.projectMaterial.update({
+    where: { id: material.id },
+    data: material.purchasedAt
+      ? {
+          purchasedAt: null,
+          actualCostCents: null,
+        }
+      : {
+          purchasedAt: new Date(),
+          actualCostCents,
+          source: source ?? material.source,
+        },
+  });
+
+  refreshViews(["/", "/tasks", "/projects", "/projects/timeline", "/stats", "/admin"]);
+  redirect(`${returnTo}#task-${material.taskId}`);
+}
+
+export async function deleteProjectMaterialAction(formData: FormData) {
+  const { householdId } = await requireAdminAction();
+  const taskId = String(formData.get("taskId") ?? "").trim();
+  const materialId = String(formData.get("materialId") ?? "").trim();
+  const returnTo = getReturnPath(formData.get("returnTo"), "/projects");
+  if (!taskId || !materialId) {
+    return;
+  }
+
+  const material = await prisma.projectMaterial.findFirst({
+    where: {
+      id: materialId,
+      taskId,
+      task: {
+        room: { householdId },
+      },
+    },
+    select: { id: true, taskId: true },
+  });
+  if (!material) {
+    return;
+  }
+
+  await prisma.projectMaterial.delete({
+    where: { id: material.id },
+  });
+
+  refreshViews(["/", "/tasks", "/projects", "/projects/timeline", "/stats", "/admin"]);
+  redirect(`${returnTo}#task-${material.taskId}`);
+}
+
+export async function createProjectMilestoneAction(formData: FormData) {
+  const { householdId } = await requireAdminAction();
+  const taskId = String(formData.get("taskId") ?? "").trim();
+  const title = String(formData.get("title") ?? "").trim();
+  const targetAt = toDate(formData.get("targetAt"));
+  const returnTo = getReturnPath(formData.get("returnTo"), "/projects");
+  if (!taskId || !title) {
+    return;
+  }
+
+  const task = await prisma.task.findFirst({
+    where: {
+      id: taskId,
+      active: true,
+      room: { householdId },
+    },
+    select: { id: true },
+  });
+  if (!task) {
+    return;
+  }
+
+  const maxSort = await prisma.projectMilestone.aggregate({
+    where: { taskId: task.id },
+    _max: { sortOrder: true },
+  });
+
+  await prisma.projectMilestone.create({
+    data: {
+      taskId: task.id,
+      title,
+      targetAt,
+      sortOrder: (maxSort._max.sortOrder ?? 0) + 1,
+    },
+  });
+
+  refreshViews(["/", "/tasks", "/projects", "/projects/timeline", "/stats", "/admin"]);
+  redirect(`${returnTo}#task-${task.id}`);
+}
+
+export async function toggleProjectMilestoneAction(formData: FormData) {
+  const { householdId } = await requireAdminAction();
+  const taskId = String(formData.get("taskId") ?? "").trim();
+  const milestoneId = String(formData.get("milestoneId") ?? "").trim();
+  const returnTo = getReturnPath(formData.get("returnTo"), "/projects");
+  if (!taskId || !milestoneId) {
+    return;
+  }
+
+  const milestone = await prisma.projectMilestone.findFirst({
+    where: {
+      id: milestoneId,
+      taskId,
+      task: {
+        room: { householdId },
+      },
+    },
+    select: { id: true, taskId: true, completedAt: true },
+  });
+  if (!milestone) {
+    return;
+  }
+
+  await prisma.projectMilestone.update({
+    where: { id: milestone.id },
+    data: { completedAt: milestone.completedAt ? null : new Date() },
+  });
+
+  refreshViews(["/", "/tasks", "/projects", "/projects/timeline", "/stats", "/admin"]);
+  redirect(`${returnTo}#task-${milestone.taskId}`);
+}
+
+export async function deleteProjectMilestoneAction(formData: FormData) {
+  const { householdId } = await requireAdminAction();
+  const taskId = String(formData.get("taskId") ?? "").trim();
+  const milestoneId = String(formData.get("milestoneId") ?? "").trim();
+  const returnTo = getReturnPath(formData.get("returnTo"), "/projects");
+  if (!taskId || !milestoneId) {
+    return;
+  }
+
+  const milestone = await prisma.projectMilestone.findFirst({
+    where: {
+      id: milestoneId,
+      taskId,
+      task: {
+        room: { householdId },
+      },
+    },
+    select: { id: true, taskId: true },
+  });
+  if (!milestone) {
+    return;
+  }
+
+  await prisma.projectMilestone.delete({
+    where: { id: milestone.id },
+  });
+
+  refreshViews(["/", "/tasks", "/projects", "/projects/timeline", "/stats", "/admin"]);
+  redirect(`${returnTo}#task-${milestone.taskId}`);
+}
+
 export async function deleteTaskAction(formData: FormData) {
-  const { householdId, userId: actorUserId } = await requireSessionMemberAction();
+  const { householdId, userId: actorUserId } = await requireAdminAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
   if (!taskId) {
     return;
@@ -1252,7 +1709,10 @@ export async function loginAction(formData: FormData) {
   }
 
   const storedHash = await getUserPasswordHash(user.id);
-  const passcodeValid = storedHash ? verifyPassword(passcode, storedHash) : passcode === getHouseholdPasscode();
+  const householdPasscode = getHouseholdPasscode();
+  const passcodeValid = storedHash
+    ? verifyPassword(passcode, storedHash)
+    : householdPasscode !== null && passcode === householdPasscode;
   if (!passcodeValid) {
     redirect(`/login?next=${encodeURIComponent(nextPath)}&error=invalid`);
   }
@@ -1295,6 +1755,25 @@ function toNonNegativeInt(value: FormDataEntryValue | null, fallback: number) {
   return num;
 }
 
+function toCurrencyCentsOrNull(value: FormDataEntryValue | null) {
+  const raw = String(value ?? "").trim();
+  if (!raw) {
+    return null;
+  }
+
+  const normalized = raw.replace(/,/g, "");
+  if (!/^\d+(\.\d{1,2})?$/.test(normalized)) {
+    return null;
+  }
+
+  const amount = Number(normalized);
+  if (!Number.isFinite(amount) || amount < 0) {
+    return null;
+  }
+
+  return Math.round(amount * 100);
+}
+
 function toDate(value: FormDataEntryValue | null) {
   const raw = String(value ?? "").trim();
   if (!raw) {
@@ -1312,7 +1791,7 @@ function parseRecurrenceType(value: FormDataEntryValue | null) {
   if (raw === "daily" || raw === "weekly" || raw === "monthly" || raw === "custom") {
     return raw;
   }
-  return "weekly";
+  return null;
 }
 
 function parseOptionalRecurrenceType(value: FormDataEntryValue | null) {

@@ -62,6 +62,8 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
           <div className="capture-topbar-actions">
             <Link href="/" className="action-btn subtle quiet">Home</Link>
             <Link href="/tasks" className="action-btn subtle quiet">Tasks</Link>
+            <Link href="/projects" className="action-btn subtle quiet">Projects</Link>
+            <Link href="/projects/timeline" className="action-btn subtle quiet">Timeline</Link>
             <form action={logoutAction}>
               <FormActionButton className="action-btn subtle quiet" pendingLabel="Logging out">
                 Log out
@@ -125,6 +127,112 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
             <span className="stat-label">All time</span>
           </div>
         </section>
+
+        {stats.projectOverview.totalProjects > 0 ? (
+          <section className="stats-panel">
+            <p className="settings-kicker">Projects</p>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="recorded-title">Project health</h2>
+                <p className="text-sm text-muted">
+                  Budget, milestones, and overdue child work across the current project board.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Link href="/projects" className="action-btn subtle quiet">
+                  Open board
+                </Link>
+                <Link href="/projects/timeline" className="action-btn subtle quiet">
+                  Timeline
+                </Link>
+              </div>
+            </div>
+
+            <div className="stats-summary-grid mt-4">
+              <div className="stat-card">
+                <span className="stat-number">{stats.projectOverview.totalProjects}</span>
+                <span className="stat-label">Projects</span>
+              </div>
+              <div className="stat-card">
+                <span className="stat-number">{stats.projectOverview.activeProjects}</span>
+                <span className="stat-label">Active</span>
+              </div>
+              <div className="stat-card">
+                <span className="stat-number">{stats.projectOverview.atRiskProjects}</span>
+                <span className="stat-label">At risk</span>
+              </div>
+              <div className="stat-card">
+                <span className="stat-number">{stats.projectOverview.completeProjects}</span>
+                <span className="stat-label">Complete</span>
+              </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl border border-border bg-surface p-4">
+                <p className="text-sm font-semibold text-foreground">Planned budget</p>
+                <p className="mt-1 text-2xl font-black tracking-tight text-foreground">
+                  {formatMoney(stats.projectOverview.plannedBudgetCents)}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-border bg-surface p-4">
+                <p className="text-sm font-semibold text-foreground">Actual spend</p>
+                <p className="mt-1 text-2xl font-black tracking-tight text-foreground">
+                  {formatMoney(stats.projectOverview.actualSpendCents)}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              {stats.projects.map((project) => (
+                <Link
+                  key={project.id}
+                  href={`/projects#task-${project.id}`}
+                  className="block rounded-2xl border border-border bg-surface p-4 transition hover:shadow-sm"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="truncate text-base font-semibold text-foreground">{project.title}</h3>
+                        <span className={`task-chip ${project.status === "at_risk" ? "task-chip-lapsed" : project.status === "complete" ? "task-chip-done" : project.status === "planning" ? "" : "task-chip-due"}`}>
+                          {formatProjectStatus(project.status)}
+                        </span>
+                        {project.locationName ? <span className="task-chip">{project.locationName}</span> : null}
+                      </div>
+                      <p className="mt-1 text-sm text-muted">{project.roomName}</p>
+                    </div>
+                    <span className="text-sm font-semibold text-foreground">
+                      {project.totalChildren > 0 ? `${project.completedChildren}/${project.totalChildren} tasks` : "No child tasks"}
+                    </span>
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-1 gap-2 text-sm text-muted sm:grid-cols-2">
+                    <p>
+                      <span className="font-semibold text-foreground">Spend</span>{" "}
+                      {project.budgetCents !== null
+                        ? `${formatMoney(project.actualSpendCents)} / ${formatMoney(project.budgetCents)}`
+                        : `${formatMoney(project.actualSpendCents)} spent`}
+                    </p>
+                    <p>
+                      <span className="font-semibold text-foreground">Milestones</span>{" "}
+                      {project.totalMilestones > 0 ? `${project.completedMilestones}/${project.totalMilestones}` : "None"}
+                    </p>
+                    <p>
+                      <span className="font-semibold text-foreground">Shopping</span>{" "}
+                      {project.totalMaterials > 0 ? `${project.purchasedMaterials}/${project.totalMaterials} bought` : "No materials"}
+                    </p>
+                    <p>
+                      <span className="font-semibold text-foreground">Overdue child tasks</span> {project.overdueChildren}
+                    </p>
+                    <p>
+                      <span className="font-semibold text-foreground">Target</span>{" "}
+                      {project.targetAt ? formatDate(project.targetAt) : "Not set"}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         {/* Recurring health */}
         <section className="stats-panel">
@@ -244,4 +352,19 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" }).format(new Date(value));
+}
+
+function formatMoney(cents: number) {
+  return new Intl.NumberFormat("en-IE", {
+    style: "currency",
+    currency: "EUR",
+    maximumFractionDigits: 0,
+  }).format(cents / 100);
+}
+
+function formatProjectStatus(status: "planning" | "active" | "complete" | "at_risk") {
+  if (status === "at_risk") return "At risk";
+  if (status === "complete") return "Complete";
+  if (status === "planning") return "Planning";
+  return "Active";
 }

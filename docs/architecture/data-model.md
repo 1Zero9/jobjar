@@ -1,17 +1,46 @@
-# Data Model (Draft)
+# Data Model
+
+Prisma schema source of truth: `web/prisma/schema.prisma`
 
 ## Core entities
-- households
-- users
-- household_members
-- rooms
-- tasks
-- task_schedules
-- task_occurrences
-- task_logs
-- task_assignments
-- share_links
+- `User`
+- `AuthCredential`
+- `Household`
+- `HouseholdMember`
+- `Location`
+- `Room`
+- `Task`
+- `TaskSchedule`
+- `TaskOccurrence`
+- `TaskLog`
+- `TaskAssignment`
+- `ProjectCost`
+- `ProjectMaterial`
+- `ProjectMilestone`
+- `ShareLink`
 
-## Notes
+## Task model direction
+`Task` is the central work item.
+
+A task can represent:
+- a one-off household job
+- a recurring upkeep item
+- an issue
+- a planning item
+- a project parent
+- a child task inside a project
+
+Project behavior is modeled inside `Task` using:
+- `jobKind`
+- `projectParentId`
+- `projectTargetAt`
+- `projectBudgetCents`
+
+Project spend is stored separately in `ProjectCost`.
+Project shopping items are stored separately in `ProjectMaterial`.
+Project checkpoints are stored separately in `ProjectMilestone`.
+
+## Operational notes
 - RAG status is derived from due date and grace window.
-- Room status is a rollup from underlying tasks.
+- Room status is rolled up from underlying tasks.
+- Project progress is derived from child task and milestone completion, not a separate project state table.

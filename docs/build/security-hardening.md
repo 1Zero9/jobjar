@@ -20,7 +20,7 @@ The following headers are now set on all responses:
 - `Permissions-Policy` — disables camera, microphone, geolocation, payment APIs
 - `Strict-Transport-Security` — enforces HTTPS for 2 years including subdomains
 
-### TV dashboard now requires auth (`middleware.ts`)
+### Historical TV dashboard hardening (`middleware.ts`)
 `/tv` and `/tv-lite` were previously fully public. They now require a session cookie and redirect to `/login` if absent. This prevents household task data from being accessible to anyone who guesses or obtains the URL.
 
 ### Health check error redaction (`src/app/api/health/db/route.ts`)
@@ -56,3 +56,16 @@ The `actorUserId` field was added to `TaskLog` so every log entry records who pe
 
 ### Duplicate parse functions removed (`src/lib/admin-data.ts`)
 `parseValidationMode()` and `parseMinimumMinutes()` were duplicated between `actions.ts` and `admin-data.ts`. Both are now removed; the data is read directly from the database columns.
+
+---
+
+## Round 3 — March 13, 2026 stabilization
+
+### Production auth fallback removed (`src/lib/auth.ts`)
+The app no longer silently accepts hardcoded production fallbacks for the session signing secret or household passcode. Production now requires a real `SESSION_SIGNING_SECRET`, and the household passcode only falls back in development.
+
+### Admin-only destructive task actions (`src/app/actions.ts`)
+Task archive/delete is now admin-only. The UI had already framed that action as admin management, and the action-level permission now matches.
+
+### Build no longer depends on Google Fonts (`src/app/layout.tsx`)
+The `next/font/google` dependency was removed from the root layout, so local and CI builds no longer require outbound network access to fetch Inter.

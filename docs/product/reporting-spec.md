@@ -1,19 +1,27 @@
-# Reporting Spec (Draft)
+# Reporting Spec
 
-## Core reports
-1. Completion rate by room (day/week/month).
-2. Completion rate by task and member.
-3. Overdue trend (count of red occurrences over time).
-4. Average task completion duration.
-5. Upcoming workload in next 7 days.
+## Current reports in app
+1. completions by week, month, and all time
+2. open task count
+3. recurring schedule health
+4. completions by person
+5. room breakdown
+6. recent completions
+7. recurring streaks
+8. project health summary
+9. planned vs actual project spend
+10. overdue child-task count by project
+11. milestone completion by project
+12. project timeline view for targets, milestones, and child due dates
+13. project shopping progress
 
-## Visuals
-- Room RAG cards.
-- Weekly line chart for overdue count.
-- Completion donut by room.
-- Calendar heatmap by day.
+## Next reporting slice
+1. project workload by room
+2. dependency-aware sequencing
+3. project trend history
+4. materials budget rollup into spend
 
-## Public dashboard scope
-- Show room status and upcoming jobs.
-- Show recent completions.
-- Hide private member metadata by default.
+## Visual direction
+- keep stats lightweight and mobile-readable
+- treat projects as a separate reporting lens from routine tasks
+- do not expose private task details in aggregate views

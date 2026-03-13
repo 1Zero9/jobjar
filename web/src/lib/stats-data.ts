@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getProjectTaskWhere } from "@/lib/project-work";
 
 function startOfThisWeek() {
   const d = new Date();
@@ -44,6 +45,33 @@ export type RecentCompletion = {
   personName: string | null;
 };
 
+export type ProjectOverview = {
+  totalProjects: number;
+  activeProjects: number;
+  atRiskProjects: number;
+  completeProjects: number;
+  plannedBudgetCents: number;
+  actualSpendCents: number;
+};
+
+export type ProjectSnapshot = {
+  id: string;
+  title: string;
+  roomName: string;
+  locationName: string | null;
+  status: "planning" | "active" | "complete" | "at_risk";
+  targetAt: string | null;
+  budgetCents: number | null;
+  actualSpendCents: number;
+  overdueChildren: number;
+  totalChildren: number;
+  completedChildren: number;
+  totalMaterials: number;
+  purchasedMaterials: number;
+  totalMilestones: number;
+  completedMilestones: number;
+};
+
 export type StatsData = {
   completionsThisWeek: number;
   completionsThisMonth: number;
@@ -54,6 +82,8 @@ export type StatsData = {
   byRoom: StatsRoom[];
   topStreaks: StatsStreak[];
   recentCompletions: RecentCompletion[];
+  projectOverview: ProjectOverview;
+  projects: ProjectSnapshot[];
 };
 
 export async function getStatsData(householdId: string, filters: StatsFilters = {}): Promise<StatsData> {
@@ -90,6 +120,7 @@ export async function getStatsData(householdId: string, filters: StatsFilters = 
     recurringTasks,
     recentDone,
     periodOccurrences,
+    projectTasks,
   ] = await Promise.all([
     prisma.taskOccurrence.count({
       where: { status: "done", completedAt: { gte: weekStart }, ...completedByFilter, task: taskRoomWhere },
@@ -162,6 +193,44 @@ export async function getStatsData(householdId: string, filters: StatsFilters = 
       },
       select: { completedBy: true, completedAt: true },
     }),
+    prisma.task.findMany({
+      where: {
+        active: true,
+        ...taskRoomWhere,
+        ...getProjectTaskWhere(),
+      },
+      orderBy: [{ priority: "asc" }, { createdAt: "desc" }],
+      include: {
+        room: {
+          select: {
+            name: true,
+            location: { select: { name: true } },
+          },
+        },
+        projectChildren: {
+          where: { active: true },
+          orderBy: [{ priority: "asc" }, { createdAt: "desc" }],
+          select: {
+            captureStage: true,
+            schedule: { select: { nextDueAt: true } },
+            occurrences: {
+              orderBy: { dueAt: "desc" },
+              take: 5,
+              select: { status: true, dueAt: true },
+            },
+          },
+        },
+        projectCosts: {
+          select: { amountCents: true },
+        },
+        projectMaterials: {
+          select: { purchasedAt: true },
+        },
+        projectMilestones: {
+          select: { targetAt: true, completedAt: true },
+        },
+      },
+    }),
   ]);
 
   const byPerson: StatsPerson[] = (userId
@@ -216,6 +285,51 @@ export async function getStatsData(householdId: string, filters: StatsFilters = 
     personName: o.completer?.displayName ?? null,
   }));
 
+  const projects = projectTasks.map((task) => {
+    const spentCents = task.projectCosts.reduce((sum, cost) => sum + cost.amountCents, 0);
+    const totalChildren = task.projectChildren.length;
+    const completedChildren = task.projectChildren.filter((child) => getTaskState(child) === "done").length;
+    const overdueChildren = task.projectChildren.filter((child) => isOverdueProjectChild(child)).length;
+    const totalMaterials = task.projectMaterials.length;
+    const purchasedMaterials = task.projectMaterials.filter((material) => material.purchasedAt).length;
+    const totalMilestones = task.projectMilestones.length;
+    const completedMilestones = task.projectMilestones.filter((milestone) => milestone.completedAt).length;
+    const overdueMilestones = task.projectMilestones.filter((milestone) => isOverdueMilestone(milestone)).length;
+    const budgetExceeded = task.projectBudgetCents !== null && spentCents > task.projectBudgetCents;
+    const complete = totalChildren > 0 ? completedChildren === totalChildren : task.captureStage === "done";
+    const planning = totalChildren === 0 && totalMilestones === 0 && task.captureStage !== "done";
+    const targetMissed =
+      !complete && task.projectTargetAt !== null && new Date(task.projectTargetAt).getTime() < now.getTime();
+    const atRisk = !complete && (budgetExceeded || overdueChildren > 0 || overdueMilestones > 0 || targetMissed);
+
+    return {
+      id: task.id,
+      title: task.title,
+      roomName: task.room.name,
+      locationName: task.room.location?.name ?? null,
+      status: complete ? "complete" : planning ? "planning" : atRisk ? "at_risk" : "active",
+      targetAt: task.projectTargetAt?.toISOString() ?? null,
+      budgetCents: task.projectBudgetCents,
+      actualSpendCents: spentCents,
+      overdueChildren,
+      totalChildren,
+      completedChildren,
+      totalMaterials,
+      purchasedMaterials,
+      totalMilestones,
+      completedMilestones,
+    } satisfies ProjectSnapshot;
+  });
+
+  const projectOverview: ProjectOverview = {
+    totalProjects: projects.length,
+    activeProjects: projects.filter((project) => project.status === "active").length,
+    atRiskProjects: projects.filter((project) => project.status === "at_risk").length,
+    completeProjects: projects.filter((project) => project.status === "complete").length,
+    plannedBudgetCents: projects.reduce((sum, project) => sum + (project.budgetCents ?? 0), 0),
+    actualSpendCents: projects.reduce((sum, project) => sum + project.actualSpendCents, 0),
+  };
+
   return {
     completionsThisWeek: weekCompletions,
     completionsThisMonth: monthCompletions,
@@ -226,6 +340,8 @@ export async function getStatsData(householdId: string, filters: StatsFilters = 
     byRoom,
     topStreaks,
     recentCompletions,
+    projectOverview,
+    projects,
   };
 }
 
@@ -236,4 +352,34 @@ function computeStreak(occurrences: Array<{ status: string }>) {
     else break;
   }
   return streak;
+}
+
+function getTaskState(task: { captureStage: string; occurrences: Array<{ status: string }> }) {
+  if (task.captureStage === "done" || task.occurrences[0]?.status === "done") {
+    return "done";
+  }
+  return "open";
+}
+
+function getOpenOccurrence<T extends { status: string; dueAt: Date }>(occurrences: T[]) {
+  return occurrences.find((occurrence) => occurrence.status !== "done") ?? null;
+}
+
+function isOverdueProjectChild(child: {
+  captureStage: string;
+  schedule: { nextDueAt: Date | null } | null;
+  occurrences: Array<{ status: string; dueAt: Date }>;
+}) {
+  if (getTaskState(child) === "done") {
+    return false;
+  }
+  const dueAt = child.schedule?.nextDueAt ?? getOpenOccurrence(child.occurrences)?.dueAt ?? null;
+  return dueAt ? dueAt.getTime() < Date.now() : false;
+}
+
+function isOverdueMilestone(milestone: { targetAt: Date | null; completedAt: Date | null }) {
+  if (!milestone.targetAt || milestone.completedAt) {
+    return false;
+  }
+  return milestone.targetAt.getTime() < Date.now();
 }

@@ -3,6 +3,7 @@ import { FormActionButton } from "@/app/components/FormActionButton";
 import { requireSessionContext } from "@/lib/auth";
 import { APP_VERSION } from "@/lib/app-version";
 import { prisma } from "@/lib/prisma";
+import { getProjectTaskWhere } from "@/lib/project-work";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -10,13 +11,20 @@ export const dynamic = "force-dynamic";
 export default async function HomePage() {
   const { householdId, userId, role } = await requireSessionContext("/");
 
-  const [currentUser, taskCount] = await Promise.all([
+  const [currentUser, taskCount, projectCount] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       select: { displayName: true },
     }),
     prisma.task.count({
       where: { active: true, room: { householdId } },
+    }),
+    prisma.task.count({
+      where: {
+        active: true,
+        room: { householdId },
+        ...getProjectTaskWhere(),
+      },
     }),
   ]);
 
@@ -72,6 +80,16 @@ export default async function HomePage() {
               <strong>Tasks</strong>
             </Link>
 
+            <Link href="/projects" className="landing-action-card setup">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h4A2.5 2.5 0 0 1 12 7.5v1A2.5 2.5 0 0 1 9.5 11h-4A2.5 2.5 0 0 1 3 8.5z"/>
+                <path d="M12 15.5A2.5 2.5 0 0 1 14.5 13h4a2.5 2.5 0 0 1 2.5 2.5v1a2.5 2.5 0 0 1-2.5 2.5h-4a2.5 2.5 0 0 1-2.5-2.5z"/>
+                <path d="M8 11v2a2 2 0 0 0 2 2h2"/>
+              </svg>
+              <strong>Projects</strong>
+              <span>{projectCount} tracked</span>
+            </Link>
+
             <form action={luckyDipAction} className="landing-action-form">
               <input type="hidden" name="returnTo" value="/tasks" />
               <FormActionButton className="landing-action-card lucky landing-action-button" pendingLabel="Picking…">
@@ -96,6 +114,15 @@ export default async function HomePage() {
                 <line x1="2" y1="20" x2="22" y2="20"/>
               </svg>
               <strong>Stats</strong>
+            </Link>
+
+            <Link href="/projects/timeline" className="landing-action-card timeline">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="9"/>
+                <path d="M12 7v5l3 3"/>
+              </svg>
+              <strong>Timeline</strong>
+              <span>Dates and checkpoints</span>
             </Link>
 
             {role === "admin" ? (

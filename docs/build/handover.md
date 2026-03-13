@@ -1,81 +1,84 @@
 # JobJar Handover
 
 ## Current product shape
-JobJar is a household job tracker built with Next.js App Router, Prisma, and PostgreSQL. The current app supports:
-- household bootstrap from `/login`
-- simple passcode-based sign-in
-- room and task management from `/admin`
-- a daily dashboard at `/`
-- a TV dashboard at `/tv`
-- a DB health check at `/api/health/db`
+JobJar is a household work-tracking app built with Next.js App Router, Prisma, and PostgreSQL.
+
+Current routes:
+- `/login`: bootstrap and sign-in
+- `/`: home
+- `/log`: quick capture
+- `/tasks`: general task board
+- `/projects`: project board
+- `/projects/timeline`: project timeline
+- `/stats`: reporting
+- `/admin`: admin workspace
+- `/settings/*`: setup sections
+- `/api/health/db`: DB health check
+
+Current package version:
+- `web/package.json`: `0.2.3`
 
 ## Auth model
-- Auth is custom, not NextAuth/Auth.js.
-- Users sign in with a selected profile plus a passcode.
-- Password hashes are stored in the `AuthCredential` table.
-- Session state is handled by the app's own server-side session helpers.
-- Sessions are signed with HMAC-SHA256 using `SESSION_SIGNING_SECRET`. **This env var must be set in production** — the server will refuse to start without it.
-- `HOUSEHOLD_PASSCODE` is a fallback for users without a stored hash. Set it in production; warn is emitted if absent.
-- Login is rate-limited to 10 attempts per IP per 15 minutes (in-memory, per server instance).
+- custom auth, not NextAuth/Auth.js
+- per-user passcodes stored in `AuthCredential`
+- session cookies signed with HMAC-SHA256
+- `SESSION_SIGNING_SECRET` must be set in production
+- `HOUSEHOLD_PASSCODE` only falls back in development; production users without stored hashes need the env var set
+- login rate limiting is in-memory per server instance
 
 ## Data model
-The schema source of truth is `web/prisma/schema.prisma`.
+Schema source of truth:
+- `web/prisma/schema.prisma`
 
-Main models:
-- `User`
-- `AuthCredential`
-- `Household`
-- `HouseholdMember`
-- `Room`
-- `Task`
-- `TaskSchedule`
-- `TaskOccurrence`
-- `TaskLog`
-- `TaskAssignment`
-- `ShareLink`
+Project support is built on `Task`, not a separate `Project` model.
+
+Project capabilities currently come from:
+- `Task.jobKind = project`
+- `Task.projectParentId`
+- `Task.projectTargetAt`
+- `Task.projectBudgetCents`
+- `ProjectCost`
+- `ProjectMaterial`
+- `ProjectMilestone`
 
 ## Deployment notes
-- Vercel root directory is `web`.
-- Prisma requires `DATABASE_URL`. `DIRECT_URL` is recommended and falls back to `DATABASE_URL` when unset in the repo scripts.
-- Fresh production databases are initialized by committed Prisma migrations during deploy.
-- `npm run db:seed` is optional demo/local data, not required for production bootstrap.
-- Ongoing schema changes should use Prisma migrations committed under `web/prisma/migrations`.
-- `web/vercel.json` points Vercel at `npm run build:vercel`, so `prisma migrate deploy` runs before `next build`.
+- Vercel root directory is `web`
+- `web/vercel.json` uses `npm run build:vercel`
+- `build:vercel` runs `prisma migrate deploy` before `next build`
+- `DIRECT_URL` is recommended and falls back to `DATABASE_URL`
+- committed Prisma migrations live under `web/prisma/migrations`
 
-### Required environment variables
+## Required environment variables
 | Variable | Required | Notes |
 |---|---|---|
 | `DATABASE_URL` | Yes | Pooled Postgres connection string |
-| `DIRECT_URL` | Recommended | Non-pooled connection for migrations; falls back to `DATABASE_URL` |
-| `SESSION_SIGNING_SECRET` | **Yes in production** | Signs session cookies; server won't start without it. Generate: `openssl rand -hex 32` |
-| `HOUSEHOLD_PASSCODE` | Recommended | Fallback passcode for users without a stored hash |
+| `DIRECT_URL` | Recommended | Non-pooled migration connection |
+| `SESSION_SIGNING_SECRET` | Yes in production | Session signing secret |
+| `HOUSEHOLD_PASSCODE` | Recommended | Production fallback passcode for users without stored hashes |
+
+## Verification routine
+```bash
+cd web
+npm run db:generate
+npm run lint
+npm run build
+```
+
+If the schema changed:
+
+```bash
+cd web
+npm run db:deploy
+```
 
 ## Operational checks
-- `/api/health/db` verifies Prisma can reach the database.
-- `/login` now reports database failures more accurately and logs the underlying server error.
-- A brand-new production environment should land on `Create Admin`, not on pre-seeded demo data.
+- `/api/health/db` returns `status: "ok"` and `db: "connected"`
+- `/login` should show `Create Admin` on a fresh production DB
+- `/projects` should load and show project filters, milestones, materials, and project health states
+- `/projects/timeline` should load overdue/upcoming/recent sections
+- `/stats` should show project budget/spend, shopping progress, and project risk summaries when projects exist
 
-## Task validation model
-Tasks have two validation fields (stored as proper columns on `Task`, not encoded in `description`):
-- `validationMode` — `"basic"` (default) or `"strict"`. Strict requires a note and a minimum time worked before completion.
-- `minimumMinutes` — minimum time in minutes that must be logged before a strict-mode task can be completed.
-
-## Audit trail
-`TaskLog` records all task-level events with an `actorUserId` field indicating who performed the action. Logged actions:
-- `started`, `completed`, `reopened` — task workflow events
-- `task_created`, `task_updated`, `task_deleted` — admin/management events
-- `assignee_changed` — when a task is assigned/reassigned
-
-## Security headers
-The following HTTP headers are set on all responses via `next.config.ts`:
-- `X-Frame-Options: SAMEORIGIN`
-- `X-Content-Type-Options: nosniff`
-- `Referrer-Policy: strict-origin-when-cross-origin`
-- `Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()`
-- `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload`
-
-## Protected routes
-All routes except `/login` and `/api/health/db` require an authenticated session, including `/tv` and `/tv-lite`.
-
-## Known cleanup outside this handover
-- `.DS_Store` is untracked in the repo root and should not be committed.
+## Known next steps
+- timezone-aware due-date handling
+- timeline drag/drop or dependency sequencing
+- materials budget rollups into project spend

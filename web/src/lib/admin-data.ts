@@ -30,7 +30,7 @@ export type AdminTask = {
   dueAt: string | null;
   validationMode: "basic" | "strict";
   minimumMinutes: number;
-  recurrenceType: "daily" | "weekly" | "monthly" | "custom";
+  recurrenceType: "daily" | "weekly" | "monthly" | "custom" | "none";
   recurrenceInterval: number;
   recurrenceTime: string;
   assigneeUserId: string;
@@ -122,7 +122,7 @@ export async function getAdminData(options: { householdId: string }): Promise<Ad
         dueAt: pendingOccurrence?.dueAt?.toISOString() ?? schedule?.nextDueAt?.toISOString() ?? null,
         validationMode: task.validationMode as "basic" | "strict",
         minimumMinutes: task.minimumMinutes,
-        recurrenceType: schedule?.recurrenceType ?? "weekly",
+        recurrenceType: schedule?.recurrenceType ?? "none",
         recurrenceInterval: schedule?.intervalCount ?? 1,
         recurrenceTime: schedule?.timeOfDay ?? "09:00",
         assigneeUserId: assignee?.userId ?? "",
@@ -132,4 +132,3 @@ export async function getAdminData(options: { householdId: string }): Promise<Ad
 
   return { rooms, people, tasks };
 }
-

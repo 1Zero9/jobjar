@@ -18,11 +18,20 @@ npm run db:deploy
 npm run db:seed
 ```
 
+## Current product routes
+- `/log`: fast capture
+- `/tasks`: general task board
+- `/projects`: project planning, child tasks, costs, milestones, and materials
+- `/projects/timeline`: project dates, overdue items, and recent completions
+- `/stats`: household reporting, including project health and shopping progress
+- `/admin`: people, room, and task shaping
+- `/settings/*`: setup sections
+
 ## Deployment notes
-- `npm run build` regenerates the Prisma client before building.
-- Vercel uses `npm run build:vercel` via `vercel.json`.
-- `build:vercel` runs `prisma migrate deploy` before the Next.js build.
-- `DIRECT_URL` is optional in scripts and falls back to `DATABASE_URL`.
+- `npm run build` regenerates the Prisma client before building
+- Vercel uses `npm run build:vercel` via `vercel.json`
+- `build:vercel` runs `prisma migrate deploy` before the Next.js build
+- `DIRECT_URL` is optional in scripts and falls back to `DATABASE_URL`
 
 ## First production login
 After a fresh deploy with an empty database:

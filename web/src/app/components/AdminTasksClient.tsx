@@ -2,7 +2,7 @@
 
 import { deleteTaskAction, updateTaskAction } from "@/app/actions";
 import type { AdminTask, AdminRoom, AdminPerson } from "@/lib/admin-data";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 type Props = {
   tasks: AdminTask[];
@@ -16,19 +16,19 @@ export function AdminTasksClient({ tasks, rooms, people }: Props) {
   const projectOptions = tasks.filter((task) => task.jobKind === "project" || task.childCount > 0);
 
   const roomNameById = new Map(rooms.map((r) => [r.id, r.name]));
+  const personNameById = new Map(people.map((person) => [person.id, person.displayName]));
 
-  const filteredTasks = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return tasks;
-    return tasks.filter(
-      (task) =>
-        task.title.toLowerCase().includes(q) ||
-        task.detailNotes.toLowerCase().includes(q) ||
-        task.locationDetails.toLowerCase().includes(q) ||
-        (roomNameById.get(task.roomId) ?? "").toLowerCase().includes(q) ||
-        people.find((p) => p.id === task.assigneeUserId)?.displayName.toLowerCase().includes(q),
-    );
-  }, [tasks, query, rooms, people]);
+  const q = query.trim().toLowerCase();
+  const filteredTasks = !q
+    ? tasks
+    : tasks.filter(
+        (task) =>
+          task.title.toLowerCase().includes(q) ||
+          task.detailNotes.toLowerCase().includes(q) ||
+          task.locationDetails.toLowerCase().includes(q) ||
+          (roomNameById.get(task.roomId) ?? "").toLowerCase().includes(q) ||
+          (personNameById.get(task.assigneeUserId) ?? "").toLowerCase().includes(q),
+      );
 
   return (
     <div className="space-y-3">
@@ -126,6 +126,7 @@ export function AdminTasksClient({ tasks, rooms, people }: Props) {
                     <label className="admin-field-label">
                       <span>Repeats</span>
                       <select name="recurrenceType" defaultValue={task.recurrenceType} className="admin-input px-2 py-1.5 text-xs">
+                        <option value="none">Does not repeat</option>
                         <option value="daily">Daily</option>
                         <option value="weekly">Weekly</option>
                         <option value="monthly">Monthly</option>

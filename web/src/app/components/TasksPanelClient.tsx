@@ -1,6 +1,21 @@
 "use client";
 
-import { deleteTaskAction, luckyDipAction, updateRecordedTaskAction } from "@/app/actions";
+import {
+  createProjectChildTaskAction,
+  createProjectCostAction,
+  createProjectMaterialAction,
+  createProjectMilestoneAction,
+  deleteProjectCostAction,
+  deleteProjectMaterialAction,
+  deleteProjectMilestoneAction,
+  deleteTaskAction,
+  luckyDipAction,
+  promoteTaskToProjectAction,
+  toggleProjectMaterialPurchasedAction,
+  toggleProjectMilestoneAction,
+  updateProjectPlanAction,
+  updateRecordedTaskAction,
+} from "@/app/actions";
 import { FormActionButton } from "@/app/components/FormActionButton";
 import { useEffect, useMemo, useState } from "react";
 
@@ -29,6 +44,7 @@ type TaskItem = {
   locationId: string | null;
   locationName: string | null;
   loggerName: string | null;
+  projectParentId: string | null;
   projectParentTitle: string | null;
   assignmentUserId: string | null;
   assignmentUserName: string | null;
@@ -38,6 +54,44 @@ type TaskItem = {
   jobKind: string;
   captureStage: string;
   createdAt: string;
+  estimatedMinutes: number;
+  projectTargetAt: string | null;
+  projectBudgetCents: number | null;
+  projectChildren: Array<{
+    id: string;
+    title: string;
+    captureStage: string;
+    estimatedMinutes: number;
+    assignmentUserName: string | null;
+    nextDueAt: string | null;
+    occurrences: Array<{
+      status: string;
+      dueAt: string;
+      completedAt: string | null;
+    }>;
+  }>;
+  projectCosts: Array<{
+    id: string;
+    title: string;
+    amountCents: number;
+    notedAt: string;
+  }>;
+  projectMaterials: Array<{
+    id: string;
+    title: string;
+    quantityLabel: string | null;
+    source: string | null;
+    estimatedCostCents: number | null;
+    actualCostCents: number | null;
+    purchasedAt: string | null;
+  }>;
+  projectMilestones: Array<{
+    id: string;
+    title: string;
+    targetAt: string | null;
+    completedAt: string | null;
+    sortOrder: number;
+  }>;
   schedule: {
     recurrenceType: string;
     intervalCount: number;
@@ -62,7 +116,17 @@ type Props = {
   initialLocationId: string;
   initialState: "all" | "open" | "done";
   initialLuckyId: string | null;
+  initialProjectState?: ProjectFilterState;
+  canManageProjects: boolean;
+  canDeleteTasks: boolean;
+  basePath?: string;
+  viewMode?: "tasks" | "projects";
+  panelTitle?: string;
+  panelKicker?: string;
+  emptyMessage?: string;
 };
+
+type ProjectFilterState = "all" | "planning" | "active" | "complete" | "over_budget" | "at_risk";
 
 export function TasksPanelClient({
   roomOptions,
@@ -74,13 +138,23 @@ export function TasksPanelClient({
   initialLocationId,
   initialState,
   initialLuckyId,
+  initialProjectState = "all",
+  canManageProjects,
+  canDeleteTasks,
+  basePath = "/tasks",
+  viewMode = "tasks",
+  panelTitle = "Logged tasks",
+  panelKicker = "Tasks",
+  emptyMessage = "No tasks recorded yet.",
 }: Props) {
   const [selectedRoomId, setSelectedRoomId] = useState(initialRoomId);
   const [selectedAssigneeId, setSelectedAssigneeId] = useState(initialAssigneeId);
   const [selectedLocationId, setSelectedLocationId] = useState(initialLocationId);
   const [selectedState, setSelectedState] = useState<"all" | "open" | "done">(initialState);
+  const [selectedProjectState, setSelectedProjectState] = useState<ProjectFilterState>(initialProjectState);
 
   const groupedRoomOptions = groupRoomsByLocation(roomOptions);
+  const projectMode = viewMode === "projects";
 
   const visibleTasks = useMemo(() => {
     return tasks.filter((task) => {
@@ -89,9 +163,10 @@ export function TasksPanelClient({
       const matchesLocation = selectedLocationId ? task.locationId === selectedLocationId : true;
       const taskState = getTaskState(task);
       const matchesState = selectedState === "all" ? true : taskState === selectedState;
-      return matchesRoom && matchesAssignee && matchesLocation && matchesState;
+      const matchesProjectState = projectMode ? projectMatchesFilter(task, selectedProjectState) : true;
+      return matchesRoom && matchesAssignee && matchesLocation && matchesState && matchesProjectState;
     });
-  }, [selectedAssigneeId, selectedRoomId, selectedLocationId, selectedState, tasks]);
+  }, [projectMode, selectedAssigneeId, selectedProjectState, selectedRoomId, selectedLocationId, selectedState, tasks]);
 
   useEffect(() => {
     const search = new URLSearchParams(window.location.search);
@@ -115,17 +190,22 @@ export function TasksPanelClient({
     } else {
       search.delete("state");
     }
+    if (projectMode && selectedProjectState !== "all") {
+      search.set("projectState", selectedProjectState);
+    } else {
+      search.delete("projectState");
+    }
     const query = search.toString();
-    const nextUrl = query ? `/tasks?${query}` : "/tasks";
+    const nextUrl = query ? `${basePath}?${query}` : basePath;
     window.history.replaceState(null, "", nextUrl);
-  }, [selectedAssigneeId, selectedRoomId, selectedLocationId, selectedState]);
+  }, [basePath, projectMode, selectedAssigneeId, selectedProjectState, selectedRoomId, selectedLocationId, selectedState]);
 
   return (
     <section id="recorded" className="recorded-panel">
       <div className="recorded-header">
         <div>
-          <p className="capture-kicker">Tasks</p>
-          <h2 className="recorded-title">Logged tasks</h2>
+          <p className="capture-kicker">{panelKicker}</p>
+          <h2 className="recorded-title">{panelTitle}</h2>
         </div>
         <span className="recorded-count">{visibleTasks.length}</span>
       </div>
@@ -193,10 +273,27 @@ export function TasksPanelClient({
               ))}
             </select>
           </label>
+          {projectMode ? (
+            <label className="recorded-filter-field">
+              <span>Project state</span>
+              <select
+                value={selectedProjectState}
+                onChange={(event) => setSelectedProjectState(event.target.value as ProjectFilterState)}
+                className={`recorded-filter-select${selectedProjectState !== "all" ? " filter-active" : ""}`}
+              >
+                <option value="all">All projects</option>
+                <option value="planning">Planning</option>
+                <option value="active">Active</option>
+                <option value="at_risk">At risk</option>
+                <option value="complete">Complete</option>
+                <option value="over_budget">Over budget</option>
+              </select>
+            </label>
+          ) : null}
         </div>
 
         <div className="recorded-toolbar-actions">
-          {selectedRoomId || selectedAssigneeId || selectedLocationId || selectedState !== "all" ? (
+          {selectedRoomId || selectedAssigneeId || selectedLocationId || selectedState !== "all" || (projectMode && selectedProjectState !== "all") ? (
             <button
               type="button"
               className="action-btn subtle quiet"
@@ -205,6 +302,7 @@ export function TasksPanelClient({
                 setSelectedAssigneeId("");
                 setSelectedLocationId("");
                 setSelectedState("all");
+                setSelectedProjectState("all");
               }}
             >
               Clear filters
@@ -213,251 +311,632 @@ export function TasksPanelClient({
             <span className="recorded-toolbar-hint">Filters update instantly.</span>
           )}
 
-          <form action={luckyDipAction}>
-            <input type="hidden" name="returnTo" value="/tasks" />
-            <FormActionButton className="action-btn subtle quiet" pendingLabel="Choosing task">
-              Lucky dip
-            </FormActionButton>
-          </form>
+          {!projectMode ? (
+            <form action={luckyDipAction}>
+              <input type="hidden" name="returnTo" value="/tasks" />
+              <FormActionButton className="action-btn subtle quiet" pendingLabel="Choosing task">
+                Lucky dip
+              </FormActionButton>
+            </form>
+          ) : null}
         </div>
       </div>
 
       <div className="recorded-list">
         {visibleTasks.length === 0 ? (
           <p className="recorded-empty">
-            {selectedRoomId || selectedAssigneeId || selectedState !== "all"
+            {selectedRoomId || selectedAssigneeId || selectedState !== "all" || (projectMode && selectedProjectState !== "all")
               ? "No tasks match these filters."
-              : "No tasks recorded yet."}
+              : emptyMessage}
           </p>
         ) : (
-          visibleTasks.map((task) => (
-            <details
-              key={task.id}
-              id={`task-${task.id}`}
-              className={`recorded-row ${rowStateClass(task)}`}
-              open={task.id === initialLuckyId}
-            >
-              <summary className="recorded-row-summary">
-                <div className="recorded-row-top">
-                  <p className="recorded-row-title">{task.title}</p>
-                  <span className="recorded-row-chevron">▾</span>
-                </div>
-                <div className="recorded-row-sub">
-                  {task.locationName ? (
-                    <span className="recorded-row-location">{task.locationName}</span>
-                  ) : null}
-                  <span className="recorded-row-room">{displayRoomName(task.roomName)}</span>
-                  {task.assignmentUserName ? (
-                    <span className="recorded-row-assignee">
-                      <span className="assignee-avatar" style={nameToAvatarStyle(task.assignmentUserName)}>
-                        {nameInitials(task.assignmentUserName)}
-                      </span>
-                      {task.assignmentUserName}
-                    </span>
-                  ) : (
-                    <span className="assignee-unset">Unassigned</span>
-                  )}
-                  <span className="task-chip task-chip-kind">{formatJobKind(task.jobKind)}</span>
-                  {getTaskState(task) === "done" ? <span className="task-chip task-chip-done">Done</span> : null}
-                  {recurrenceStateClassName(task) === "task-chip-lapsed" ? <span className="task-chip task-chip-lapsed">Lapsed</span> : null}
-                  {recurrenceStateClassName(task) === "task-chip-due" ? <span className="task-chip task-chip-due">Due today</span> : null}
-                  {task.isPrivate ? <span className="task-chip task-chip-private">Private</span> : null}
-                  {task.projectParentTitle ? <span className="task-chip">↳ {task.projectParentTitle}</span> : null}
-                  {task.schedule && computeStreak(task.occurrences) >= 2 ? (
-                    <span className="task-chip task-chip-streak">{computeStreak(task.occurrences)} in a row</span>
-                  ) : null}
-                </div>
-              </summary>
+          visibleTasks.map((task) => {
+            const latestCompleted = getLatestCompletedOccurrence(task.occurrences);
+            const isProject = isProjectTask(task);
+            const projectSummary = summarizeProject(task);
 
-              <div className="recorded-row-detail">
-                <form action={updateRecordedTaskAction} className="recorded-edit-form">
-                  <input type="hidden" name="taskId" value={task.id} />
-                  <input type="hidden" name="returnTo" value="/tasks" />
-
-                  <label className="recorded-field">
-                    <span>Task</span>
-                    <input name="title" type="text" defaultValue={task.title} className="recorded-edit-input" />
-                  </label>
-
-                  <label className="recorded-field">
-                    <span>Room</span>
-                    <select name="roomId" defaultValue={task.roomName.toLowerCase() === "unsorted" ? "" : task.roomId} className="recorded-edit-input">
-                      <option value="">No room</option>
-                      {groupedRoomOptions.map(([group, groupedRooms]) => (
-                        <optgroup key={group} label={group}>
-                          {groupedRooms.map((room) => (
-                            <option key={room.id} value={room.id}>
-                              {room.name}
-                            </option>
-                          ))}
-                        </optgroup>
-                      ))}
-                    </select>
-                  </label>
-
-                  <label className="recorded-field">
-                    <span>Person</span>
-                    <select name="assigneeUserId" defaultValue={task.assignmentUserId ?? ""} className="recorded-edit-input">
-                      <option value="">No person</option>
-                      {peopleOptions.map((person) => (
-                        <option key={person.id} value={person.id}>
-                          {person.displayName}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <label className="recorded-field">
-                    <span>Notes</span>
-                    <textarea
-                      name="detailNotes"
-                      rows={3}
-                      defaultValue={task.detailNotes ?? ""}
-                      className="recorded-edit-input recorded-edit-textarea"
-                    />
-                  </label>
-
-                  <label className="recorded-field recorded-field-toggle">
-                    <span>Private</span>
-                    <span className="recorded-toggle-wrap">
-                      <input type="checkbox" name="isPrivate" value="true" defaultChecked={task.isPrivate} className="recorded-toggle-check" />
-                      <input type="hidden" name="isPrivate" value="false" />
-                      <span className="recorded-toggle-hint">Only visible to you and the assigned person</span>
-                    </span>
-                  </label>
-
-                  <label className="recorded-field">
-                    <span>Status</span>
-                    <select
-                      name="recordStatus"
-                      defaultValue={getTaskState(task) === "done" ? "done" : "open"}
-                      className="recorded-edit-input"
-                    >
-                      <option value="open">Open</option>
-                      <option value="done">Completed</option>
-                    </select>
-                  </label>
-
-                  <details className="recorded-more-details">
-                    <summary className="recorded-more-summary">More details</summary>
-                    <div className="capture-meta-grid">
-                      <label className="recorded-field">
-                        <span>Priority in room</span>
-                        <input
-                          name="priority"
-                          type="number"
-                          min={1}
-                          defaultValue={getTaskState(task) === "done" ? "" : task.priority}
-                          className="recorded-edit-input"
-                        />
-                      </label>
-
-                      <label className="recorded-field">
-                        <span>Completed by</span>
-                        <select
-                          name="completedByUserId"
-                          defaultValue={getLatestCompletedOccurrence(task.occurrences)?.completedBy ?? ""}
-                          className="recorded-edit-input"
-                        >
-                          <option value="">Not set</option>
-                          {peopleOptions.map((person) => (
-                            <option key={person.id} value={person.id}>
-                              {person.displayName}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                    </div>
-
-                    <label className="recorded-field">
-                      <span>Resolved date</span>
-                      <input
-                        name="resolvedAt"
-                        type="datetime-local"
-                        defaultValue={toDateTimeInputValue(getLatestCompletedOccurrence(task.occurrences)?.completedAt ?? task.createdAt)}
-                        className="recorded-edit-input"
-                      />
-                    </label>
-
-                    <div className="capture-meta-grid">
-                      <label className="recorded-field">
-                        <span>Repeats</span>
-                        <select
-                          name="recurrenceType"
-                          defaultValue={task.schedule?.recurrenceType ?? "none"}
-                          className="recorded-edit-input"
-                        >
-                          <option value="none">Does not repeat</option>
-                          <option value="daily">Daily</option>
-                          <option value="weekly">Weekly</option>
-                          <option value="monthly">Monthly</option>
-                        </select>
-                      </label>
-
-                      <label className="recorded-field">
-                        <span>Every</span>
-                        <input
-                          name="recurrenceInterval"
-                          type="number"
-                          min={1}
-                          defaultValue={task.schedule?.intervalCount ?? 1}
-                          className="recorded-edit-input"
-                        />
-                      </label>
-                    </div>
-
-                    <label className="recorded-field">
-                      <span>Next due</span>
-                      <input
-                        name="nextDueAt"
-                        type="datetime-local"
-                        defaultValue={toDateTimeInputValue(task.schedule?.nextDueAt ?? addDays(new Date(), 7))}
-                        className="recorded-edit-input"
-                      />
-                    </label>
-                  </details>
-
-                  {task.loggerName ? <p><span>Logged by</span><strong>{task.loggerName}</strong></p> : null}
-                  <p><span>Recorded</span><strong>{formatRecordedAt(task.createdAt)}</strong></p>
-                  {task.schedule ? (
-                    <p><span>Recurring</span><strong>{formatRecurrenceChip(task.schedule)}</strong></p>
-                  ) : null}
-                  {task.schedule?.nextDueAt ? (
-                    <p><span>Next due</span><strong>{formatRecordedAt(task.schedule.nextDueAt)}</strong></p>
-                  ) : null}
-                  {task.schedule ? (
-                    <p><span>Status</span><strong>{getRecurrenceStateLabel(task)}</strong></p>
-                  ) : null}
-                  {getLatestCompletedOccurrence(task.occurrences)?.completedAt ? (
-                    <p><span>Resolved</span><strong>{formatRecordedAt(getLatestCompletedOccurrence(task.occurrences)!.completedAt!)}</strong></p>
-                  ) : null}
-                  {getLatestCompletedOccurrence(task.occurrences)?.completedAt ? (
-                    <p><span>Last done</span><strong>{formatRecordedAt(getLatestCompletedOccurrence(task.occurrences)!.completedAt!)}</strong></p>
-                  ) : null}
-                  {getLatestCompletedOccurrence(task.occurrences)?.completedAt && getLatestCompletedOccurrence(task.occurrences)?.dueAt ? (
-                    <p>
-                      <span>Completed</span>
-                      <strong>{wasOccurrenceOnTime(getLatestCompletedOccurrence(task.occurrences)!) ? "On time" : "Late"}</strong>
-                    </p>
-                  ) : null}
-                  {getLatestCompletedOccurrence(task.occurrences)?.completerName ? (
-                    <p><span>Completed by</span><strong>{getLatestCompletedOccurrence(task.occurrences)!.completerName}</strong></p>
-                  ) : null}
-                  <div className="recorded-row-actions between">
-                    <FormActionButton className="action-btn bright quiet" pendingLabel="Saving">
-                      Save changes
-                    </FormActionButton>
+            return (
+              <details
+                key={task.id}
+                id={`task-${task.id}`}
+                className={`recorded-row ${rowStateClass(task)}`}
+                open={task.id === initialLuckyId}
+              >
+                <summary className="recorded-row-summary">
+                  <div className="recorded-row-top">
+                    <p className="recorded-row-title">{task.title}</p>
+                    <span className="recorded-row-chevron">▾</span>
                   </div>
-                </form>
-                <form action={deleteTaskAction} className="recorded-row-actions">
-                  <input type="hidden" name="taskId" value={task.id} />
-                  <FormActionButton className="action-btn warn quiet" pendingLabel="Deleting">
-                    Delete task
-                  </FormActionButton>
-                </form>
-              </div>
-            </details>
-          ))
+                  <div className="recorded-row-sub">
+                    {task.locationName ? (
+                      <span className="recorded-row-location">{task.locationName}</span>
+                    ) : null}
+                    <span className="recorded-row-room">{displayRoomName(task.roomName)}</span>
+                    {task.assignmentUserName ? (
+                      <span className="recorded-row-assignee">
+                        <span className="assignee-avatar" style={nameToAvatarStyle(task.assignmentUserName)}>
+                          {nameInitials(task.assignmentUserName)}
+                        </span>
+                        {task.assignmentUserName}
+                      </span>
+                    ) : (
+                      <span className="assignee-unset">Unassigned</span>
+                    )}
+                    <span className="task-chip task-chip-kind">{formatJobKind(task.jobKind)}</span>
+                    {getTaskState(task) === "done" ? <span className="task-chip task-chip-done">Done</span> : null}
+                    {recurrenceStateClassName(task) === "task-chip-lapsed" ? <span className="task-chip task-chip-lapsed">Lapsed</span> : null}
+                    {recurrenceStateClassName(task) === "task-chip-due" ? <span className="task-chip task-chip-due">Due today</span> : null}
+                    {task.isPrivate ? <span className="task-chip task-chip-private">Private</span> : null}
+                    {task.projectParentTitle ? <span className="task-chip">↳ {task.projectParentTitle}</span> : null}
+                    {isProject ? <span className="task-chip task-chip-streak">{projectSummary.progressLabel}</span> : null}
+                    {isProject && projectSummary.atRisk ? <span className="task-chip task-chip-lapsed">At risk</span> : null}
+                    {isProject && !projectSummary.atRisk && projectSummary.overBudget ? <span className="task-chip task-chip-due">Over budget</span> : null}
+                    {isProject && projectSummary.milestoneLabel ? <span className="task-chip">{projectSummary.milestoneLabel}</span> : null}
+                    {task.schedule && computeStreak(task.occurrences) >= 2 ? (
+                      <span className="task-chip task-chip-streak">{computeStreak(task.occurrences)} in a row</span>
+                    ) : null}
+                  </div>
+                </summary>
+
+                <div className="recorded-row-detail">
+                  <form action={updateRecordedTaskAction} className="recorded-edit-form">
+                    <input type="hidden" name="taskId" value={task.id} />
+                    <input type="hidden" name="returnTo" value={basePath} />
+
+                    <label className="recorded-field">
+                      <span>Task</span>
+                      <input name="title" type="text" defaultValue={task.title} className="recorded-edit-input" />
+                    </label>
+
+                    <label className="recorded-field">
+                      <span>Room</span>
+                      <select name="roomId" defaultValue={task.roomName.toLowerCase() === "unsorted" ? "" : task.roomId} className="recorded-edit-input">
+                        <option value="">No room</option>
+                        {groupedRoomOptions.map(([group, groupedRooms]) => (
+                          <optgroup key={group} label={group}>
+                            {groupedRooms.map((room) => (
+                              <option key={room.id} value={room.id}>
+                                {room.name}
+                              </option>
+                            ))}
+                          </optgroup>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="recorded-field">
+                      <span>Person</span>
+                      <select name="assigneeUserId" defaultValue={task.assignmentUserId ?? ""} className="recorded-edit-input">
+                        <option value="">No person</option>
+                        {peopleOptions.map((person) => (
+                          <option key={person.id} value={person.id}>
+                            {person.displayName}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="recorded-field">
+                      <span>Notes</span>
+                      <textarea
+                        name="detailNotes"
+                        rows={3}
+                        defaultValue={task.detailNotes ?? ""}
+                        className="recorded-edit-input recorded-edit-textarea"
+                      />
+                    </label>
+
+                    <label className="recorded-field recorded-field-toggle">
+                      <span>Private</span>
+                      <span className="recorded-toggle-wrap">
+                        <input type="checkbox" name="isPrivate" value="true" defaultChecked={task.isPrivate} className="recorded-toggle-check" />
+                        <input type="hidden" name="isPrivate" value="false" />
+                        <span className="recorded-toggle-hint">Only visible to you and the assigned person</span>
+                      </span>
+                    </label>
+
+                    <label className="recorded-field">
+                      <span>Status</span>
+                      <select
+                        name="recordStatus"
+                        defaultValue={getTaskState(task) === "done" ? "done" : "open"}
+                        className="recorded-edit-input"
+                      >
+                        <option value="open">Open</option>
+                        <option value="done">Completed</option>
+                      </select>
+                    </label>
+
+                    <details className="recorded-more-details">
+                      <summary className="recorded-more-summary">More details</summary>
+                      <div className="capture-meta-grid">
+                        <label className="recorded-field">
+                          <span>Priority in room</span>
+                          <input
+                            name="priority"
+                            type="number"
+                            min={1}
+                            defaultValue={getTaskState(task) === "done" ? "" : task.priority}
+                            className="recorded-edit-input"
+                          />
+                        </label>
+
+                        <label className="recorded-field">
+                          <span>Completed by</span>
+                          <select
+                            name="completedByUserId"
+                            defaultValue={latestCompleted?.completedBy ?? ""}
+                            className="recorded-edit-input"
+                          >
+                            <option value="">Not set</option>
+                            {peopleOptions.map((person) => (
+                              <option key={person.id} value={person.id}>
+                                {person.displayName}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      </div>
+
+                      <label className="recorded-field">
+                        <span>Resolved date</span>
+                        <input
+                          name="resolvedAt"
+                          type="datetime-local"
+                          defaultValue={toDateTimeInputValue(latestCompleted?.completedAt ?? task.createdAt)}
+                          className="recorded-edit-input"
+                        />
+                      </label>
+
+                      <div className="capture-meta-grid">
+                        <label className="recorded-field">
+                          <span>Repeats</span>
+                          <select
+                            name="recurrenceType"
+                            defaultValue={task.schedule?.recurrenceType ?? "none"}
+                            className="recorded-edit-input"
+                          >
+                            <option value="none">Does not repeat</option>
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                          </select>
+                        </label>
+
+                        <label className="recorded-field">
+                          <span>Every</span>
+                          <input
+                            name="recurrenceInterval"
+                            type="number"
+                            min={1}
+                            defaultValue={task.schedule?.intervalCount ?? 1}
+                            className="recorded-edit-input"
+                          />
+                        </label>
+                      </div>
+
+                      <label className="recorded-field">
+                        <span>Next due</span>
+                        <input
+                          name="nextDueAt"
+                          type="datetime-local"
+                          defaultValue={toDateTimeInputValue(task.schedule?.nextDueAt ?? addDays(new Date(), 7))}
+                          className="recorded-edit-input"
+                        />
+                      </label>
+                    </details>
+
+                    {task.loggerName ? <p><span>Logged by</span><strong>{task.loggerName}</strong></p> : null}
+                    <p><span>Recorded</span><strong>{formatRecordedAt(task.createdAt)}</strong></p>
+                    <p><span>Estimate</span><strong>{formatMinutes(task.estimatedMinutes)}</strong></p>
+                    {task.schedule ? (
+                      <p><span>Recurring</span><strong>{formatRecurrenceChip(task.schedule)}</strong></p>
+                    ) : null}
+                    {task.schedule?.nextDueAt ? (
+                      <p><span>Next due</span><strong>{formatRecordedAt(task.schedule.nextDueAt)}</strong></p>
+                    ) : null}
+                    {task.schedule ? (
+                      <p><span>Status</span><strong>{getRecurrenceStateLabel(task)}</strong></p>
+                    ) : null}
+                    {latestCompleted?.completedAt ? (
+                      <p><span>Resolved</span><strong>{formatRecordedAt(latestCompleted.completedAt)}</strong></p>
+                    ) : null}
+                    {latestCompleted?.completedAt ? (
+                      <p><span>Last done</span><strong>{formatRecordedAt(latestCompleted.completedAt)}</strong></p>
+                    ) : null}
+                    {latestCompleted?.completedAt && latestCompleted?.dueAt ? (
+                      <p>
+                        <span>Completed</span>
+                        <strong>{wasOccurrenceOnTime(latestCompleted) ? "On time" : "Late"}</strong>
+                      </p>
+                    ) : null}
+                    {latestCompleted?.completerName ? (
+                      <p><span>Completed by</span><strong>{latestCompleted.completerName}</strong></p>
+                    ) : null}
+                    <div className="recorded-row-actions between">
+                      <FormActionButton className="action-btn bright quiet" pendingLabel="Saving">
+                        Save changes
+                      </FormActionButton>
+                    </div>
+                  </form>
+
+                  {isProject ? (
+                    <section className="rounded-xl border border-border bg-surface p-3">
+                      <div className="room-setup-header">
+                        <div>
+                          <p className="settings-kicker">Project</p>
+                          <h3 className="recorded-title">Plan and rollout</h3>
+                        </div>
+                        <span className="recorded-count">{projectSummary.progressLabel}</span>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        <p><span>Target</span><strong>{task.projectTargetAt ? formatRecordedAt(task.projectTargetAt) : "Not set"}</strong></p>
+                        <p><span>Budget</span><strong>{task.projectBudgetCents !== null ? formatMoney(task.projectBudgetCents) : "Not set"}</strong></p>
+                        <p><span>Actual spend</span><strong>{formatMoney(projectSummary.spentCents)}</strong></p>
+                        <p><span>Total estimate</span><strong>{formatMinutes(projectSummary.totalEstimatedMinutes)}</strong></p>
+                        <p><span>Materials estimate</span><strong>{projectSummary.materialEstimateCents > 0 ? formatMoney(projectSummary.materialEstimateCents) : "Not set"}</strong></p>
+                        <p><span>Shopping progress</span><strong>{projectSummary.materialsLabel ?? "No materials"}</strong></p>
+                      </div>
+
+                      {canManageProjects ? (
+                        <>
+                          <form action={updateProjectPlanAction} className="recorded-edit-form">
+                            <input type="hidden" name="taskId" value={task.id} />
+                            <input type="hidden" name="returnTo" value={basePath} />
+                            <label className="recorded-field">
+                              <span>Target date</span>
+                              <input
+                                name="projectTargetAt"
+                                type="datetime-local"
+                                defaultValue={task.projectTargetAt ? toDateTimeInputValue(task.projectTargetAt) : ""}
+                                className="recorded-edit-input"
+                              />
+                            </label>
+                            <label className="recorded-field">
+                              <span>Budget amount</span>
+                              <input
+                                name="projectBudget"
+                                type="text"
+                                inputMode="decimal"
+                                defaultValue={task.projectBudgetCents !== null ? centsToInputValue(task.projectBudgetCents) : ""}
+                                placeholder="250.00"
+                                className="recorded-edit-input"
+                              />
+                            </label>
+                            <label className="recorded-field">
+                              <span>Estimate minutes</span>
+                              <input
+                                name="estimatedMinutes"
+                                type="number"
+                                min={1}
+                                defaultValue={task.estimatedMinutes}
+                                className="recorded-edit-input"
+                              />
+                            </label>
+                            <div className="recorded-row-actions between">
+                              <FormActionButton className="action-btn bright quiet" pendingLabel="Saving plan">
+                                Save project plan
+                              </FormActionButton>
+                            </div>
+                          </form>
+
+                          <form action={createProjectChildTaskAction} className="recorded-edit-form">
+                            <input type="hidden" name="projectId" value={task.id} />
+                            <input type="hidden" name="returnTo" value={basePath} />
+                            <label className="recorded-field">
+                              <span>New child task</span>
+                              <input name="title" type="text" required placeholder="Patch walls" className="recorded-edit-input" />
+                            </label>
+                            <label className="recorded-field">
+                              <span>Notes</span>
+                              <input name="detailNotes" type="text" placeholder="Optional detail" className="recorded-edit-input" />
+                            </label>
+                            <div className="capture-meta-grid">
+                              <label className="recorded-field">
+                                <span>Assign</span>
+                                <select name="assigneeUserId" defaultValue="" className="recorded-edit-input">
+                                  <option value="">No person</option>
+                                  {peopleOptions.map((person) => (
+                                    <option key={person.id} value={person.id}>
+                                      {person.displayName}
+                                    </option>
+                                  ))}
+                                </select>
+                              </label>
+                              <label className="recorded-field">
+                                <span>Estimate minutes</span>
+                                <input name="estimatedMinutes" type="number" min={1} defaultValue={30} className="recorded-edit-input" />
+                              </label>
+                            </div>
+                            <label className="recorded-field">
+                              <span>Due date</span>
+                              <input name="dueAt" type="datetime-local" className="recorded-edit-input" />
+                            </label>
+                            <div className="recorded-row-actions between">
+                              <FormActionButton className="action-btn bright quiet" pendingLabel="Adding child">
+                                Add child task
+                              </FormActionButton>
+                            </div>
+                          </form>
+
+                          <form action={createProjectCostAction} className="recorded-edit-form">
+                            <input type="hidden" name="taskId" value={task.id} />
+                            <input type="hidden" name="returnTo" value={basePath} />
+                            <label className="recorded-field">
+                              <span>Cost line</span>
+                              <input name="title" type="text" required placeholder="Paint order" className="recorded-edit-input" />
+                            </label>
+                            <label className="recorded-field">
+                              <span>Amount</span>
+                              <input name="amount" type="text" inputMode="decimal" required placeholder="48.90" className="recorded-edit-input" />
+                            </label>
+                            <div className="recorded-row-actions between">
+                              <FormActionButton className="action-btn bright quiet" pendingLabel="Adding cost">
+                                Add cost
+                              </FormActionButton>
+                            </div>
+                          </form>
+                          <form action={createProjectMaterialAction} className="recorded-edit-form">
+                            <input type="hidden" name="taskId" value={task.id} />
+                            <input type="hidden" name="returnTo" value={basePath} />
+                            <label className="recorded-field">
+                              <span>Material item</span>
+                              <input name="title" type="text" required placeholder="Wall paint" className="recorded-edit-input" />
+                            </label>
+                            <div className="capture-meta-grid">
+                              <label className="recorded-field">
+                                <span>Quantity</span>
+                                <input name="quantityLabel" type="text" placeholder="2 tins" className="recorded-edit-input" />
+                              </label>
+                              <label className="recorded-field">
+                                <span>Estimated cost</span>
+                                <input name="estimatedCost" type="text" inputMode="decimal" placeholder="65.00" className="recorded-edit-input" />
+                              </label>
+                            </div>
+                            <label className="recorded-field">
+                              <span>Store or source</span>
+                              <input name="source" type="text" placeholder="Woodies" className="recorded-edit-input" />
+                            </label>
+                            <div className="recorded-row-actions between">
+                              <FormActionButton className="action-btn bright quiet" pendingLabel="Adding material">
+                                Add material
+                              </FormActionButton>
+                            </div>
+                          </form>
+                          <form action={createProjectMilestoneAction} className="recorded-edit-form">
+                            <input type="hidden" name="taskId" value={task.id} />
+                            <input type="hidden" name="returnTo" value={basePath} />
+                            <label className="recorded-field">
+                              <span>Milestone</span>
+                              <input name="title" type="text" required placeholder="Materials ordered" className="recorded-edit-input" />
+                            </label>
+                            <label className="recorded-field">
+                              <span>Target date</span>
+                              <input name="targetAt" type="datetime-local" className="recorded-edit-input" />
+                            </label>
+                            <div className="recorded-row-actions between">
+                              <FormActionButton className="action-btn bright quiet" pendingLabel="Adding milestone">
+                                Add milestone
+                              </FormActionButton>
+                            </div>
+                          </form>
+                        </>
+                      ) : null}
+
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        <p><span>Project state</span><strong>{projectSummary.statusLabel}</strong></p>
+                        <p><span>Milestones</span><strong>{projectSummary.milestoneLabel ?? "No milestones"}</strong></p>
+                        <p><span>Overdue child tasks</span><strong>{projectSummary.overdueChildren}</strong></p>
+                        <p><span>Spend vs budget</span><strong>{formatSpendSummary(projectSummary.spentCents, task.projectBudgetCents)}</strong></p>
+                        <p><span>Materials</span><strong>{projectSummary.materialsLabel ?? "No materials"}</strong></p>
+                        <p><span>Bought materials</span><strong>{projectSummary.materialSpendLabel}</strong></p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <p className="capture-step-label">Materials and shopping</p>
+                        {task.projectMaterials.length === 0 ? (
+                          <p className="recorded-empty">No materials yet.</p>
+                        ) : (
+                          task.projectMaterials.map((material) => (
+                            <div key={material.id} className="rounded-lg border border-border px-3 py-3 text-sm">
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                  <p className="font-semibold text-foreground">{material.title}</p>
+                                  <p className="text-muted">
+                                    {[
+                                      material.quantityLabel,
+                                      material.source,
+                                      material.purchasedAt ? `Bought ${formatRecordedAt(material.purchasedAt)}` : "Still to buy",
+                                    ]
+                                      .filter(Boolean)
+                                      .join(" · ")}
+                                  </p>
+                                </div>
+                                <div className="flex flex-wrap items-center justify-end gap-2">
+                                  {material.estimatedCostCents !== null ? (
+                                    <span className="task-chip">Est. {formatMoney(material.estimatedCostCents)}</span>
+                                  ) : null}
+                                  {material.actualCostCents !== null ? (
+                                    <span className="task-chip task-chip-done">Paid {formatMoney(material.actualCostCents)}</span>
+                                  ) : null}
+                                  <span className={`task-chip ${material.purchasedAt ? "task-chip-done" : ""}`}>
+                                    {material.purchasedAt ? "Bought" : "Open"}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {canManageProjects ? (
+                                <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
+                                  <form action={toggleProjectMaterialPurchasedAction} className="flex flex-wrap items-center gap-2">
+                                    <input type="hidden" name="taskId" value={task.id} />
+                                    <input type="hidden" name="materialId" value={material.id} />
+                                    <input type="hidden" name="returnTo" value={basePath} />
+                                    {!material.purchasedAt ? (
+                                      <>
+                                        <input
+                                          name="source"
+                                          type="text"
+                                          defaultValue={material.source ?? ""}
+                                          placeholder="Store"
+                                          className="recorded-edit-input w-32"
+                                        />
+                                        <input
+                                          name="actualCost"
+                                          type="text"
+                                          inputMode="decimal"
+                                          defaultValue={material.actualCostCents !== null ? centsToInputValue(material.actualCostCents) : ""}
+                                          placeholder="Actual cost"
+                                          className="recorded-edit-input w-32"
+                                        />
+                                      </>
+                                    ) : null}
+                                    <FormActionButton className="action-btn subtle quiet" pendingLabel="Saving">
+                                      {material.purchasedAt ? "Reopen" : "Mark bought"}
+                                    </FormActionButton>
+                                  </form>
+                                  <form action={deleteProjectMaterialAction}>
+                                    <input type="hidden" name="taskId" value={task.id} />
+                                    <input type="hidden" name="materialId" value={material.id} />
+                                    <input type="hidden" name="returnTo" value={basePath} />
+                                    <FormActionButton className="action-btn subtle quiet" pendingLabel="Removing">
+                                      Remove
+                                    </FormActionButton>
+                                  </form>
+                                </div>
+                              ) : null}
+                            </div>
+                          ))
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <p className="capture-step-label">Milestones</p>
+                        {task.projectMilestones.length === 0 ? (
+                          <p className="recorded-empty">No milestones yet.</p>
+                        ) : (
+                          task.projectMilestones.map((milestone) => {
+                            const overdue = isMilestoneOverdue(milestone);
+                            return (
+                              <div key={milestone.id} className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2 text-sm">
+                                <div className="min-w-0">
+                                  <p className="font-semibold text-foreground">{milestone.title}</p>
+                                  <p className="text-muted">
+                                    {milestone.completedAt
+                                      ? `Done ${formatRecordedAt(milestone.completedAt)}`
+                                      : milestone.targetAt
+                                        ? overdue
+                                          ? `Due ${formatRecordedAt(milestone.targetAt)}`
+                                          : `Target ${formatRecordedAt(milestone.targetAt)}`
+                                        : "No target date"}
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className={`task-chip ${milestone.completedAt ? "task-chip-done" : overdue ? "task-chip-lapsed" : ""}`}>
+                                    {milestone.completedAt ? "Done" : overdue ? "Late" : "Open"}
+                                  </span>
+                                  {canManageProjects ? (
+                                    <>
+                                      <form action={toggleProjectMilestoneAction}>
+                                        <input type="hidden" name="taskId" value={task.id} />
+                                        <input type="hidden" name="milestoneId" value={milestone.id} />
+                                        <input type="hidden" name="returnTo" value={basePath} />
+                                        <FormActionButton className="action-btn subtle quiet" pendingLabel="Saving">
+                                          {milestone.completedAt ? "Reopen" : "Complete"}
+                                        </FormActionButton>
+                                      </form>
+                                      <form action={deleteProjectMilestoneAction}>
+                                        <input type="hidden" name="taskId" value={task.id} />
+                                        <input type="hidden" name="milestoneId" value={milestone.id} />
+                                        <input type="hidden" name="returnTo" value={basePath} />
+                                        <FormActionButton className="action-btn subtle quiet" pendingLabel="Removing">
+                                          Remove
+                                        </FormActionButton>
+                                      </form>
+                                    </>
+                                  ) : null}
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <p className="capture-step-label">Child tasks</p>
+                        {task.projectChildren.length === 0 ? (
+                          <p className="recorded-empty">No child tasks yet.</p>
+                        ) : (
+                          task.projectChildren.map((child) => (
+                            <a key={child.id} href={`#task-${child.id}`} className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm text-foreground">
+                              <span>{child.title}</span>
+                              <span className="text-muted">
+                                {getTaskState(child) === "done"
+                                  ? "Done"
+                                  : isProjectChildOverdue(child)
+                                    ? "Overdue"
+                                  : child.assignmentUserName
+                                    ? child.assignmentUserName
+                                    : child.nextDueAt
+                                      ? formatRecordedAt(child.nextDueAt)
+                                      : "Open"}
+                              </span>
+                            </a>
+                          ))
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <p className="capture-step-label">Costs</p>
+                        {task.projectCosts.length === 0 ? (
+                          <p className="recorded-empty">No costs recorded yet.</p>
+                        ) : (
+                          task.projectCosts.map((cost) => (
+                            <div key={cost.id} className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2 text-sm">
+                              <div className="min-w-0">
+                                <p className="font-semibold text-foreground">{cost.title}</p>
+                                <p className="text-muted">{formatRecordedAt(cost.notedAt)}</p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <strong className="text-foreground">{formatMoney(cost.amountCents)}</strong>
+                                {canManageProjects ? (
+                                  <form action={deleteProjectCostAction}>
+                                    <input type="hidden" name="taskId" value={task.id} />
+                                    <input type="hidden" name="costId" value={cost.id} />
+                                    <input type="hidden" name="returnTo" value={basePath} />
+                                    <FormActionButton className="action-btn subtle quiet" pendingLabel="Removing">
+                                      Remove
+                                    </FormActionButton>
+                                  </form>
+                                ) : null}
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </section>
+                  ) : canManageProjects ? (
+                    <form action={promoteTaskToProjectAction} className="recorded-row-actions">
+                      <input type="hidden" name="taskId" value={task.id} />
+                      <input type="hidden" name="returnTo" value={basePath} />
+                      <FormActionButton className="action-btn subtle quiet" pendingLabel="Promoting">
+                        Promote to project
+                      </FormActionButton>
+                    </form>
+                  ) : null}
+
+                  {canDeleteTasks ? (
+                    <form action={deleteTaskAction} className="recorded-row-actions">
+                      <input type="hidden" name="taskId" value={task.id} />
+                      <FormActionButton className="action-btn warn quiet" pendingLabel="Deleting">
+                        Delete task
+                      </FormActionButton>
+                    </form>
+                  ) : null}
+                </div>
+              </details>
+            );
+          })
         )}
       </div>
     </section>
@@ -514,13 +993,6 @@ function addDays(value: Date, days: number) {
   const next = new Date(value);
   next.setDate(next.getDate() + days);
   return next.toISOString();
-}
-
-function formatShortDate(value: string) {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-  }).format(new Date(value));
 }
 
 function getTaskState(task: { captureStage: string; occurrences: Array<{ status: string }> }) {
@@ -626,6 +1098,138 @@ function displayRoomName(roomName: string) {
   return roomName.toLowerCase() === "unsorted" ? "No room" : roomName;
 }
 
+function isProjectTask(task: TaskItem) {
+  return (
+    task.jobKind === "project" ||
+    task.projectChildren.length > 0 ||
+    task.projectCosts.length > 0 ||
+    task.projectMaterials.length > 0 ||
+    task.projectMilestones.length > 0 ||
+    task.projectBudgetCents !== null ||
+    task.projectTargetAt !== null
+  );
+}
+
+function summarizeProject(task: TaskItem) {
+  const now = Date.now();
+  const totalChildren = task.projectChildren.length;
+  const completedChildren = task.projectChildren.filter((child) => getTaskState(child) === "done").length;
+  const overdueChildren = task.projectChildren.filter((child) => isProjectChildOverdue(child)).length;
+  const spentCents = task.projectCosts.reduce((sum, cost) => sum + cost.amountCents, 0);
+  const totalMaterials = task.projectMaterials.length;
+  const purchasedMaterials = task.projectMaterials.filter((material) => material.purchasedAt).length;
+  const materialEstimateCents = task.projectMaterials.reduce((sum, material) => sum + (material.estimatedCostCents ?? 0), 0);
+  const materialSpentCents = task.projectMaterials.reduce((sum, material) => sum + (material.actualCostCents ?? 0), 0);
+  const totalMilestones = task.projectMilestones.length;
+  const completedMilestones = task.projectMilestones.filter((milestone) => milestone.completedAt).length;
+  const overdueMilestones = task.projectMilestones.filter((milestone) => isMilestoneOverdue(milestone)).length;
+  const totalEstimatedMinutes =
+    task.estimatedMinutes + task.projectChildren.reduce((sum, child) => sum + child.estimatedMinutes, 0);
+  const overBudget = task.projectBudgetCents !== null && spentCents > task.projectBudgetCents;
+  const complete = task.projectChildren.length > 0
+    ? completedChildren === totalChildren
+    : getTaskState(task) === "done";
+  const planning =
+    task.projectChildren.length === 0 &&
+    task.projectMilestones.length === 0 &&
+    task.projectMaterials.length === 0 &&
+    getTaskState(task) !== "done";
+  const targetMissed =
+    !complete && task.projectTargetAt !== null && new Date(task.projectTargetAt).getTime() < now;
+  const atRisk = !complete && (overBudget || overdueChildren > 0 || overdueMilestones > 0 || targetMissed);
+  const milestoneLabel = totalMilestones > 0 ? `${completedMilestones}/${totalMilestones} milestones` : null;
+  const materialsLabel = totalMaterials > 0 ? `${purchasedMaterials}/${totalMaterials} bought` : null;
+  const statusLabel = complete ? "Complete" : planning ? "Planning" : atRisk ? "At risk" : "Active";
+
+  return {
+    totalChildren,
+    completedChildren,
+    overdueChildren,
+    spentCents,
+    totalMaterials,
+    purchasedMaterials,
+    materialEstimateCents,
+    materialSpentCents,
+    totalEstimatedMinutes,
+    totalMilestones,
+    completedMilestones,
+    overdueMilestones,
+    overBudget,
+    atRisk,
+    statusLabel,
+    milestoneLabel,
+    materialsLabel,
+    materialSpendLabel:
+      totalMaterials > 0
+        ? materialSpentCents > 0
+          ? `${formatMoney(materialSpentCents)} across ${purchasedMaterials}`
+          : purchasedMaterials > 0
+            ? `${purchasedMaterials} bought`
+            : "None bought"
+        : "No materials",
+    progressLabel: totalChildren > 0 ? `${completedChildren}/${totalChildren} tasks done` : "Project shell",
+  };
+}
+
+function projectMatchesFilter(task: TaskItem, filter: ProjectFilterState) {
+  if (filter === "all") {
+    return true;
+  }
+
+  const summary = summarizeProject(task);
+  const complete = task.projectChildren.length > 0
+    ? summary.completedChildren === summary.totalChildren
+    : getTaskState(task) === "done";
+  const planning =
+    task.projectChildren.length === 0 &&
+    task.projectMilestones.length === 0 &&
+    task.projectMaterials.length === 0 &&
+    getTaskState(task) !== "done";
+  const active = !planning && !complete;
+
+  if (filter === "at_risk") {
+    return summary.atRisk;
+  }
+  if (filter === "over_budget") {
+    return summary.overBudget;
+  }
+  if (filter === "complete") {
+    return complete;
+  }
+  if (filter === "planning") {
+    return planning;
+  }
+  return active;
+}
+
+function formatMinutes(value: number) {
+  if (value < 60) {
+    return `${value} min`;
+  }
+
+  const hours = Math.floor(value / 60);
+  const minutes = value % 60;
+  return minutes === 0 ? `${hours} hr` : `${hours} hr ${minutes} min`;
+}
+
+function formatMoney(cents: number) {
+  return new Intl.NumberFormat("en-IE", {
+    style: "currency",
+    currency: "EUR",
+  }).format(cents / 100);
+}
+
+function formatSpendSummary(spentCents: number, budgetCents: number | null) {
+  if (budgetCents === null) {
+    return `${formatMoney(spentCents)} spent`;
+  }
+  return `${formatMoney(spentCents)} / ${formatMoney(budgetCents)}`;
+}
+
+function centsToInputValue(cents: number) {
+  return (cents / 100).toFixed(2);
+}
+
 function formatJobKind(jobKind: string) {
   const labels: Record<string, string> = {
     upkeep: "Upkeep",
@@ -647,4 +1251,19 @@ function groupRoomsByLocation<T extends { location?: { name: string } | null; na
     grouped.set(key, entries);
   }
   return [...grouped.entries()];
+}
+
+function isProjectChildOverdue(child: { captureStage: string; nextDueAt: string | null; occurrences: Array<{ status: string; dueAt: string }> }) {
+  if (getTaskState(child) === "done") {
+    return false;
+  }
+  const dueAt = child.nextDueAt ?? getOpenOccurrence(child.occurrences)?.dueAt ?? null;
+  return dueAt ? new Date(dueAt).getTime() < Date.now() : false;
+}
+
+function isMilestoneOverdue(milestone: { targetAt: string | null; completedAt: string | null }) {
+  if (!milestone.targetAt || milestone.completedAt) {
+    return false;
+  }
+  return new Date(milestone.targetAt).getTime() < Date.now();
 }

@@ -1,11 +1,22 @@
-# Phase 1 Scope
+# Phase Scope
 
-## Goals
-- Mobile-first task capture and completion flow.
-- Households, rooms, and task CRUD.
-- Basic recurring schedule definitions.
-- Today view and room view.
+## Delivered in current build
+- mobile-first capture on `/log`
+- household auth and bootstrap on `/login`
+- task board on `/tasks`
+- project board on `/projects`
+- people, rooms, locations, and task shaping in admin/setup
+- recurring schedules
+- private tasks
+- assignment history
+- strict validation mode
+- stats and recurring health
+- project planning fields, child tasks, cost lines, and milestones
+- project reporting in `/stats`
+- project timeline view in `/projects/timeline`
+- shopping/materials workflow on projects
 
-## Deferred
-- Public share pages.
-- Advanced reporting and fairness analytics.
+## Still deferred
+- public share pages
+- cross-household collaboration
+- advanced fairness analytics

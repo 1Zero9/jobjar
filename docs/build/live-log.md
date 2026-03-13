@@ -1,5 +1,47 @@
 # Live Build Log
 
+## 2026-03-13
+- Stabilized the app before expanding project support:
+  - production auth fallback tightened
+  - task deletion restricted to admins
+  - admin recurrence no longer silently creates schedules
+  - build no longer depends on Google Fonts
+- Added project-planning model extensions:
+  - `Task.projectTargetAt`
+  - `Task.projectBudgetCents`
+  - new `ProjectCost` model
+- Added server actions to:
+  - promote tasks into projects
+  - save project target date and budget
+  - create child tasks from a project
+  - add and remove project cost lines
+- Added dedicated `/projects` route and board:
+  - project-only filtering
+  - project-state filter
+  - child-task rollups
+  - budget vs spend visibility
+- Extended project delivery to `0.2.1`:
+  - added `ProjectMilestone`
+  - added milestone create/complete/remove actions
+  - added at-risk project state from deadlines, overdue children, and spend
+  - added project health and budget reporting to `/stats`
+- Extended project delivery to `0.2.2`:
+  - added `/projects/timeline`
+  - added timeline filters for location, state, and date window
+  - added upcoming, overdue, and recently done project events from milestones, child tasks, and target dates
+  - centralized project-shape detection to avoid route drift
+- Extended project delivery to `0.2.3`:
+  - added `ProjectMaterial`
+  - added project-level materials and shopping workflow
+  - added bought vs open material tracking on project cards
+  - added shopping progress into project reporting
+- Updated product docs to match the current route model and `0.2.3` app shape.
+- Validation completed:
+  - `npm run db:generate` passed
+  - `npm run lint` passed
+  - `npm run build` passed
+  - `npm run db:deploy` passed
+
 ## 2026-02-22
 - Initialized live documentation workflow.
 - Created documentation structure for build, architecture, and product notes.

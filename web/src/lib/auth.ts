@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 
 const SESSION_USER_COOKIE = "jobjar_session_user";
 const SESSION_HOUSEHOLD_COOKIE = "jobjar_session_household";
-const SESSION_SIGNING_SECRET = process.env.SESSION_SIGNING_SECRET || process.env.NEXTAUTH_SECRET || "jobjar-dev-secret";
+const SESSION_SIGNING_SECRET = getSessionSigningSecret();
 
 const SESSION_COOKIE_OPTIONS = {
   httpOnly: true,
@@ -116,7 +116,29 @@ export async function requireAdmin(nextPath = "/admin") {
 }
 
 export function getHouseholdPasscode() {
-  return process.env.HOUSEHOLD_PASSCODE || "jobjar";
+  const configuredPasscode = process.env.HOUSEHOLD_PASSCODE;
+  if (configuredPasscode) {
+    return configuredPasscode;
+  }
+
+  if (process.env.NODE_ENV !== "production") {
+    return "jobjar";
+  }
+
+  return null;
+}
+
+function getSessionSigningSecret() {
+  const configuredSecret = process.env.SESSION_SIGNING_SECRET || process.env.NEXTAUTH_SECRET;
+  if (configuredSecret) {
+    return configuredSecret;
+  }
+
+  if (process.env.NODE_ENV !== "production") {
+    return "jobjar-dev-secret";
+  }
+
+  throw new Error("SESSION_SIGNING_SECRET must be set in production.");
 }
 
 function encodeSignedValue(value: string) {

@@ -39,13 +39,16 @@ export default async function AdminPage() {
             <Link href="/" className="action-btn subtle text-center">
               Home
             </Link>
+            <Link href="/projects" className="action-btn subtle text-center">
+              Projects
+            </Link>
             <a href="#section-people" className="action-btn subtle text-center">
               People
             </a>
             <a href="#section-rooms" className="action-btn subtle text-center">
               Rooms
             </a>
-            <a href="#section-tasks" className="action-btn subtle text-center sm:col-span-2">
+            <a href="#section-tasks" className="action-btn subtle text-center">
               Tasks
             </a>
           </div>
@@ -186,7 +189,8 @@ export default async function AdminPage() {
               <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-3">
                 <label className="admin-field-label">
                   <span>Repeats</span>
-                  <select name="recurrenceType" defaultValue="weekly" className="admin-input px-3 py-2 text-sm">
+                  <select name="recurrenceType" defaultValue="none" className="admin-input px-3 py-2 text-sm">
+                    <option value="none">Does not repeat</option>
                     <option value="daily">Daily</option>
                     <option value="weekly">Weekly</option>
                     <option value="monthly">Monthly</option>
@@ -238,4 +242,3 @@ function ProgressChip({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
-

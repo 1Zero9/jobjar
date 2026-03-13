@@ -45,6 +45,9 @@ export default async function SettingsPage() {
             <Link href="/tasks" className="action-btn subtle quiet">
               Tasks
             </Link>
+            <Link href="/projects" className="action-btn subtle quiet">
+              Projects
+            </Link>
             <form action={logoutAction}>
               <FormActionButton className="action-btn subtle quiet" pendingLabel="Logging out">
                 Log out

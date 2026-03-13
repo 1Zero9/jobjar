@@ -53,15 +53,40 @@ Use it to:
 - add notes and location details
 - connect a job to a larger parent project
 
-## 3. TV
-TV is the family summary board.
+## 3. Stats
+Stats is the household summary board.
 
 Use it for:
 
 - shared visibility
 - overall progress
-- room status
-- simple family-level awareness
+- recurring task health
+- recent completions
+- simple household-level awareness
+- project budget and risk review
+
+## 4. Projects
+Projects is where bigger work is reviewed as a plan rather than a single task.
+
+Use it for:
+
+- promoting a task into a project
+- setting a target date
+- setting a rough budget
+- adding child tasks
+- recording spend as simple cost lines
+- tracking materials to buy
+- tracking milestones
+
+## 5. Project Timeline
+Timeline is the date view for project work.
+
+Use it for:
+
+- seeing what is overdue
+- seeing what is coming up next
+- reviewing recent milestone and child-task completions
+- spotting projects with no dates at all
 
 ## First-Time Setup
 
@@ -73,7 +98,7 @@ flowchart TD
   D --> E[Open admin]
   E --> F[Add people and spaces]
   F --> G[Shape and assign jobs]
-  G --> H[Use TV for family view]
+  G --> H[Use Stats for family review]
 ```
 
 ## Normal Daily Flow
@@ -114,7 +139,20 @@ Jobs move through stages like:
 - done
 
 ## Step 4: Review
-Use the TV view to keep the family aligned.
+Use Stats to keep the household aligned.
+
+## Step 5: Expand
+If a task is too big to stay as one item, open `/projects` or `/tasks` and promote it into a project.
+
+Then:
+
+- add a target date
+- add a rough budget if useful
+- break the work into child tasks
+- record spend as the project moves
+- add materials that still need to be bought
+- add milestones when you want checkpoints
+- use Timeline to review the date view across all projects
 
 ## Job Types
 JobJar supports different kinds of household jobs.
@@ -191,6 +229,8 @@ Child jobs:
 
 Use Admin to connect smaller jobs to a parent project.
 
+Use Projects to manage the parent item once it becomes active planning work.
+
 ## Recommended Household Habit
 
 ```mermaid
@@ -200,7 +240,7 @@ flowchart TD
   C --> D[Admin shaping session]
   D --> E[Assign or plan]
   E --> F[Do the work]
-  F --> G[Review progress on TV]
+  F --> G[Review progress in Stats]
 ```
 
 ## Best Practice
@@ -210,7 +250,9 @@ flowchart TD
 - Put extra detail in notes.
 - Use spaces to anchor work in the real world.
 - Use parent projects for anything that is obviously multi-step.
-- Keep TV simple and visible.
+- Keep the stats view simple and useful.
+- Use budgets as rough household guidance, not accounting.
+- Use milestones for checkpoints, not for every tiny action.
 
 ## Example Walkthroughs
 

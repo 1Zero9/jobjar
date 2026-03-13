@@ -7,6 +7,7 @@ import { ToastNotice } from "@/app/components/ToastNotice";
 import { requireSessionContext } from "@/lib/auth";
 import { APP_VERSION } from "@/lib/app-version";
 import { prisma } from "@/lib/prisma";
+import { getPrivateTaskAccessWhere, getProjectTaskWhere } from "@/lib/project-work";
 import Link from "next/link";
 
 type SearchParams = {
@@ -18,6 +19,7 @@ type SearchParams = {
   state?: string;
   location?: string;
   taskId?: string;
+  projectState?: string;
 };
 
 export async function LogWorkspace({ params }: { params: SearchParams }) {
@@ -93,6 +95,9 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
             </Link>
             <Link href="/tasks" className="action-btn subtle quiet">
               View tasks
+            </Link>
+            <Link href="/projects" className="action-btn subtle quiet">
+              Projects
             </Link>
             {role === "admin" ? (
               <Link href="/settings" className="action-btn subtle quiet">
@@ -237,7 +242,17 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
 }
 
 export async function TasksWorkspace({ params }: { params: SearchParams }) {
-  const { householdId, userId, role } = await requireSessionContext("/tasks");
+  return <WorkItemsWorkspace params={params} mode="tasks" />;
+}
+
+export async function ProjectsWorkspace({ params }: { params: SearchParams }) {
+  return <WorkItemsWorkspace params={params} mode="projects" />;
+}
+
+async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode: "tasks" | "projects" }) {
+  const { householdId, userId, role } = await requireSessionContext(mode === "projects" ? "/projects" : "/tasks");
+  const privateTaskAccess = role === "admin" ? undefined : getPrivateTaskAccessWhere(userId);
+  const projectOnlyWhere = mode === "projects" ? getProjectTaskWhere() : undefined;
 
   const [currentUser, rooms, people, locations, recordedTasks] = await Promise.all([
     prisma.user.findUnique({
@@ -270,10 +285,9 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
       where: {
         active: true,
         room: { householdId },
-        OR: [
-          { isPrivate: false },
-          { isPrivate: true, createdByUserId: userId },
-          { isPrivate: true, assignments: { some: { userId, assignedTo: null } } },
+        AND: [
+          ...(privateTaskAccess ? [{ OR: privateTaskAccess }] : []),
+          ...(projectOnlyWhere ? [projectOnlyWhere] : []),
         ],
       },
       orderBy: [{ room: { sortOrder: "asc" } }, { priority: "asc" }, { createdAt: "desc" }],
@@ -287,7 +301,75 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
         },
         projectParent: {
           select: {
+            id: true,
             title: true,
+          },
+        },
+        projectChildren: {
+          where: {
+            active: true,
+            ...(privateTaskAccess ? { OR: privateTaskAccess } : {}),
+          },
+          orderBy: [{ priority: "asc" }, { createdAt: "desc" }],
+          include: {
+            assignments: {
+              where: { assignedTo: null },
+              orderBy: { assignedFrom: "desc" },
+              take: 1,
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    displayName: true,
+                  },
+                },
+              },
+            },
+            schedule: {
+              select: {
+                nextDueAt: true,
+              },
+            },
+            occurrences: {
+              orderBy: { dueAt: "desc" },
+              take: 3,
+              select: {
+                status: true,
+                dueAt: true,
+                completedAt: true,
+              },
+            },
+          },
+        },
+        projectMilestones: {
+          orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+          select: {
+            id: true,
+            title: true,
+            targetAt: true,
+            completedAt: true,
+            sortOrder: true,
+          },
+        },
+        projectCosts: {
+          orderBy: { notedAt: "desc" },
+          select: {
+            id: true,
+            title: true,
+            amountCents: true,
+            notedAt: true,
+          },
+        },
+        projectMaterials: {
+          orderBy: [{ purchasedAt: "asc" }, { sortOrder: "asc" }, { createdAt: "asc" }],
+          select: {
+            id: true,
+            title: true,
+            quantityLabel: true,
+            source: true,
+            estimatedCostCents: true,
+            actualCostCents: true,
+            purchasedAt: true,
           },
         },
         assignments: {
@@ -331,12 +413,20 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
   const selectedAssigneeId = peopleOptions.some((person) => person.id === params.assignee) ? (params.assignee ?? "") : "";
   const selectedLocationId = locations.some((loc) => loc.id === params.location) ? (params.location ?? "") : "";
   const selectedState: "all" | "open" | "done" = params.state === "done" || params.state === "open" ? params.state : "all";
+  const selectedProjectState =
+    params.projectState === "planning" ||
+    params.projectState === "active" ||
+    params.projectState === "complete" ||
+    params.projectState === "over_budget" ||
+    params.projectState === "at_risk"
+      ? params.projectState
+      : "all";
   const luckyTask = params.lucky && params.lucky !== "empty"
     ? recordedTasks.find((task) => task.id === params.lucky)
     : null;
 
   return (
-    <div className="capture-shell page-tasks min-h-screen px-4 py-5">
+    <div className={`capture-shell ${mode === "projects" ? "page-projects" : "page-tasks"} min-h-screen px-4 py-5`}>
       <main className="capture-app-shell mx-auto flex w-full max-w-[32rem] flex-col gap-6">
         <header className="capture-topbar">
           <div>
@@ -354,8 +444,12 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
                 <polyline points="3 18 4 19 6 16"/>
               </svg>
             </div>
-            <h1 className="capture-title">Tasks</h1>
-            <p className="capture-subtitle">View, filter, prioritise, and complete what has already been logged.</p>
+            <h1 className="capture-title">{mode === "projects" ? "Projects" : "Tasks"}</h1>
+            <p className="capture-subtitle">
+              {mode === "projects"
+                ? "Track larger household work, child tasks, dates, budget, and spend."
+                : "View, filter, prioritise, and complete what has already been logged."}
+            </p>
           </div>
           <div className="capture-topbar-actions">
             <span className="session-chip">{currentUser?.displayName ?? "You"}</span>
@@ -365,6 +459,14 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
             <Link href="/log" className="action-btn subtle quiet">
               Log task
             </Link>
+            <Link href={mode === "projects" ? "/tasks" : "/projects"} className="action-btn subtle quiet">
+              {mode === "projects" ? "Tasks" : "Projects"}
+            </Link>
+            {mode === "projects" ? (
+              <Link href="/projects/timeline" className="action-btn subtle quiet">
+                Timeline
+              </Link>
+            ) : null}
             {role === "admin" ? (
               <Link href="/settings" className="action-btn subtle quiet">
                 Setup
@@ -394,6 +496,14 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
           initialLocationId={selectedLocationId}
           initialState={selectedState}
           initialLuckyId={params.lucky && params.lucky !== "empty" ? params.lucky : null}
+          initialProjectState={selectedProjectState}
+          canManageProjects={role === "admin"}
+          canDeleteTasks={role === "admin"}
+          basePath={mode === "projects" ? "/projects" : "/tasks"}
+          viewMode={mode}
+          panelKicker={mode === "projects" ? "Projects" : "Tasks"}
+          panelTitle={mode === "projects" ? "Project board" : "Logged tasks"}
+          emptyMessage={mode === "projects" ? "No projects yet. Promote a task or create child work from an existing project." : "No tasks recorded yet."}
           tasks={recordedTasks.map((task) => ({
             id: task.id,
             title: task.title,
@@ -402,6 +512,7 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
             locationId: task.room.location?.id ?? null,
             locationName: task.room.location?.name ?? null,
             loggerName: task.logger?.displayName ?? null,
+            projectParentId: task.projectParentId,
             projectParentTitle: task.projectParent?.title ?? null,
             assignmentUserId: task.assignments[0]?.userId ?? null,
             assignmentUserName: task.assignments[0]?.user?.displayName ?? null,
@@ -411,6 +522,44 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
             jobKind: task.jobKind,
             captureStage: task.captureStage,
             createdAt: task.createdAt.toISOString(),
+            estimatedMinutes: task.estimatedMinutes,
+            projectTargetAt: task.projectTargetAt?.toISOString() ?? null,
+            projectBudgetCents: task.projectBudgetCents,
+            projectChildren: task.projectChildren.map((child) => ({
+              id: child.id,
+              title: child.title,
+              captureStage: child.captureStage,
+              estimatedMinutes: child.estimatedMinutes,
+              assignmentUserName: child.assignments[0]?.user?.displayName ?? null,
+              nextDueAt: child.schedule?.nextDueAt?.toISOString() ?? child.occurrences[0]?.dueAt.toISOString() ?? null,
+              occurrences: child.occurrences.map((occurrence) => ({
+                status: occurrence.status,
+                dueAt: occurrence.dueAt.toISOString(),
+                completedAt: occurrence.completedAt?.toISOString() ?? null,
+              })),
+            })),
+            projectCosts: task.projectCosts.map((cost) => ({
+              id: cost.id,
+              title: cost.title,
+              amountCents: cost.amountCents,
+              notedAt: cost.notedAt.toISOString(),
+            })),
+            projectMaterials: task.projectMaterials.map((material) => ({
+              id: material.id,
+              title: material.title,
+              quantityLabel: material.quantityLabel ?? null,
+              source: material.source ?? null,
+              estimatedCostCents: material.estimatedCostCents ?? null,
+              actualCostCents: material.actualCostCents ?? null,
+              purchasedAt: material.purchasedAt?.toISOString() ?? null,
+            })),
+            projectMilestones: task.projectMilestones.map((milestone) => ({
+              id: milestone.id,
+              title: milestone.title,
+              targetAt: milestone.targetAt?.toISOString() ?? null,
+              completedAt: milestone.completedAt?.toISOString() ?? null,
+              sortOrder: milestone.sortOrder,
+            })),
             schedule: task.schedule
               ? {
                   recurrenceType: task.schedule.recurrenceType,
@@ -458,15 +607,4 @@ function uniqueRoomsByName<T extends { id: string; name: string }>(rooms: T[]) {
     seen.add(key);
     return true;
   });
-}
-
-function groupRoomsByLocation<T extends { location?: { name: string } | null; name: string }>(rooms: T[]) {
-  const grouped = new Map<string, T[]>();
-  for (const room of rooms) {
-    const key = room.location?.name ?? "Other";
-    const entries = grouped.get(key) ?? [];
-    entries.push(room);
-    grouped.set(key, entries);
-  }
-  return [...grouped.entries()];
 }

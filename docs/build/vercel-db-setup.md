@@ -57,3 +57,8 @@ Expected first-run production state:
 - `/api/health/db` returns connected
 - `/login` shows `Create Admin`
 - no demo household data exists unless you explicitly ran `db:seed`
+
+Useful smoke routes after first login:
+- `/tasks`
+- `/projects`
+- `/stats`
