@@ -7,7 +7,8 @@ export function WorkspaceRouteLoading({ title }: Props) {
     <div className="capture-shell page-tasks min-h-screen px-4 py-5">
       <main className="capture-app-shell mx-auto flex w-full max-w-[32rem] flex-col gap-6">
         <section className="page-hero-card animate-pulse">
-          <div className="hero-corner-toggle">
+          <div className="hero-corner-tools">
+            <span className="block h-10 w-10 rounded-full border border-border bg-surface" />
             <span className="block h-10 w-10 rounded-full border border-border bg-surface" />
           </div>
           <div className="page-hero-topline">

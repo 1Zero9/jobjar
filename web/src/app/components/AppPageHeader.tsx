@@ -1,5 +1,6 @@
 import { APP_VERSION } from "@/lib/app-version";
 import type { ReactNode } from "react";
+import { ResetViewButton } from "./ResetViewButton";
 import { ThemeToggle } from "./ThemeToggle";
 
 type Props = {
@@ -13,7 +14,8 @@ type Props = {
 export function AppPageHeader({ title, subtitle, icon, iconClassName = "", actions }: Props) {
   return (
     <header className="page-hero-card">
-      <div className="hero-corner-toggle">
+      <div className="hero-corner-tools">
+        <ResetViewButton />
         <ThemeToggle compact />
       </div>
       <div className="page-hero-topline">

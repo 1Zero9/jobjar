@@ -1,4 +1,5 @@
 import { bootstrapOwnerAction, loginAction } from "@/app/actions";
+import { ResetViewButton } from "@/app/components/ResetViewButton";
 import { ThemeToggle } from "@/app/components/ThemeToggle";
 import { prisma } from "@/lib/prisma";
 
@@ -54,7 +55,8 @@ export default async function LoginPage({
     <div className="login-screen task-shell min-h-screen px-4 py-6">
       <main className="login-main">
         <section className="login-shell board-shell login-card-shell">
-          <div className="hero-corner-toggle">
+          <div className="hero-corner-tools">
+            <ResetViewButton />
             <ThemeToggle compact />
           </div>
           <div className="login-header-row">

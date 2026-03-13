@@ -9,6 +9,7 @@ import {
   updateRoomAction,
 } from "@/app/actions";
 import { AdminTasksClient } from "@/app/components/AdminTasksClient";
+import { ResetViewButton } from "@/app/components/ResetViewButton";
 import { ThemeToggle } from "@/app/components/ThemeToggle";
 import { requireAdmin } from "@/lib/auth";
 import { getAdminData } from "@/lib/admin-data";
@@ -25,7 +26,8 @@ export default async function AdminPage() {
     <div className="workday-gradient min-h-screen px-3 py-4 sm:px-4 sm:py-6">
       <main className="mx-auto flex w-full max-w-7xl flex-col gap-4">
         <header className="board-shell relative p-4 sm:p-5">
-          <div className="hero-corner-toggle">
+          <div className="hero-corner-tools">
+            <ResetViewButton />
             <ThemeToggle compact />
           </div>
           <div className="flex items-start justify-between gap-3">

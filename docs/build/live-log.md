@@ -65,7 +65,11 @@
   - widened the app shell on iPad-sized screens so pages use the space better without losing the aligned card layout
   - made the signed-in user chip more vibrant so the current person stands out immediately
   - trimmed the initial `/tasks` payload slightly to improve mobile route transitions
-- Updated product docs to match the current role model and `0.3.1` app shape.
+- Added a top-corner reset control in `0.3.2`:
+  - placed a compact reset-view button beside the theme toggle across the main title cards
+  - reset now clears query and hash state on filter-driven pages like tasks, projects, stats, and timeline
+  - on simpler screens it acts as a clean refresh and scroll-to-top control
+- Updated product docs to match the current role model and `0.3.2` app shape.
 - Validation completed:
   - `npm run db:generate` passed
   - `npm run lint` passed

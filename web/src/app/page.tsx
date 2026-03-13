@@ -1,5 +1,6 @@
 import { luckyDipAction, logoutAction } from "@/app/actions";
 import { FormActionButton } from "@/app/components/FormActionButton";
+import { ResetViewButton } from "@/app/components/ResetViewButton";
 import { ThemeToggle } from "@/app/components/ThemeToggle";
 import { requireSessionContext } from "@/lib/auth";
 import { APP_VERSION } from "@/lib/app-version";
@@ -34,7 +35,8 @@ export default async function HomePage() {
     <div className="capture-shell min-h-screen px-4 py-5">
       <main className="landing-shell mx-auto flex w-full max-w-[28rem] flex-col gap-6">
         <header className="landing-hero">
-          <div className="hero-corner-toggle">
+          <div className="hero-corner-tools">
+            <ResetViewButton />
             <ThemeToggle compact />
           </div>
           <div className="landing-brand-row">

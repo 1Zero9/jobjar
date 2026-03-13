@@ -647,11 +647,14 @@ html[data-theme="dark"] .page-hero-icon.people {
   color: var(--text-soft);
 }
 
-.hero-corner-toggle {
+.hero-corner-tools {
   position: absolute;
   top: 1rem;
   right: 1rem;
   z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
 }
 
 .theme-toggle {
