@@ -408,6 +408,7 @@ export async function TasksWorkspace({ params }: { params: SearchParams }) {
             detailNotes: task.detailNotes ?? null,
             priority: task.priority,
             isPrivate: task.isPrivate,
+            jobKind: task.jobKind,
             captureStage: task.captureStage,
             createdAt: task.createdAt.toISOString(),
             schedule: task.schedule

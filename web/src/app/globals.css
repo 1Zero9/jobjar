@@ -826,6 +826,19 @@ select.admin-input {
   font-weight: 400;
 }
 
+.recorded-row-location {
+  align-items: center;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 999px;
+  color: #4338ca;
+  display: inline-flex;
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 0.15rem 0.5rem;
+  white-space: nowrap;
+}
+
 .recorded-row-room {
   display: inline-flex;
   align-items: center;
@@ -837,6 +850,13 @@ select.admin-input {
   font-weight: 600;
   padding: 0.18rem 0.58rem;
   white-space: nowrap;
+}
+
+.task-chip-kind {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #166534;
+  font-weight: 500;
 }
 
 .recorded-row-detail {

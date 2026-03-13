@@ -35,6 +35,7 @@ type TaskItem = {
   detailNotes: string | null;
   priority: number;
   isPrivate: boolean;
+  jobKind: string;
   captureStage: string;
   createdAt: string;
   schedule: {
@@ -242,6 +243,9 @@ export function TasksPanelClient({
                   <span className="recorded-row-chevron">▾</span>
                 </div>
                 <div className="recorded-row-sub">
+                  {task.locationName ? (
+                    <span className="recorded-row-location">{task.locationName}</span>
+                  ) : null}
                   <span className="recorded-row-room">{displayRoomName(task.roomName)}</span>
                   {task.assignmentUserName ? (
                     <span className="recorded-row-assignee">
@@ -253,6 +257,7 @@ export function TasksPanelClient({
                   ) : (
                     <span className="assignee-unset">Unassigned</span>
                   )}
+                  <span className="task-chip task-chip-kind">{formatJobKind(task.jobKind)}</span>
                   {getTaskState(task) === "done" ? <span className="task-chip task-chip-done">Done</span> : null}
                   {recurrenceStateClassName(task) === "task-chip-lapsed" ? <span className="task-chip task-chip-lapsed">Lapsed</span> : null}
                   {recurrenceStateClassName(task) === "task-chip-due" ? <span className="task-chip task-chip-due">Due today</span> : null}
@@ -619,6 +624,18 @@ function computeStreak(occurrences: Array<{ status: string }>) {
 
 function displayRoomName(roomName: string) {
   return roomName.toLowerCase() === "unsorted" ? "No room" : roomName;
+}
+
+function formatJobKind(jobKind: string) {
+  const labels: Record<string, string> = {
+    upkeep: "Upkeep",
+    issue: "Issue",
+    project: "Project",
+    clear_out: "Clear out",
+    outdoor: "Outdoor",
+    planning: "Planning",
+  };
+  return labels[jobKind] ?? jobKind;
 }
 
 function groupRoomsByLocation<T extends { location?: { name: string } | null; name: string }>(rooms: T[]) {
