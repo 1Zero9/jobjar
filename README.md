@@ -15,7 +15,7 @@ It started as a task tracker and now supports:
 - `docs/`: product, architecture, build, and handover notes
 
 ## Current app version
-- `web/package.json` is currently `0.2.6`
+- `web/package.json` is currently `0.2.7`
 
 ## Key routes
 - `/login`

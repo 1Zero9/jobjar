@@ -292,6 +292,7 @@ html[data-theme="dark"] .admin-shell {
 
 .landing-hero,
 .page-hero-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -389,9 +390,17 @@ html[data-theme="dark"] .page-hero-brand {
   border-radius: 999px;
   font-size: 0.78rem;
   font-weight: 700;
-  border: 1px solid var(--border);
-  background: var(--surface-alt);
-  color: var(--text-soft);
+  border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--teal) 18%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--primary-soft) 88%, #ffffff) 0%, color-mix(in srgb, var(--teal-soft) 82%, #f8fffd) 100%);
+  color: color-mix(in srgb, var(--primary) 64%, var(--text) 36%);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--primary) 14%, transparent);
+}
+
+html[data-theme="dark"] .session-chip {
+  border-color: color-mix(in srgb, var(--primary) 42%, var(--teal) 22%);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.24) 0%, rgba(45, 212, 191, 0.16) 100%);
+  color: #e8f3ff;
+  box-shadow: 0 10px 24px rgba(3, 10, 22, 0.28);
 }
 
 .landing-stat-row {
@@ -607,16 +616,42 @@ html[data-theme="dark"] .page-hero-icon.people {
   color: var(--text-soft);
 }
 
+.hero-corner-toggle {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 2;
+}
+
 .theme-toggle {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
 }
 
+.theme-toggle.compact {
+  width: 2.6rem;
+  height: 2.6rem;
+  padding: 0;
+  justify-content: center;
+}
+
 .theme-toggle-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+.theme-toggle-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .capture-kicker {
@@ -2248,12 +2283,11 @@ html[data-theme="dark"] .recorded-row[open] {
   align-items: flex-start;
   display: flex;
   gap: 1rem;
-  justify-content: space-between;
   margin-bottom: 1.25rem;
 }
 
-.login-header-row .theme-toggle {
-  flex-shrink: 0;
+.login-card-shell {
+  position: relative;
 }
 
 .login-brand-title {
@@ -3342,7 +3376,18 @@ html[data-theme="dark"] .landing-action-card.stats {
 
 @media (max-width: 640px) {
   .page-hero-main {
-    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.8rem;
+  }
+
+  .page-hero-card .page-hero-icon {
+    width: 3.1rem;
+    height: 3.1rem;
+    flex-shrink: 0;
+  }
+
+  .page-hero-title {
+    font-size: clamp(2.1rem, 9vw, 2.7rem);
   }
 
   .timeline-item {

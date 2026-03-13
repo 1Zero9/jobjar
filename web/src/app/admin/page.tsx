@@ -24,19 +24,19 @@ export default async function AdminPage() {
   return (
     <div className="workday-gradient min-h-screen px-3 py-4 sm:px-4 sm:py-6">
       <main className="mx-auto flex w-full max-w-7xl flex-col gap-4">
-        <header className="board-shell p-4 sm:p-5">
+        <header className="board-shell relative p-4 sm:p-5">
+          <div className="hero-corner-toggle">
+            <ThemeToggle compact />
+          </div>
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Admin</p>
               <h1 className="mt-1 text-2xl font-bold text-foreground sm:text-3xl">Admin Workspace</h1>
               <p className="mt-1 text-sm text-muted">Manage people, rooms, and tasks for the household.</p>
             </div>
-            <div className="capture-topbar-actions">
-              <ThemeToggle />
-              <form action={logoutAction}>
-                <button className="action-btn warn">Log out</button>
-              </form>
-            </div>
+            <form action={logoutAction}>
+              <button className="action-btn warn">Log out</button>
+            </form>
           </div>
 
           <div className="mt-3 grid grid-cols-2 gap-2 sm:w-[28rem]">

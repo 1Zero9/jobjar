@@ -53,7 +53,10 @@ export default async function LoginPage({
   return (
     <div className="login-screen task-shell min-h-screen px-4 py-6">
       <main className="login-main">
-        <section className="login-shell board-shell">
+        <section className="login-shell board-shell login-card-shell">
+          <div className="hero-corner-toggle">
+            <ThemeToggle compact />
+          </div>
           <div className="login-header-row">
             <div className="login-brand-row">
               <div className="page-hero-icon home">
@@ -65,7 +68,6 @@ export default async function LoginPage({
               </div>
               <span className="login-brand-title">Jobjar</span>
             </div>
-            <ThemeToggle />
           </div>
           <h1 className="login-heading">
             {needsSetup ? "Create Admin" : "Sign In"}

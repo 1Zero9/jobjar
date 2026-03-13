@@ -24,7 +24,7 @@ function readTheme(): Theme {
   return document.documentElement.dataset.theme === "dark" ? "dark" : "light";
 }
 
-export function ThemeToggle() {
+export function ThemeToggle({ compact = false }: { compact?: boolean }) {
   const [theme, setTheme] = useState<Theme>(readTheme);
 
   const nextTheme = theme === "dark" ? "light" : "dark";
@@ -32,7 +32,7 @@ export function ThemeToggle() {
   return (
     <button
       type="button"
-      className="action-btn subtle quiet theme-toggle"
+      className={`action-btn subtle quiet theme-toggle${compact ? " compact" : ""}`}
       suppressHydrationWarning
       aria-pressed={theme === "dark"}
       aria-label={`Switch to ${nextTheme} mode`}
@@ -61,7 +61,7 @@ export function ThemeToggle() {
           </svg>
         )}
       </span>
-      <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>
+      {compact ? <span className="theme-toggle-sr">{theme === "dark" ? "Light mode" : "Dark mode"}</span> : <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>}
     </button>
   );
 }

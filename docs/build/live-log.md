@@ -47,7 +47,11 @@
   - added a persistent light/dark mode toggle across home, shared page headers, admin, and login
   - bootstrapped the saved theme before hydration to avoid a flash of the wrong mode on load
   - tuned dark-mode tokens, gradients, hero cards, and task rows for a proper dark theme pass
-- Updated product docs to match the current role model and `0.2.6` app shape.
+- Refined UI details in `0.2.7`:
+  - moved the theme toggle into the top-right corner of the title cards
+  - brightened the logged-in person chip so the active user stands out more clearly
+  - corrected the mobile page header layout so `Jobjar` stays above the main title instead of dropping below the icon
+- Updated product docs to match the current role model and `0.2.7` app shape.
 - Validation completed:
   - `npm run db:generate` passed
   - `npm run lint` passed
