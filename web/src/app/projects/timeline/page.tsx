@@ -91,6 +91,9 @@ export default async function ProjectsTimelinePage({
               <Link href="/" className="action-btn subtle quiet">
                 Home
               </Link>
+              <Link href="/help" className="action-btn subtle quiet">
+                Help
+              </Link>
               <Link href="/projects" className="action-btn subtle quiet">
                 Board
               </Link>

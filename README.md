@@ -14,9 +14,10 @@ It started as a task tracker and now supports:
 ## Repo structure
 - `web/`: Next.js application
 - `docs/`: product, architecture, build, and handover notes
+- `docs/user-guide/`: guide hub plus adults, teens, kids, and grandparents guides
 
 ## Current app version
-- `web/package.json` is currently `0.4.1`
+- `web/package.json` is currently `0.4.5`
 
 ## Key routes
 - `/login`
@@ -25,6 +26,7 @@ It started as a task tracker and now supports:
 - `/tasks`
 - `/projects`
 - `/projects/timeline`
+- `/help`
 - `/stats`
 - `/admin`
 - `/settings`

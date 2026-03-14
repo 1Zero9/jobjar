@@ -23,6 +23,7 @@ npm run db:seed
 - `/tasks`: general task board
 - `/projects`: project planning, child tasks, costs, milestones, and materials
 - `/projects/timeline`: project dates, overdue items, and recent completions
+- `/help`: in-app onboarding and audience guides
 - `/stats`: household reporting, including project health and shopping progress
 - `/admin`: people, room, and task shaping
 - `/settings/*`: setup sections
@@ -32,6 +33,13 @@ npm run db:seed
 - `power_user`: can manage projects without full admin access
 - `member`: can use normal task workflows
 - `viewer`: read-only access
+
+## Audience guides
+- `docs/user-guide/jobjar-user-guide.md`: guide hub
+- `docs/user-guide/adults-guide.md`: adults and household managers
+- `docs/user-guide/teens-guide.md`: 12 to 18 users
+- `docs/user-guide/kids-guide.md`: under-12 users
+- `docs/user-guide/grandparents-guide.md`: read-only family members
 
 ## Deployment notes
 - `npm run build` regenerates the Prisma client before building

@@ -74,6 +74,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
           actions={
             <>
               <Link href="/" className="action-btn subtle quiet">Home</Link>
+              <Link href="/help" className="action-btn subtle quiet">Help</Link>
               <Link href="/tasks" prefetch className="action-btn subtle quiet">Tasks</Link>
               <Link href="/projects" prefetch className="action-btn subtle quiet">Projects</Link>
               <Link href="/projects/timeline" className="action-btn subtle quiet">Timeline</Link>

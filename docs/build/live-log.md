@@ -86,7 +86,23 @@
   - added profile theme settings on household members
   - let admins set the theme at create time and let power users update it later
   - layered blue and pink accent variants on top of the existing audience themes
-- Updated product docs to match the current role model and `0.4.1` app shape.
+- Added UX cleanup and navigation alignment in `0.4.2`:
+  - simplified task rows so overview and quick actions appear first, with full editing folded into a secondary details section
+  - surfaced role, age group, theme, and location access directly in People row summaries
+  - added direct People navigation for power users so route visibility matches their actual permissions
+  - tightened task wording around the shared task board view
+- Folded project management on the board in `0.4.3`:
+  - collapsed project actions under a single management section instead of showing every form at once
+  - folded materials, milestones, project steps, and costs into count-based sections for a cleaner mobile reading flow
+- Tightened read-only and onboarding support in `0.4.4`:
+  - hid editing and quick-action controls for `viewer` users so the interface matches the read-only permission model
+  - redirected read-only users away from `/log`
+  - added audience-specific user guides for adults, teens, kids, and grandparents
+- Added in-app help in `0.4.5`:
+  - added `/help` as an app route with role- and audience-aware onboarding
+  - linked help from home and the main working screens
+  - brought the new audience guides into the product instead of leaving them only in repo docs
+- Updated product docs to match the current role model and `0.4.5` app shape.
 - Validation completed:
   - `npm run db:generate` passed
   - `npm run lint` passed

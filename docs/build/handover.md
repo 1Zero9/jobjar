@@ -10,13 +10,14 @@ Current routes:
 - `/tasks`: general task board
 - `/projects`: project board
 - `/projects/timeline`: project timeline
+- `/help`: in-app onboarding and audience guides
 - `/stats`: reporting
 - `/admin`: admin workspace
 - `/settings/*`: setup sections
 - `/api/health/db`: DB health check
 
 Current package version:
-- `web/package.json`: `0.4.1`
+- `web/package.json`: `0.4.5`
 
 ## Auth model
 - custom auth, not NextAuth/Auth.js
@@ -42,6 +43,13 @@ Current package version:
 ## Data model
 Schema source of truth:
 - `web/prisma/schema.prisma`
+
+## User guides
+- `docs/user-guide/jobjar-user-guide.md`: guide hub
+- `docs/user-guide/adults-guide.md`: adult workflow
+- `docs/user-guide/teens-guide.md`: teen workflow
+- `docs/user-guide/kids-guide.md`: under-12 workflow
+- `docs/user-guide/grandparents-guide.md`: read-only family workflow
 
 Project support is built on `Task`, not a separate `Project` model.
 

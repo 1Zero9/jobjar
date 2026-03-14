@@ -516,6 +516,11 @@ html[data-theme="dark"] .session-chip {
   color: #c2410c;
 }
 
+.page-hero-icon.help {
+  background: linear-gradient(135deg, #ede9fe, #f8f5ff);
+  color: #6d28d9;
+}
+
 .page-hero-icon.log {
   background: linear-gradient(135deg, #dbeafe, #eff6ff);
   color: var(--primary);
@@ -1344,6 +1349,40 @@ html[data-theme="dark"] .recorded-row[open] {
   padding: 0.55rem 0.75rem;
 }
 
+.recorded-row-main {
+  display: grid;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.recorded-row-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.recorded-row-summary-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-left: auto;
+}
+
+.recorded-row-edit {
+  color: var(--accent);
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.people-summary-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
 .recorded-row-summary::-webkit-details-marker {
   display: none;
 }
@@ -1486,6 +1525,59 @@ html[data-theme="dark"] .recorded-row[open] {
   font-size: 0.88rem;
   font-weight: 600;
   text-transform: capitalize;
+}
+
+.task-overview-panel {
+  display: grid;
+  gap: 0.85rem;
+  padding: 0.15rem 0 0.1rem;
+}
+
+.task-overview-copy {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.task-overview-grid {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.task-overview-grid p {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-top: 1px solid var(--neutral-200);
+  padding-top: 0.65rem;
+}
+
+.task-overview-actions {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  padding-top: 0;
+}
+
+.task-manage-details {
+  margin-top: 0.1rem;
+}
+
+.project-panel {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.project-manage-details,
+.project-collection-details {
+  margin-top: 0.1rem;
+}
+
+.project-manage-stack {
+  display: grid;
+  gap: 0.75rem;
 }
 
 .lookup-parent-banner {
@@ -1654,6 +1746,78 @@ html[data-theme="dark"] .recorded-row[open] {
 .recorded-row-actions.between {
   justify-content: flex-start;
   padding-top: 0;
+}
+
+.task-manage-details .recorded-edit-form p {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-top: 1px solid var(--neutral-200);
+  padding-top: 0.7rem;
+}
+
+.task-readonly-note {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.help-hero-panel,
+.help-guide-grid,
+.help-summary-grid,
+.help-checklist {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.help-guide-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.help-guide-card {
+  display: grid;
+  gap: 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--surface);
+  color: var(--text-primary);
+  padding: 0.95rem 1rem;
+  text-decoration: none;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.help-guide-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.help-guide-card strong {
+  font-size: 0.98rem;
+  font-weight: 700;
+}
+
+.help-guide-card span {
+  color: var(--text-soft);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.help-checklist-item {
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: 0.95rem;
+  background: var(--surface);
+  color: var(--text-primary);
+  padding: 0.85rem 0.95rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+  .help-guide-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .recorded-empty {

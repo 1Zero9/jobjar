@@ -2,7 +2,7 @@ import { luckyDipAction, logoutAction } from "@/app/actions";
 import { FormActionButton } from "@/app/components/FormActionButton";
 import { ResetViewButton } from "@/app/components/ResetViewButton";
 import { ThemeToggle } from "@/app/components/ThemeToggle";
-import { requireSessionContext } from "@/lib/auth";
+import { canManagePeopleRole, canUseMemberActions, requireSessionContext } from "@/lib/auth";
 import { APP_VERSION } from "@/lib/app-version";
 import { getRoomLocationAccessWhere } from "@/lib/location-access";
 import {
@@ -23,6 +23,8 @@ export default async function HomePage() {
   const audienceThemeClass = getMemberThemeClassName(audienceBand, profileTheme);
   const childMode = isChildAudience(audienceBand);
   const teenMode = isTeenAudience(audienceBand);
+  const peopleManager = canManagePeopleRole(role);
+  const canAct = canUseMemberActions(role);
   const taskAudienceWhere = getAudienceAssignedTaskWhere(userId, audienceBand);
   const weekStart = startOfThisWeek();
 
@@ -98,6 +100,10 @@ export default async function HomePage() {
             <p className="landing-panel-copy">
               Jump into your jobs, tick them off, and keep your streak going.
             </p>
+          ) : !canAct ? (
+            <p className="landing-panel-copy">
+              This view is read-only, so you can keep up with what is happening without changing anything.
+            </p>
           ) : teenMode ? (
             <p className="landing-panel-copy">
               Keep your board moving. Focus on what is assigned, due, or ready to finish.
@@ -133,7 +139,7 @@ export default async function HomePage() {
                 <strong>Wins this week</strong>
                 <span>{completedThisWeek}</span>
               </div>
-            ) : (
+            ) : canAct ? (
               <>
                 <Link href="/log" className="landing-action-card log">
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -153,25 +159,37 @@ export default async function HomePage() {
                   <span>{projectCount} tracked</span>
                 </Link>
               </>
+            ) : (
+              <Link href="/projects" className="landing-action-card setup">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h4A2.5 2.5 0 0 1 12 7.5v1A2.5 2.5 0 0 1 9.5 11h-4A2.5 2.5 0 0 1 3 8.5z"/>
+                  <path d="M12 15.5A2.5 2.5 0 0 1 14.5 13h4a2.5 2.5 0 0 1 2.5 2.5v1a2.5 2.5 0 0 1-2.5 2.5h-4a2.5 2.5 0 0 1-2.5-2.5z"/>
+                  <path d="M8 11v2a2 2 0 0 0 2 2h2"/>
+                </svg>
+                <strong>Projects</strong>
+                <span>{projectCount} tracked</span>
+              </Link>
             )}
 
             {canAccessExtendedViews(audienceBand) ? (
               <>
-                <form action={luckyDipAction} className="landing-action-form">
-                  <input type="hidden" name="returnTo" value="/tasks" />
-                  <FormActionButton className="landing-action-card lucky landing-action-button" pendingLabel="Picking…">
-                    <>
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <polyline points="16 3 21 3 21 8"/>
-                        <line x1="4" y1="20" x2="21" y2="3"/>
-                        <polyline points="21 16 21 21 16 21"/>
-                        <line x1="15" y1="15" x2="21" y2="21"/>
-                        <line x1="4" y1="4" x2="9" y2="9"/>
-                      </svg>
-                      <strong>{teenMode ? "Pick one" : "Lucky dip"}</strong>
-                    </>
-                  </FormActionButton>
-                </form>
+                {canAct ? (
+                  <form action={luckyDipAction} className="landing-action-form">
+                    <input type="hidden" name="returnTo" value="/tasks" />
+                    <FormActionButton className="landing-action-card lucky landing-action-button" pendingLabel="Picking…">
+                      <>
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <polyline points="16 3 21 3 21 8"/>
+                          <line x1="4" y1="20" x2="21" y2="3"/>
+                          <polyline points="21 16 21 21 16 21"/>
+                          <line x1="15" y1="15" x2="21" y2="21"/>
+                          <line x1="4" y1="4" x2="9" y2="9"/>
+                        </svg>
+                        <strong>{teenMode ? "Pick one" : "Lucky dip"}</strong>
+                      </>
+                    </FormActionButton>
+                  </form>
+                ) : null}
 
                 <Link href="/stats" className="landing-action-card stats">
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -200,9 +218,30 @@ export default async function HomePage() {
                     </svg>
                     <strong>Setup</strong>
                   </Link>
+                ) : peopleManager ? (
+                  <Link href="/settings/people" className="landing-action-card setup">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" />
+                      <circle cx="9.5" cy="7" r="3" />
+                      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
+                    <strong>People</strong>
+                    <span>Profiles and access</span>
+                  </Link>
                 ) : null}
               </>
             ) : null}
+
+            <Link href="/help" className="landing-action-card view">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M9.09 9a3 3 0 1 1 5.82 1c0 2-3 2-3 4" />
+                <path d="M12 17h.01" />
+              </svg>
+              <strong>Help</strong>
+              <span>{canAct ? "Quick guides and tips" : "How this view works"}</span>
+            </Link>
           </div>
         </section>
       </main>

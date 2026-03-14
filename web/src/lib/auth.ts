@@ -33,6 +33,10 @@ export function canManageProjectsRole(role: MemberRole) {
   return role === "admin" || role === "power_user";
 }
 
+export function canManagePeopleRole(role: MemberRole) {
+  return role === "admin" || role === "power_user";
+}
+
 export function canUseMemberActions(role: MemberRole) {
   return role !== "viewer";
 }
@@ -139,6 +143,14 @@ export async function requireAdmin(nextPath = "/admin") {
 export async function requireProjectManager(nextPath = "/projects") {
   const context = await requireSessionContext(nextPath);
   if (!canManageProjectsRole(context.role)) {
+    redirect("/");
+  }
+  return context;
+}
+
+export async function requirePeopleManager(nextPath = "/settings/people") {
+  const context = await requireSessionContext(nextPath);
+  if (!canManagePeopleRole(context.role)) {
     redirect("/");
   }
   return context;

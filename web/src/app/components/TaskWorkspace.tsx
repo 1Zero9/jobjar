@@ -5,7 +5,7 @@ import { LocationRoomSelect } from "@/app/components/LocationRoomSelect";
 import { SimilarTaskField } from "@/app/components/SimilarTaskField";
 import { TasksPanelClient } from "@/app/components/TasksPanelClient";
 import { ToastNotice } from "@/app/components/ToastNotice";
-import { canManageProjectsRole, isAdminRole, requireSessionContext } from "@/lib/auth";
+import { canManagePeopleRole, canManageProjectsRole, canUseMemberActions, isAdminRole, requireSessionContext } from "@/lib/auth";
 import { getRoomLocationAccessWhere, hasLocationRestrictions } from "@/lib/location-access";
 import { canAccessExtendedViews, getAudienceAssignedTaskWhere, getMemberThemeClassName, isChildAudience, isTeenAudience } from "@/lib/member-audience";
 import { prisma } from "@/lib/prisma";
@@ -27,9 +27,10 @@ type SearchParams = {
 
 export async function LogWorkspace({ params }: { params: SearchParams }) {
   const { householdId, userId, role, audienceBand, profileTheme, allowedLocationIds } = await requireSessionContext("/log");
-  if (!canAccessExtendedViews(audienceBand)) {
+  if (!canAccessExtendedViews(audienceBand) || !canUseMemberActions(role)) {
     redirect("/tasks");
   }
+  const peopleManager = canManagePeopleRole(role);
   const restrictedToLocations = hasLocationRestrictions(allowedLocationIds);
   const audienceThemeClass = getMemberThemeClassName(audienceBand, profileTheme);
 
@@ -103,6 +104,9 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
               <Link href="/" className="action-btn subtle quiet">
                 Home
               </Link>
+              <Link href="/help" className="action-btn subtle quiet">
+                Help
+              </Link>
               <Link href="/tasks" prefetch className="action-btn subtle quiet">
                 View tasks
               </Link>
@@ -112,6 +116,10 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
               {isAdminRole(role) ? (
                 <Link href="/settings" className="action-btn subtle quiet">
                   Setup
+                </Link>
+              ) : peopleManager ? (
+                <Link href="/settings/people" className="action-btn subtle quiet">
+                  People
                 </Link>
               ) : null}
               <form action={logoutAction}>
@@ -272,6 +280,8 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
   const audienceThemeClass = getMemberThemeClassName(audienceBand, profileTheme);
   const childMode = isChildAudience(audienceBand);
   const teenMode = isTeenAudience(audienceBand);
+  const peopleManager = canManagePeopleRole(role);
+  const canEditTasks = canUseMemberActions(role);
   const taskTake = mode === "projects" ? 28 : 48;
   const parentOccurrenceTake = mode === "projects" ? 8 : 6;
   const childOccurrenceTake = 2;
@@ -487,11 +497,16 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
               <Link href="/" className="action-btn subtle quiet">
                 Home
               </Link>
+              <Link href="/help" className="action-btn subtle quiet">
+                Help
+              </Link>
               {canAccessExtendedViews(audienceBand) ? (
                 <>
-                  <Link href="/log" className="action-btn subtle quiet">
-                    {teenMode ? "Log job" : "Log task"}
-                  </Link>
+                  {canEditTasks ? (
+                    <Link href="/log" className="action-btn subtle quiet">
+                      {teenMode ? "Log job" : "Log task"}
+                    </Link>
+                  ) : null}
                   <Link href={mode === "projects" ? "/tasks" : "/projects"} prefetch className="action-btn subtle quiet">
                     {mode === "projects" ? (teenMode ? "Board" : "Tasks") : "Projects"}
                   </Link>
@@ -503,6 +518,10 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
                   {isAdminRole(role) ? (
                     <Link href="/settings" className="action-btn subtle quiet">
                       Setup
+                    </Link>
+                  ) : peopleManager ? (
+                    <Link href="/settings/people" className="action-btn subtle quiet">
+                      People
                     </Link>
                   ) : null}
                 </>
@@ -534,6 +553,7 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
           initialLuckyId={params.lucky && params.lucky !== "empty" ? params.lucky : null}
           initialProjectState={selectedProjectState}
           audienceBand={audienceBand}
+          canEditTasks={canEditTasks}
           canManageProjects={canManageProjectsRole(role)}
           canDeleteTasks={isAdminRole(role)}
           basePath={mode === "projects" ? "/projects" : "/tasks"}
@@ -542,14 +562,14 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
             childMode ? "My jobs" : mode === "projects" ? "Projects" : teenMode ? "My board" : "Tasks"
           }
           panelTitle={
-            childMode ? "Jobs picked for you" : mode === "projects" ? "Project board" : teenMode ? "Task board" : "Logged tasks"
+            childMode ? "Jobs picked for you" : mode === "projects" ? "Project board" : "Task board"
           }
           emptyMessage={
             childMode
               ? "No jobs waiting right now. Nice work."
               : mode === "projects"
                 ? "No projects yet. Promote a task or add project steps from an existing project."
-                : "No tasks recorded yet."
+                : "No tasks on the board yet."
           }
           tasks={recordedTasks.map((task) => ({
             id: task.id,

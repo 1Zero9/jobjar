@@ -11,7 +11,7 @@ import {
 import { AppPageHeader } from "@/app/components/AppPageHeader";
 import { FormActionButton } from "@/app/components/FormActionButton";
 import { ToastNotice } from "@/app/components/ToastNotice";
-import { isAdminRole, requireProjectManager } from "@/lib/auth";
+import { isAdminRole, requirePeopleManager } from "@/lib/auth";
 import { formatAudienceBand, formatProfileTheme } from "@/lib/member-audience";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
@@ -24,7 +24,7 @@ export default async function PeoplePage({
   searchParams: Promise<{ added?: string; updated?: string }>;
 }) {
   const params = await searchParams;
-  const { householdId, role } = await requireProjectManager("/settings/people");
+  const { householdId, role } = await requirePeopleManager("/settings/people");
   const adminMode = isAdminRole(role);
 
   const [people, locations] = await Promise.all([
@@ -146,7 +146,7 @@ export default async function PeoplePage({
             </form>
           ) : (
             <p className="recorded-row-placeholder">
-              Power users can set the age group for each person here. Admin-only controls such as roles, passcodes, and location access stay with admins.
+              Power users can keep age group and theme settings current here. Admin-only controls such as roles, passcodes, and location access stay with admins.
             </p>
           )}
 
@@ -156,12 +156,17 @@ export default async function PeoplePage({
                 <summary className="recorded-row-summary">
                   <div className="recorded-row-main">
                     <p className="recorded-row-title">{person.user.displayName}</p>
-                    <p className="recorded-row-placeholder">{person.user.email}</p>
+                    <p className="recorded-row-placeholder">{person.user.email ?? "No email saved"}</p>
                   </div>
                   <div className="recorded-row-meta">
-                    <span className="recorded-row-room">{formatRole(person.role)}</span>
+                    <div className="people-summary-chips">
+                      <span className="task-chip">{formatRole(person.role)}</span>
+                      <span className="task-chip">{formatAudienceBand(person.audienceBand)}</span>
+                      <span className="task-chip">{formatProfileTheme(person.profileTheme)}</span>
+                      <span className="task-chip">{formatLocationAccessSummary(person.role, person.locationAccess)}</span>
+                    </div>
                     <div className="recorded-row-summary-actions">
-                      <span className="recorded-row-edit">Edit</span>
+                      <span className="recorded-row-edit">Open</span>
                       <span className="recorded-row-chevron">+</span>
                     </div>
                   </div>
@@ -310,4 +315,17 @@ function formatLocationAccess(
     return "All locations";
   }
   return locationAccess.map((entry) => entry.location.name).join(", ");
+}
+
+function formatLocationAccessSummary(
+  role: string,
+  locationAccess: Array<{ location: { name: string } }>,
+) {
+  if (role === "admin" || locationAccess.length === 0) {
+    return "All locations";
+  }
+  if (locationAccess.length === 1) {
+    return locationAccess[0]?.location.name ?? "1 location";
+  }
+  return `${locationAccess.length} locations`;
 }
