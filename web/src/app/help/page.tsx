@@ -1,6 +1,5 @@
-import { logoutAction } from "@/app/actions";
 import { AppPageHeader } from "@/app/components/AppPageHeader";
-import { FormActionButton } from "@/app/components/FormActionButton";
+import { LogoutIconButton } from "@/app/components/LogoutIconButton";
 import { canAccessProjectViewsRole, canAccessReportingViewsRole, canManagePeopleRole, canUseMemberActions, isMemberRole, requireSessionContext } from "@/lib/auth";
 import { canAccessExtendedViews, getMemberThemeClassName } from "@/lib/member-audience";
 import Link from "next/link";
@@ -86,13 +85,7 @@ export default async function HelpPage() {
               <path d="M12 17h.01" />
             </svg>
           }
-          cornerAction={
-            <form action={logoutAction}>
-              <FormActionButton className="action-btn subtle quiet compact" pendingLabel="Logging out">
-                Log out
-              </FormActionButton>
-            </form>
-          }
+          cornerAction={<LogoutIconButton />}
           actions={
             <>
               <Link href="/" className="action-btn subtle quiet">Home</Link>

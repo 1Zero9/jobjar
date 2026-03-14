@@ -1,6 +1,7 @@
-import { createRoomAction, deleteRoomAction, logoutAction, updateRoomAction, updateRoomLocationAction } from "@/app/actions";
+import { createRoomAction, deleteRoomAction, updateRoomAction, updateRoomLocationAction } from "@/app/actions";
 import { AppPageHeader } from "@/app/components/AppPageHeader";
 import { FormActionButton } from "@/app/components/FormActionButton";
+import { LogoutIconButton } from "@/app/components/LogoutIconButton";
 import { ToastNotice } from "@/app/components/ToastNotice";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -66,13 +67,7 @@ export default async function RoomsPage({
               <path d="M9 21v-6h6v6" />
             </svg>
           }
-          cornerAction={
-            <form action={logoutAction}>
-              <FormActionButton className="action-btn subtle quiet compact" pendingLabel="Logging out">
-                Log out
-              </FormActionButton>
-            </form>
-          }
+          cornerAction={<LogoutIconButton />}
           actions={
             <>
               <Link href="/settings" className="action-btn subtle quiet">

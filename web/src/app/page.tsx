@@ -1,5 +1,6 @@
-import { luckyDipAction, logoutAction } from "@/app/actions";
+import { luckyDipAction } from "@/app/actions";
 import { FormActionButton } from "@/app/components/FormActionButton";
+import { LogoutIconButton } from "@/app/components/LogoutIconButton";
 import { ResetViewButton } from "@/app/components/ResetViewButton";
 import { ThemeToggle } from "@/app/components/ThemeToggle";
 import { canAccessProjectViewsRole, canAccessReportingViewsRole, canManagePeopleRole, canUseMemberActions, isMemberRole, requireSessionContext } from "@/lib/auth";
@@ -71,30 +72,32 @@ export default async function HomePage() {
     <div className={`capture-shell ${audienceThemeClass} min-h-screen px-4 py-5`}>
       <main className="landing-shell mx-auto flex w-full max-w-[28rem] flex-col gap-6">
         <header className={`landing-hero ${childMode ? "landing-hero-kid" : teenMode ? "landing-hero-teen" : ""}`.trim()}>
-          <div className="hero-corner-tools">
-            <ResetViewButton />
-            <ThemeToggle compact />
-          </div>
-          <div className="hero-corner-action">
-            <form action={logoutAction}>
-              <FormActionButton className="action-btn subtle quiet compact" pendingLabel="Logging out">
-                Log out
-              </FormActionButton>
-            </form>
-          </div>
-          <div className="landing-brand-row">
-            <div className="page-hero-icon home">
-              <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
-                <path d="m3.3 7 8.7 5 8.7-5"/>
-                <path d="M12 22V12"/>
-              </svg>
+          <div className="landing-hero-topline">
+            <div className="landing-hero-topline-main">
+              <div className="landing-brand-row">
+                <div className="page-hero-icon home">
+                  <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
+                    <path d="m3.3 7 8.7 5 8.7-5"/>
+                    <path d="M12 22V12"/>
+                  </svg>
+                </div>
+                <h1 className="landing-title">Jobjar</h1>
+              </div>
+              <div className="landing-meta-row">
+                <span className="session-chip">{currentUser?.displayName ?? "You"}</span>
+                <span className="version-chip">{APP_VERSION}</span>
+              </div>
             </div>
-            <h1 className="landing-title">Jobjar</h1>
-          </div>
-          <div className="landing-meta-row">
-            <span className="session-chip">{currentUser?.displayName ?? "You"}</span>
-            <span className="version-chip">{APP_VERSION}</span>
+            <div className="hero-corner-stack">
+              <div className="hero-corner-tools">
+                <ResetViewButton />
+                <ThemeToggle compact />
+              </div>
+              <div className="hero-corner-action">
+                <LogoutIconButton />
+              </div>
+            </div>
           </div>
         </header>
 

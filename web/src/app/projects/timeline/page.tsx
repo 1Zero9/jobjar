@@ -1,7 +1,6 @@
-import { logoutAction } from "@/app/actions";
 import { AppPageHeader } from "@/app/components/AppPageHeader";
 import { AutoSubmitSelect } from "@/app/components/AutoSubmitSelect";
-import { FormActionButton } from "@/app/components/FormActionButton";
+import { LogoutIconButton } from "@/app/components/LogoutIconButton";
 import { canAccessProjectViewsRole, isAdminRole, requireSessionContext } from "@/lib/auth";
 import { hasLocationRestrictions } from "@/lib/location-access";
 import { canAccessExtendedViews, getMemberThemeClassName } from "@/lib/member-audience";
@@ -85,13 +84,7 @@ export default async function ProjectsTimelinePage({
               <path d="M12 7v5l3 3" />
             </svg>
           }
-          cornerAction={
-            <form action={logoutAction}>
-              <FormActionButton className="action-btn subtle quiet compact" pendingLabel="Logging out">
-                Log out
-              </FormActionButton>
-            </form>
-          }
+          cornerAction={<LogoutIconButton />}
           actions={
             <>
               <span className="session-chip">{currentUser?.displayName ?? "You"}</span>

@@ -1,7 +1,6 @@
-import { logoutAction } from "@/app/actions";
 import { AppPageHeader } from "@/app/components/AppPageHeader";
 import { AutoSubmitSelect } from "@/app/components/AutoSubmitSelect";
-import { FormActionButton } from "@/app/components/FormActionButton";
+import { LogoutIconButton } from "@/app/components/LogoutIconButton";
 import { canAccessReportingViewsRole, requireSessionContext } from "@/lib/auth";
 import { hasLocationRestrictions } from "@/lib/location-access";
 import { canAccessExtendedViews, getMemberThemeClassName } from "@/lib/member-audience";
@@ -71,13 +70,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
               <line x1="2" y1="20" x2="22" y2="20" />
             </svg>
           }
-          cornerAction={
-            <form action={logoutAction}>
-              <FormActionButton className="action-btn subtle quiet compact" pendingLabel="Logging out">
-                Log out
-              </FormActionButton>
-            </form>
-          }
+          cornerAction={<LogoutIconButton />}
           actions={
             <>
               <Link href="/" className="action-btn subtle quiet">Home</Link>

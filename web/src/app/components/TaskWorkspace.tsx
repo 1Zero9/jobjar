@@ -1,7 +1,8 @@
-import { createQuickTaskAction, logoutAction } from "@/app/actions";
+import { createQuickTaskAction } from "@/app/actions";
 import { FormActionButton } from "@/app/components/FormActionButton";
 import { AppPageHeader } from "@/app/components/AppPageHeader";
 import { LocationRoomSelect } from "@/app/components/LocationRoomSelect";
+import { LogoutIconButton } from "@/app/components/LogoutIconButton";
 import { SimilarTaskField } from "@/app/components/SimilarTaskField";
 import { TasksPanelClient } from "@/app/components/TasksPanelClient";
 import { ToastNotice } from "@/app/components/ToastNotice";
@@ -100,13 +101,7 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
             </svg>
           }
-          cornerAction={
-            <form action={logoutAction}>
-              <FormActionButton className="action-btn subtle quiet compact" pendingLabel="Logging out">
-                Log out
-              </FormActionButton>
-            </form>
-          }
+          cornerAction={<LogoutIconButton />}
           actions={
             <>
               <span className="session-chip">{currentUser?.displayName ?? "You"}</span>
@@ -508,13 +503,7 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
               <polyline points="3 18 4 19 6 16" />
             </svg>
           }
-          cornerAction={
-            <form action={logoutAction}>
-              <FormActionButton className="action-btn subtle quiet compact" pendingLabel="Logging out">
-                Log out
-              </FormActionButton>
-            </form>
-          }
+          cornerAction={<LogoutIconButton />}
           actions={
             <>
               <span className="session-chip">{currentUser?.displayName ?? "You"}</span>

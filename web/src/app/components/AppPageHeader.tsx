@@ -16,18 +16,20 @@ type Props = {
 export function AppPageHeader({ title, subtitle, icon, iconClassName = "", actions, cornerAction, className = "" }: Props) {
   return (
     <header className={`page-hero-card ${className}`.trim()}>
-      <div className="hero-corner-stack">
-        <div className="hero-corner-tools">
-          <ResetViewButton />
-          <ThemeToggle compact />
-        </div>
-        {cornerAction ? <div className="hero-corner-action">{cornerAction}</div> : null}
-      </div>
       <div className="page-hero-topline">
-        {icon ? <div className={`page-hero-icon ${iconClassName}`.trim()}>{icon}</div> : null}
-        <div className="page-hero-brand-row">
-          <p className="page-hero-brand">Jobjar</p>
-          <span className="version-chip">{APP_VERSION}</span>
+        <div className="page-hero-topline-main">
+          {icon ? <div className={`page-hero-icon ${iconClassName}`.trim()}>{icon}</div> : null}
+          <div className="page-hero-brand-row">
+            <p className="page-hero-brand">Jobjar</p>
+            <span className="version-chip">{APP_VERSION}</span>
+          </div>
+        </div>
+        <div className="hero-corner-stack">
+          <div className="hero-corner-tools">
+            <ResetViewButton />
+            <ThemeToggle compact />
+          </div>
+          {cornerAction ? <div className="hero-corner-action">{cornerAction}</div> : null}
         </div>
       </div>
       <div className="page-hero-copy">

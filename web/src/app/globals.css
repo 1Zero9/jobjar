@@ -328,11 +328,20 @@ html[data-theme="dark"] .admin-shell {
   -webkit-text-fill-color: transparent;
 }
 
+.landing-hero-topline,
 .page-hero-topline {
   display: flex;
-  align-items: center;
-  gap: 0.9rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
   width: 100%;
+}
+
+.landing-hero-topline-main,
+.page-hero-topline-main {
+  display: grid;
+  gap: 0.65rem;
+  min-width: 0;
 }
 
 .page-hero-copy {
@@ -845,13 +854,10 @@ html[data-theme="dark"] .profile-girl-pink .page-hero-icon {
 }
 
 .hero-corner-stack {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  z-index: 2;
   display: grid;
   justify-items: end;
   gap: 0.45rem;
+  flex: 0 0 auto;
 }
 
 .hero-corner-tools {
@@ -867,6 +873,13 @@ html[data-theme="dark"] .profile-girl-pink .page-hero-icon {
 .action-btn.compact {
   padding: 0.5rem 0.72rem;
   font-size: 0.78rem;
+}
+
+.action-btn.icon-only {
+  width: 2.6rem;
+  height: 2.6rem;
+  padding: 0;
+  justify-content: center;
 }
 
 .theme-toggle {
