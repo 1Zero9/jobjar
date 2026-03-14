@@ -17,7 +17,11 @@ Current routes:
 - `/api/health/db`: DB health check
 
 Current package version:
-- `web/package.json`: `0.4.6`
+- `web/package.json`: `0.4.7`
+
+Recurring job behavior:
+- finishing a recurring job records the completion against the current occurrence
+- the job stays open and the next scheduled occurrence is created automatically
 
 ## Auth model
 - custom auth, not NextAuth/Auth.js

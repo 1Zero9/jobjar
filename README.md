@@ -17,7 +17,7 @@ It started as a task tracker and now supports:
 - `docs/user-guide/`: guide hub plus adults, teens, kids, and grandparents guides
 
 ## Current app version
-- `web/package.json` is currently `0.4.6`
+- `web/package.json` is currently `0.4.7`
 
 ## Key routes
 - `/login`

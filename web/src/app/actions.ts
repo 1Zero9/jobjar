@@ -1660,10 +1660,17 @@ export async function completeTaskAction(formData: FormData) {
       validationMode: true,
       minimumMinutes: true,
       captureStage: true,
+      schedule: {
+        select: {
+          recurrenceType: true,
+          intervalCount: true,
+          nextDueAt: true,
+        },
+      },
       occurrences: {
         orderBy: { dueAt: "desc" },
-        take: 1,
-        select: { id: true },
+        take: 3,
+        select: { id: true, status: true, dueAt: true },
       },
       logs: {
         where: { action: "started" },
@@ -1694,14 +1701,28 @@ export async function completeTaskAction(formData: FormData) {
     }
   }
 
-  const lastOccurrenceId = task.occurrences[0]?.id;
+  const isRecurring = Boolean(task.schedule);
+  const openOccurrence = task.occurrences.find((occurrence) => occurrence.status !== "done") ?? null;
+  const latestOccurrence = task.occurrences[0] ?? null;
+  let completedOccurrenceId = openOccurrence?.id ?? latestOccurrence?.id ?? null;
+
   await prisma.task.update({
     where: { id: task.id },
-    data: { captureStage: "done" },
+    data: { captureStage: isRecurring ? "shaped" : "done" },
   });
-  if (lastOccurrenceId) {
+
+  if (openOccurrence) {
     await prisma.taskOccurrence.update({
-      where: { id: lastOccurrenceId },
+      where: { id: openOccurrence.id },
+      data: {
+        status: "done",
+        completedAt: now,
+        completedBy: currentUserId,
+      },
+    });
+  } else if (latestOccurrence) {
+    await prisma.taskOccurrence.update({
+      where: { id: latestOccurrence.id },
       data: {
         status: "done",
         completedAt: now,
@@ -1709,7 +1730,7 @@ export async function completeTaskAction(formData: FormData) {
       },
     });
   } else {
-    await prisma.taskOccurrence.create({
+    const occurrence = await prisma.taskOccurrence.create({
       data: {
         taskId: task.id,
         dueAt: now,
@@ -1717,13 +1738,27 @@ export async function completeTaskAction(formData: FormData) {
         completedAt: now,
         completedBy: currentUserId,
       },
+      select: { id: true },
     });
+    completedOccurrenceId = occurrence.id;
+  }
+
+  if (isRecurring && task.schedule) {
+    if (isSimpleRecurrenceType(task.schedule.recurrenceType)) {
+      const baseDueAt = openOccurrence?.dueAt ?? task.schedule.nextDueAt ?? now;
+      const nextDueAt = calculateNextDueAt(baseDueAt, task.schedule.recurrenceType, task.schedule.intervalCount);
+      await upsertSimpleSchedule(task.id, task.schedule.recurrenceType, task.schedule.intervalCount, nextDueAt);
+      await upsertPendingOccurrence(task.id, nextDueAt);
+    } else {
+      await upsertPendingOccurrence(task.id, task.schedule.nextDueAt ?? now);
+    }
   }
 
   const durationSeconds = lastStart ? Math.max(0, Math.floor((now.getTime() - lastStart.getTime()) / 1000)) : null;
   await prisma.taskLog.create({
     data: {
       taskId: task.id,
+      occurrenceId: completedOccurrenceId,
       action: "completed",
       actorUserId: currentUserId,
       atTime: now,
@@ -2167,6 +2202,10 @@ function calculateNextDueAt(base: Date, recurrenceType: "daily" | "weekly" | "mo
   }
   next.setDate(next.getDate() + (interval * 7));
   return next;
+}
+
+function isSimpleRecurrenceType(value: string): value is "daily" | "weekly" | "monthly" {
+  return value === "daily" || value === "weekly" || value === "monthly";
 }
 
 async function upsertSimpleSchedule(

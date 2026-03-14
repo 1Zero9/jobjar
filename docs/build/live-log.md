@@ -108,7 +108,11 @@
   - folded task filters into an expandable section and added member-specific job filters
   - moved logout into the corner tools area under the theme toggle
   - strengthened the login card styling and fixed the `Jobjar` title clipping again
-- Updated product docs to match the current role model and `0.4.6` app shape.
+- Fixed recurring job completion flow in `0.4.7`:
+  - finishing a recurring job now records the completed occurrence without closing the whole job
+  - the next scheduled occurrence is created immediately so the job stays in the cycle
+  - aligned board, stats, and timeline helpers so recurring jobs no longer show as stopped after one completion
+- Updated product docs to match the current `0.4.7` app shape.
 - Validation completed:
   - `npm run db:generate` passed
   - `npm run lint` passed

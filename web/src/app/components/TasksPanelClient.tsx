@@ -1171,7 +1171,17 @@ function addDays(value: Date, days: number) {
   return next.toISOString();
 }
 
-function getTaskState(task: { captureStage: string; occurrences: Array<{ status: string }> }) {
+function getTaskState(task: {
+  captureStage: string;
+  schedule?: { nextDueAt: string | null } | null;
+  occurrences: Array<{ status: string }>;
+}) {
+  if (task.occurrences.some((occurrence) => occurrence.status !== "done")) {
+    return "open";
+  }
+  if (task.schedule) {
+    return "open";
+  }
   if (task.captureStage === "done" || task.occurrences[0]?.status === "done") {
     return "done";
   }
