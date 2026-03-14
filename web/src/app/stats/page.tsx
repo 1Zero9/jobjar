@@ -2,7 +2,7 @@ import { AppPageHeader } from "@/app/components/AppPageHeader";
 import { AutoSubmitSelect } from "@/app/components/AutoSubmitSelect";
 import { LogoutIconButton } from "@/app/components/LogoutIconButton";
 import { canAccessReportingViewsRole, requireSessionContext } from "@/lib/auth";
-import { hasLocationRestrictions } from "@/lib/location-access";
+import { getLocationScopeLabel, hasLocationRestrictions } from "@/lib/location-access";
 import { canAccessExtendedViews, getMemberThemeClassName } from "@/lib/member-audience";
 import { getStatsData } from "@/lib/stats-data";
 import { prisma } from "@/lib/prisma";
@@ -45,6 +45,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
   const selectedLocationId = locations.some((l) => l.id === params.location) ? params.location : "";
   const selectedUserId = members.some((m) => m.user.id === params.person) ? params.person : "";
   const selectedPeriod: Period = validPeriods.includes(params.period as Period) ? (params.period as Period) : "month";
+  const locationScopeLabel = getLocationScopeLabel(locations, allowedLocationIds);
 
   const stats = await getStatsData(householdId, {
     locationId: selectedLocationId || undefined,
@@ -71,10 +72,10 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
             </svg>
           }
           cornerAction={<LogoutIconButton />}
+          scopeLabel={locationScopeLabel}
           actions={
             <>
               <Link href="/" className="action-btn subtle quiet">Home</Link>
-              <Link href="/help" className="action-btn subtle quiet">Help</Link>
               <Link href="/tasks" prefetch className="action-btn subtle quiet">Jobs</Link>
               <Link href="/projects" prefetch className="action-btn subtle quiet">Projects</Link>
               <Link href="/projects/timeline" className="action-btn subtle quiet">Timeline</Link>

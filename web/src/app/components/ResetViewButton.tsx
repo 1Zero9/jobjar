@@ -18,14 +18,13 @@ export function ResetViewButton() {
         const hasSearch = searchParams.toString().length > 0;
         const hasHash = typeof window !== "undefined" && window.location.hash.length > 0;
 
-        if (typeof window !== "undefined") {
-          window.history.replaceState(null, "", cleanPath);
-          window.scrollTo({ top: 0, behavior: "smooth" });
-        }
-
         if (hasSearch || hasHash) {
           router.replace(cleanPath, { scroll: true });
           return;
+        }
+
+        if (typeof window !== "undefined") {
+          window.scrollTo({ top: 0, behavior: "smooth" });
         }
 
         router.refresh();

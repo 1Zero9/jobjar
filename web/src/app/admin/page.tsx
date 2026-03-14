@@ -3,12 +3,13 @@ import {
   createRoomAction,
   createTaskAction,
   deleteRoomAction,
-  logoutAction,
   removePersonAction,
   setPersonPasscodeAction,
   updateRoomAction,
 } from "@/app/actions";
 import { AdminTasksClient } from "@/app/components/AdminTasksClient";
+import { HeaderIconLink } from "@/app/components/HeaderIconLink";
+import { LogoutIconButton } from "@/app/components/LogoutIconButton";
 import { ResetViewButton } from "@/app/components/ResetViewButton";
 import { ThemeToggle } from "@/app/components/ThemeToggle";
 import { requireAdmin } from "@/lib/auth";
@@ -29,16 +30,27 @@ export default async function AdminPage() {
           <div className="hero-corner-tools">
             <ResetViewButton />
             <ThemeToggle compact />
+            <HeaderIconLink href="/help" label="Help">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M9.09 9a3 3 0 1 1 5.82 1c0 2-3 2-3 4" />
+                <path d="M12 17h.01" />
+              </svg>
+            </HeaderIconLink>
+            <LogoutIconButton />
           </div>
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Admin</p>
               <h1 className="mt-1 text-2xl font-bold text-foreground sm:text-3xl">Admin Workspace</h1>
               <p className="mt-1 text-sm text-muted">Manage people, rooms, and tasks for the household.</p>
+              <div className="mt-2">
+                <span className="location-scope-chip">
+                  <span>Location</span>
+                  <strong>All locations</strong>
+                </span>
+              </div>
             </div>
-            <form action={logoutAction}>
-              <button className="action-btn warn">Log out</button>
-            </form>
           </div>
 
           <div className="mt-3 grid grid-cols-2 gap-2 sm:w-[28rem]">

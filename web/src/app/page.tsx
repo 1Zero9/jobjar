@@ -1,3 +1,4 @@
+import { HeaderIconLink } from "@/app/components/HeaderIconLink";
 import { luckyDipAction } from "@/app/actions";
 import { FormActionButton } from "@/app/components/FormActionButton";
 import { LogoutIconButton } from "@/app/components/LogoutIconButton";
@@ -5,7 +6,7 @@ import { ResetViewButton } from "@/app/components/ResetViewButton";
 import { ThemeToggle } from "@/app/components/ThemeToggle";
 import { canAccessProjectViewsRole, canAccessReportingViewsRole, canManagePeopleRole, canUseMemberActions, isMemberRole, requireSessionContext } from "@/lib/auth";
 import { APP_VERSION } from "@/lib/app-version";
-import { getRoomLocationAccessWhere } from "@/lib/location-access";
+import { getLocationScopeLabel, getRoomLocationAccessWhere, hasLocationRestrictions } from "@/lib/location-access";
 import {
   canAccessExtendedViews,
   getAudienceAssignedTaskWhere,
@@ -32,11 +33,17 @@ export default async function HomePage() {
   const taskAudienceWhere = getAudienceAssignedTaskWhere(userId, audienceBand);
   const memberVisibleTaskWhere = getMemberVisibleTaskWhere(role, userId);
   const weekStart = startOfThisWeek();
+  const restrictedToLocations = hasLocationRestrictions(allowedLocationIds);
 
-  const [currentUser, taskCount, projectCount, completedThisWeek] = await Promise.all([
+  const [currentUser, locations, taskCount, projectCount, completedThisWeek] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       select: { displayName: true },
+    }),
+    prisma.location.findMany({
+      where: { householdId, active: true, ...(restrictedToLocations ? { id: { in: allowedLocationIds! } } : {}) },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      select: { name: true },
     }),
     prisma.task.count({
       where: {
@@ -67,6 +74,7 @@ export default async function HomePage() {
       },
     }),
   ]);
+  const locationScopeLabel = getLocationScopeLabel(locations, allowedLocationIds);
 
   return (
     <div className={`capture-shell ${audienceThemeClass} min-h-screen px-4 py-5`}>
@@ -86,6 +94,10 @@ export default async function HomePage() {
               </div>
               <div className="landing-meta-row">
                 <span className="session-chip">{currentUser?.displayName ?? "You"}</span>
+                <span className="location-scope-chip" title={`Current location scope: ${locationScopeLabel}`}>
+                  <span>Location</span>
+                  <strong>{locationScopeLabel}</strong>
+                </span>
                 <span className="version-chip">{APP_VERSION}</span>
               </div>
             </div>
@@ -93,8 +105,13 @@ export default async function HomePage() {
               <div className="hero-corner-tools">
                 <ResetViewButton />
                 <ThemeToggle compact />
-              </div>
-              <div className="hero-corner-action">
+                <HeaderIconLink href="/help" label="Help">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M9.09 9a3 3 0 1 1 5.82 1c0 2-3 2-3 4" />
+                    <path d="M12 17h.01" />
+                  </svg>
+                </HeaderIconLink>
                 <LogoutIconButton />
               </div>
             </div>
@@ -198,11 +215,12 @@ export default async function HomePage() {
                     <FormActionButton className="landing-action-card lucky landing-action-button" pendingLabel="Picking…">
                       <>
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                          <polyline points="16 3 21 3 21 8"/>
-                          <line x1="4" y1="20" x2="21" y2="3"/>
-                          <polyline points="21 16 21 21 16 21"/>
-                          <line x1="15" y1="15" x2="21" y2="21"/>
-                          <line x1="4" y1="4" x2="9" y2="9"/>
+                          <path d="M6 18h12" />
+                          <path d="M7 18c0-3 1.5-6 5-6s5 3 5 6" />
+                          <path d="M9 12V9h6v3" />
+                          <circle cx="8" cy="7" r="1.25" />
+                          <circle cx="12" cy="5.5" r="1.25" />
+                          <circle cx="16" cy="7" r="1.25" />
                         </svg>
                         <strong>{teenMode ? "Pick one" : "Lucky dip"}</strong>
                       </>

@@ -2,7 +2,7 @@ import { AppPageHeader } from "@/app/components/AppPageHeader";
 import { AutoSubmitSelect } from "@/app/components/AutoSubmitSelect";
 import { LogoutIconButton } from "@/app/components/LogoutIconButton";
 import { canAccessProjectViewsRole, isAdminRole, requireSessionContext } from "@/lib/auth";
-import { hasLocationRestrictions } from "@/lib/location-access";
+import { getLocationScopeLabel, hasLocationRestrictions } from "@/lib/location-access";
 import { canAccessExtendedViews, getMemberThemeClassName } from "@/lib/member-audience";
 import {
   getProjectTimelineData,
@@ -56,6 +56,7 @@ export default async function ProjectsTimelinePage({
     params.window === "14" || params.window === "90" || params.window === "all"
       ? params.window
       : "30";
+  const locationScopeLabel = getLocationScopeLabel(locations, allowedLocationIds);
 
   const timeline = await getProjectTimelineData({
     householdId,
@@ -85,14 +86,12 @@ export default async function ProjectsTimelinePage({
             </svg>
           }
           cornerAction={<LogoutIconButton />}
+          scopeLabel={locationScopeLabel}
           actions={
             <>
               <span className="session-chip">{currentUser?.displayName ?? "You"}</span>
               <Link href="/" className="action-btn subtle quiet">
                 Home
-              </Link>
-              <Link href="/help" className="action-btn subtle quiet">
-                Help
               </Link>
               <Link href="/projects" className="action-btn subtle quiet">
                 Board

@@ -68,6 +68,7 @@ export default async function RoomsPage({
             </svg>
           }
           cornerAction={<LogoutIconButton />}
+          scopeLabel="All locations"
           actions={
             <>
               <Link href="/settings" className="action-btn subtle quiet">

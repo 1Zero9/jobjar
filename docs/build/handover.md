@@ -17,7 +17,7 @@ Current routes:
 - `/api/health/db`: DB health check
 
 Current package version:
-- `web/package.json`: `0.4.7`
+- `web/package.json`: `0.4.8`
 
 Recurring job behavior:
 - finishing a recurring job records the completion against the current occurrence

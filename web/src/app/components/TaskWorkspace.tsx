@@ -7,7 +7,7 @@ import { SimilarTaskField } from "@/app/components/SimilarTaskField";
 import { TasksPanelClient } from "@/app/components/TasksPanelClient";
 import { ToastNotice } from "@/app/components/ToastNotice";
 import { canAccessProjectViewsRole, canManagePeopleRole, canManageProjectsRole, canUseMemberActions, isAdminRole, isMemberRole, requireSessionContext } from "@/lib/auth";
-import { getRoomLocationAccessWhere, hasLocationRestrictions } from "@/lib/location-access";
+import { getLocationScopeLabel, getRoomLocationAccessWhere, hasLocationRestrictions } from "@/lib/location-access";
 import { canAccessExtendedViews, getAudienceAssignedTaskWhere, getMemberThemeClassName, isChildAudience, isTeenAudience } from "@/lib/member-audience";
 import { prisma } from "@/lib/prisma";
 import { getMemberVisibleTaskWhere, getPrivateTaskAccessWhere, getProjectTaskWhere } from "@/lib/project-work";
@@ -87,6 +87,7 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
 
   const roomOptions = uniqueRoomsByName(rooms).filter((room) => room.name.toLowerCase() !== "unsorted");
   const peopleOptions = people.map((member) => member.user);
+  const locationScopeLabel = getLocationScopeLabel(locations, allowedLocationIds);
 
   return (
     <div className={`capture-shell page-log ${audienceThemeClass} min-h-screen px-4 py-5`}>
@@ -102,14 +103,12 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
             </svg>
           }
           cornerAction={<LogoutIconButton />}
+          scopeLabel={locationScopeLabel}
           actions={
             <>
               <span className="session-chip">{currentUser?.displayName ?? "You"}</span>
               <Link href="/" className="action-btn subtle quiet">
                 Home
-              </Link>
-              <Link href="/help" className="action-btn subtle quiet">
-                Help
               </Link>
               <Link href="/tasks" prefetch className="action-btn subtle quiet">
                 Jobs
@@ -464,6 +463,7 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
   const luckyTask = params.lucky && params.lucky !== "empty"
     ? recordedTasks.find((task) => task.id === params.lucky)
     : null;
+  const locationScopeLabel = getLocationScopeLabel(locations, allowedLocationIds);
 
   return (
     <div className={`capture-shell ${mode === "projects" ? "page-projects" : "page-tasks"} ${audienceThemeClass} min-h-screen px-4 py-5`}>
@@ -504,14 +504,12 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
             </svg>
           }
           cornerAction={<LogoutIconButton />}
+          scopeLabel={locationScopeLabel}
           actions={
             <>
               <span className="session-chip">{currentUser?.displayName ?? "You"}</span>
               <Link href="/" className="action-btn subtle quiet">
                 Home
-              </Link>
-              <Link href="/help" className="action-btn subtle quiet">
-                Help
               </Link>
               {canAccessExtendedViews(audienceBand) ? (
                 <>
@@ -553,6 +551,15 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
         {luckyTask ? <ToastNotice message={`Lucky dip: ${luckyTask.title}`} tone="info" /> : null}
 
         <TasksPanelClient
+          key={[
+            mode,
+            selectedRoomId,
+            selectedAssigneeId,
+            selectedLocationId,
+            selectedState,
+            selectedProjectState,
+            selectedPersonalFilter,
+          ].join(":")}
           roomOptions={roomOptions}
           peopleOptions={peopleOptions}
           locationOptions={locations}

@@ -73,6 +73,7 @@ export default async function PeoplePage({
             </svg>
           }
           cornerAction={<LogoutIconButton />}
+          scopeLabel="All locations"
           actions={
             <>
               <Link href={adminMode ? "/settings" : "/"} className="action-btn subtle quiet">

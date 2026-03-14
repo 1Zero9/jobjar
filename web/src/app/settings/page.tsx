@@ -39,6 +39,7 @@ export default async function SettingsPage() {
             </svg>
           }
           cornerAction={<LogoutIconButton />}
+          scopeLabel="All locations"
           actions={
             <>
               <Link href="/" className="action-btn subtle quiet">

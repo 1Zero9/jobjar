@@ -86,6 +86,7 @@ export default async function HelpPage() {
             </svg>
           }
           cornerAction={<LogoutIconButton />}
+          showHelpTool={false}
           actions={
             <>
               <Link href="/" className="action-btn subtle quiet">Home</Link>

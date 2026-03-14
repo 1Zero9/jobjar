@@ -6,6 +6,7 @@ import {
 } from "@/app/actions";
 import { AppPageHeader } from "@/app/components/AppPageHeader";
 import { FormActionButton } from "@/app/components/FormActionButton";
+import { LogoutIconButton } from "@/app/components/LogoutIconButton";
 import { ToastNotice } from "@/app/components/ToastNotice";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -46,6 +47,8 @@ export default async function LocationsPage({
               <circle cx="12" cy="11" r="2.5" />
             </svg>
           }
+          cornerAction={<LogoutIconButton />}
+          scopeLabel="All locations"
           actions={
             <>
               <Link href="/settings" className="action-btn subtle quiet">
@@ -55,7 +58,7 @@ export default async function LocationsPage({
                 Rooms
               </Link>
               <Link href="/tasks" className="action-btn subtle quiet">
-                Tasks
+                Jobs
               </Link>
             </>
           }

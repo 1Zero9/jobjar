@@ -112,7 +112,13 @@
   - finishing a recurring job now records the completed occurrence without closing the whole job
   - the next scheduled occurrence is created immediately so the job stays in the cycle
   - aligned board, stats, and timeline helpers so recurring jobs no longer show as stopped after one completion
-- Updated product docs to match the current `0.4.7` app shape.
+- Refined header tools and filter visibility in `0.4.8`:
+  - fixed the reset button so board filters clear properly again
+  - moved help into the top-right icon tools and tightened logout into the same small-icon pattern
+  - added a discreet location scope chip in the header where the current view is location-limited
+  - gave the filter panels stronger color treatment so they read as interactive controls
+  - changed Lucky dip to a pot-of-gold style icon on home
+- Updated product docs to match the current `0.4.8` app shape.
 - Validation completed:
   - `npm run db:generate` passed
   - `npm run lint` passed
