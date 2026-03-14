@@ -2,7 +2,7 @@ import { logoutAction } from "@/app/actions";
 import { AppPageHeader } from "@/app/components/AppPageHeader";
 import { AutoSubmitSelect } from "@/app/components/AutoSubmitSelect";
 import { FormActionButton } from "@/app/components/FormActionButton";
-import { isAdminRole, requireSessionContext } from "@/lib/auth";
+import { canAccessProjectViewsRole, isAdminRole, requireSessionContext } from "@/lib/auth";
 import { hasLocationRestrictions } from "@/lib/location-access";
 import { canAccessExtendedViews, getMemberThemeClassName } from "@/lib/member-audience";
 import {
@@ -29,7 +29,7 @@ export default async function ProjectsTimelinePage({
   searchParams: Promise<SearchParams>;
 }) {
   const { householdId, userId, role, audienceBand, profileTheme, allowedLocationIds } = await requireSessionContext("/projects/timeline");
-  if (!canAccessExtendedViews(audienceBand)) {
+  if (!canAccessExtendedViews(audienceBand) || !canAccessProjectViewsRole(role)) {
     redirect("/tasks");
   }
   const params = await searchParams;
@@ -85,6 +85,13 @@ export default async function ProjectsTimelinePage({
               <path d="M12 7v5l3 3" />
             </svg>
           }
+          cornerAction={
+            <form action={logoutAction}>
+              <FormActionButton className="action-btn subtle quiet compact" pendingLabel="Logging out">
+                Log out
+              </FormActionButton>
+            </form>
+          }
           actions={
             <>
               <span className="session-chip">{currentUser?.displayName ?? "You"}</span>
@@ -105,11 +112,6 @@ export default async function ProjectsTimelinePage({
                   Setup
                 </Link>
               ) : null}
-              <form action={logoutAction}>
-                <FormActionButton className="action-btn subtle quiet" pendingLabel="Logging out">
-                  Log out
-                </FormActionButton>
-              </form>
             </>
           }
         />

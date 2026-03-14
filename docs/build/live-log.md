@@ -102,7 +102,13 @@
   - added `/help` as an app route with role- and audience-aware onboarding
   - linked help from home and the main working screens
   - brought the new audience guides into the product instead of leaving them only in repo docs
-- Updated product docs to match the current role model and `0.4.5` app shape.
+- Simplified member flow and job language in `0.4.6`:
+  - made `member` a personal jobs view instead of a household-wide board
+  - hid projects, stats, timeline, and setup from members
+  - folded task filters into an expandable section and added member-specific job filters
+  - moved logout into the corner tools area under the theme toggle
+  - strengthened the login card styling and fixed the `Jobjar` title clipping again
+- Updated product docs to match the current role model and `0.4.6` app shape.
 - Validation completed:
   - `npm run db:generate` passed
   - `npm run lint` passed

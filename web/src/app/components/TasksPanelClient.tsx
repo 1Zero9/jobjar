@@ -43,6 +43,7 @@ type LocationOption = {
 type TaskItem = {
   id: string;
   title: string;
+  createdByUserId: string | null;
   roomId: string;
   roomName: string;
   locationId: string | null;
@@ -121,9 +122,12 @@ type Props = {
   initialState: "all" | "open" | "done";
   initialLuckyId: string | null;
   initialProjectState?: ProjectFilterState;
+  initialPersonalFilter?: PersonalFilterState;
   canEditTasks: boolean;
   canManageProjects: boolean;
   canDeleteTasks: boolean;
+  memberMode: boolean;
+  currentUserId: string;
   basePath?: string;
   viewMode?: "tasks" | "projects";
   panelTitle?: string;
@@ -132,6 +136,7 @@ type Props = {
 };
 
 type ProjectFilterState = "all" | "planning" | "active" | "complete" | "over_budget" | "at_risk";
+type PersonalFilterState = "all" | "logged" | "assigned" | "private";
 
 export function TasksPanelClient({
   roomOptions,
@@ -145,37 +150,56 @@ export function TasksPanelClient({
   initialState,
   initialLuckyId,
   initialProjectState = "all",
+  initialPersonalFilter = "all",
   canEditTasks,
   canManageProjects,
   canDeleteTasks,
+  memberMode,
+  currentUserId,
   basePath = "/tasks",
   viewMode = "tasks",
-  panelTitle = "Task board",
-  panelKicker = "Tasks",
-  emptyMessage = "No tasks on the board yet.",
+  panelTitle = "Job board",
+  panelKicker = "Jobs",
+  emptyMessage = "No jobs on the board yet.",
 }: Props) {
   const [selectedRoomId, setSelectedRoomId] = useState(initialRoomId);
   const [selectedAssigneeId, setSelectedAssigneeId] = useState(initialAssigneeId);
   const [selectedLocationId, setSelectedLocationId] = useState(initialLocationId);
   const [selectedState, setSelectedState] = useState<"all" | "open" | "done">(initialState);
   const [selectedProjectState, setSelectedProjectState] = useState<ProjectFilterState>(initialProjectState);
+  const [selectedPersonalFilter, setSelectedPersonalFilter] = useState<PersonalFilterState>(initialPersonalFilter);
 
   const groupedRoomOptions = groupRoomsByLocation(roomOptions);
   const projectMode = viewMode === "projects";
   const childMode = audienceBand === "under_12";
   const teenMode = audienceBand === "teen_12_18";
+  const hasActiveFilters =
+    !!selectedRoomId ||
+    !!selectedAssigneeId ||
+    !!selectedLocationId ||
+    selectedState !== "all" ||
+    selectedPersonalFilter !== "all" ||
+    (projectMode && selectedProjectState !== "all");
 
   const visibleTasks = useMemo(() => {
     return tasks.filter((task) => {
       const matchesRoom = selectedRoomId ? task.roomId === selectedRoomId : true;
       const matchesAssignee = selectedAssigneeId ? task.assignmentUserId === selectedAssigneeId : true;
       const matchesLocation = selectedLocationId ? task.locationId === selectedLocationId : true;
+      const matchesPersonalFilter =
+        !memberMode || selectedPersonalFilter === "all"
+          ? true
+          : selectedPersonalFilter === "logged"
+            ? task.createdByUserId === currentUserId
+            : selectedPersonalFilter === "assigned"
+              ? task.assignmentUserId === currentUserId
+              : task.isPrivate;
       const taskState = getTaskState(task);
       const matchesState = selectedState === "all" ? true : taskState === selectedState;
       const matchesProjectState = projectMode ? projectMatchesFilter(task, selectedProjectState) : true;
-      return matchesRoom && matchesAssignee && matchesLocation && matchesState && matchesProjectState;
+      return matchesRoom && matchesAssignee && matchesLocation && matchesPersonalFilter && matchesState && matchesProjectState;
     });
-  }, [projectMode, selectedAssigneeId, selectedProjectState, selectedRoomId, selectedLocationId, selectedState, tasks]);
+  }, [currentUserId, memberMode, projectMode, selectedAssigneeId, selectedPersonalFilter, selectedProjectState, selectedRoomId, selectedLocationId, selectedState, tasks]);
 
   useEffect(() => {
     const search = new URLSearchParams(window.location.search);
@@ -199,6 +223,11 @@ export function TasksPanelClient({
     } else {
       search.delete("state");
     }
+    if (memberMode && selectedPersonalFilter !== "all") {
+      search.set("view", selectedPersonalFilter);
+    } else {
+      search.delete("view");
+    }
     if (projectMode && selectedProjectState !== "all") {
       search.set("projectState", selectedProjectState);
     } else {
@@ -207,7 +236,7 @@ export function TasksPanelClient({
     const query = search.toString();
     const nextUrl = query ? `${basePath}?${query}` : basePath;
     window.history.replaceState(null, "", nextUrl);
-  }, [basePath, projectMode, selectedAssigneeId, selectedProjectState, selectedRoomId, selectedLocationId, selectedState]);
+  }, [basePath, memberMode, projectMode, selectedAssigneeId, selectedPersonalFilter, selectedProjectState, selectedRoomId, selectedLocationId, selectedState]);
 
   return (
     <section id="recorded" className="recorded-panel">
@@ -220,93 +249,114 @@ export function TasksPanelClient({
       </div>
 
       <div className="recorded-toolbar">
-        <div className="recorded-filter-bar">
-          {!childMode && locationOptions.length > 1 ? (
+        <details className="recorded-toolbar-details" open={hasActiveFilters}>
+          <summary className="recorded-toolbar-summary">
+            <span>Filters</span>
+            <span className="recorded-row-chevron">▾</span>
+          </summary>
+          <div className="recorded-filter-bar">
+            {memberMode ? (
+              <label className="recorded-filter-field">
+                <span>Show</span>
+                <select
+                  value={selectedPersonalFilter}
+                  onChange={(event) => setSelectedPersonalFilter(event.target.value as PersonalFilterState)}
+                  className={`recorded-filter-select${selectedPersonalFilter !== "all" ? " filter-active" : ""}`}
+                >
+                  <option value="all">All my jobs</option>
+                  <option value="assigned">Assigned to me</option>
+                  <option value="logged">Added by me</option>
+                  <option value="private">My private jobs</option>
+                </select>
+              </label>
+            ) : null}
+            {!childMode && locationOptions.length > 1 ? (
+              <label className="recorded-filter-field">
+                <span>Location</span>
+                <select
+                  value={selectedLocationId}
+                  onChange={(event) => { setSelectedLocationId(event.target.value); setSelectedAssigneeId(""); }}
+                  className={`recorded-filter-select${selectedLocationId ? " filter-active" : ""}`}
+                >
+                  <option value="">All locations</option>
+                  {locationOptions.map((loc) => (
+                    <option key={loc.id} value={loc.id}>{loc.name}</option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+            {!childMode ? (
+              <label className="recorded-filter-field">
+                <span>Room</span>
+                <select
+                  value={selectedRoomId}
+                  onChange={(event) => setSelectedRoomId(event.target.value)}
+                  className={`recorded-filter-select${selectedRoomId ? " filter-active" : ""}`}
+                >
+                  <option value="">All rooms</option>
+                  {groupedRoomOptions.map(([group, groupedRooms]) => (
+                    <optgroup key={group} label={group}>
+                      {groupedRooms.map((room) => (
+                        <option key={room.id} value={room.id}>
+                          {room.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </label>
+            ) : null}
             <label className="recorded-filter-field">
-              <span>Location</span>
+              <span>{childMode ? "Show" : "State"}</span>
               <select
-                value={selectedLocationId}
-                onChange={(event) => { setSelectedLocationId(event.target.value); setSelectedAssigneeId(""); }}
-                className={`recorded-filter-select${selectedLocationId ? " filter-active" : ""}`}
+                value={selectedState}
+                onChange={(event) => setSelectedState(event.target.value as "all" | "open" | "done")}
+                className={`recorded-filter-select${selectedState !== "all" ? " filter-active" : ""}`}
               >
-                <option value="">All locations</option>
-                {locationOptions.map((loc) => (
-                  <option key={loc.id} value={loc.id}>{loc.name}</option>
-                ))}
+                <option value="all">{childMode ? "Everything" : "All states"}</option>
+                <option value="open">{childMode ? "Ready to do" : "Open"}</option>
+                <option value="done">{childMode ? "Finished" : "Done"}</option>
               </select>
             </label>
-          ) : null}
-          {!childMode ? (
-            <label className="recorded-filter-field">
-              <span>Room</span>
-              <select
-                value={selectedRoomId}
-                onChange={(event) => setSelectedRoomId(event.target.value)}
-                className={`recorded-filter-select${selectedRoomId ? " filter-active" : ""}`}
-              >
-                <option value="">All rooms</option>
-                {groupedRoomOptions.map(([group, groupedRooms]) => (
-                  <optgroup key={group} label={group}>
-                    {groupedRooms.map((room) => (
-                      <option key={room.id} value={room.id}>
-                        {room.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-            </label>
-          ) : null}
-          <label className="recorded-filter-field">
-            <span>{childMode ? "Show" : "State"}</span>
-            <select
-              value={selectedState}
-              onChange={(event) => setSelectedState(event.target.value as "all" | "open" | "done")}
-              className={`recorded-filter-select${selectedState !== "all" ? " filter-active" : ""}`}
-            >
-              <option value="all">{childMode ? "Everything" : "All states"}</option>
-              <option value="open">{childMode ? "Ready to do" : "Open"}</option>
-              <option value="done">{childMode ? "Finished" : "Completed"}</option>
-            </select>
-          </label>
-          {!childMode ? (
-            <label className="recorded-filter-field">
-              <span>Assigned</span>
-              <select
-                value={selectedAssigneeId}
-                onChange={(event) => setSelectedAssigneeId(event.target.value)}
-                className={`recorded-filter-select${selectedAssigneeId ? " filter-active" : ""}`}
-              >
-                <option value="">Anyone</option>
-                {peopleOptions.map((person) => (
-                  <option key={person.id} value={person.id}>
-                    {person.displayName}
-                  </option>
-                ))}
-              </select>
-            </label>
-          ) : null}
-          {projectMode && !childMode ? (
-            <label className="recorded-filter-field">
-              <span>Project state</span>
-              <select
-                value={selectedProjectState}
-                onChange={(event) => setSelectedProjectState(event.target.value as ProjectFilterState)}
-                className={`recorded-filter-select${selectedProjectState !== "all" ? " filter-active" : ""}`}
-              >
-                <option value="all">All projects</option>
-                <option value="planning">Planning</option>
-                <option value="active">Active</option>
-                <option value="at_risk">At risk</option>
-                <option value="complete">Complete</option>
-                <option value="over_budget">Over budget</option>
-              </select>
-            </label>
-          ) : null}
-        </div>
+            {!childMode && !memberMode ? (
+              <label className="recorded-filter-field">
+                <span>Assigned</span>
+                <select
+                  value={selectedAssigneeId}
+                  onChange={(event) => setSelectedAssigneeId(event.target.value)}
+                  className={`recorded-filter-select${selectedAssigneeId ? " filter-active" : ""}`}
+                >
+                  <option value="">Anyone</option>
+                  {peopleOptions.map((person) => (
+                    <option key={person.id} value={person.id}>
+                      {person.displayName}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+            {projectMode && !childMode ? (
+              <label className="recorded-filter-field">
+                <span>Project state</span>
+                <select
+                  value={selectedProjectState}
+                  onChange={(event) => setSelectedProjectState(event.target.value as ProjectFilterState)}
+                  className={`recorded-filter-select${selectedProjectState !== "all" ? " filter-active" : ""}`}
+                >
+                  <option value="all">All projects</option>
+                  <option value="planning">Planning</option>
+                  <option value="active">Active</option>
+                  <option value="at_risk">At risk</option>
+                  <option value="complete">Complete</option>
+                  <option value="over_budget">Over budget</option>
+                </select>
+              </label>
+            ) : null}
+          </div>
+        </details>
 
         <div className="recorded-toolbar-actions">
-          {selectedRoomId || selectedAssigneeId || selectedLocationId || selectedState !== "all" || (projectMode && selectedProjectState !== "all") ? (
+          {hasActiveFilters ? (
             <button
               type="button"
               className="action-btn subtle quiet"
@@ -316,12 +366,13 @@ export function TasksPanelClient({
                 setSelectedLocationId("");
                 setSelectedState("all");
                 setSelectedProjectState("all");
+                setSelectedPersonalFilter("all");
               }}
             >
               {childMode ? "Reset view" : "Clear filters"}
             </button>
           ) : (
-            <span className="recorded-toolbar-hint">{childMode ? "Your jobs update right away." : "Filters update instantly."}</span>
+            <span className="recorded-toolbar-hint">{childMode ? "Your jobs update right away." : memberMode ? "Your jobs stay focused on you." : "Filters update instantly."}</span>
           )}
 
           {!projectMode && !childMode && canEditTasks ? (
@@ -338,8 +389,8 @@ export function TasksPanelClient({
       <div className="recorded-list">
         {visibleTasks.length === 0 ? (
           <p className="recorded-empty">
-            {selectedRoomId || selectedAssigneeId || selectedState !== "all" || (projectMode && selectedProjectState !== "all")
-              ? childMode ? "No jobs match this view." : "No tasks match these filters."
+            {hasActiveFilters
+              ? childMode ? "No jobs match this view." : "No jobs match these filters."
               : emptyMessage}
           </p>
         ) : (
@@ -444,7 +495,7 @@ export function TasksPanelClient({
                         {task.detailNotes ? (
                           <p className="task-overview-copy">{task.detailNotes}</p>
                         ) : (
-                          <p className="task-overview-copy">{teenMode ? "Use the quick actions below or open details if this needs tidying." : "Use the quick actions below, then open details only if the task needs updating."}</p>
+                          <p className="task-overview-copy">{teenMode ? "Use the quick actions below or open details if this needs tidying." : "Use the quick actions below, then open details only if the job needs updating."}</p>
                         )}
 
                         <div className="task-overview-grid">
@@ -480,7 +531,7 @@ export function TasksPanelClient({
                                 <form action={startTaskAction}>
                                   <input type="hidden" name="taskId" value={task.id} />
                                   <FormActionButton className="action-btn subtle quiet" pendingLabel="Starting">
-                                    {teenMode ? "Start job" : "Start task"}
+                                    Start job
                                   </FormActionButton>
                                 </form>
                               ) : null}
@@ -488,7 +539,7 @@ export function TasksPanelClient({
                                 <input type="hidden" name="taskId" value={task.id} />
                                 <input type="hidden" name="note" value="" />
                                 <FormActionButton className="action-btn bright quiet" pendingLabel="Finishing">
-                                  {teenMode ? "Finish job" : "Mark done"}
+                                  Finish job
                                 </FormActionButton>
                               </form>
                             </>
@@ -506,25 +557,25 @@ export function TasksPanelClient({
                             <form action={deleteTaskAction}>
                               <input type="hidden" name="taskId" value={task.id} />
                               <FormActionButton className="action-btn warn quiet" pendingLabel="Archiving">
-                                Archive task
+                                Archive job
                               </FormActionButton>
                             </form>
                           ) : null}
                         </div>
                         ) : (
-                          <p className="task-readonly-note">Read-only access. Open the task details to review more information.</p>
+                          <p className="task-readonly-note">Read-only access. Open the job details to review more information.</p>
                         )}
                       </section>
 
                       {canEditTasks ? (
                       <details className="recorded-more-details task-manage-details">
-                        <summary className="recorded-more-summary">{teenMode ? "Manage this job" : "Manage task details"}</summary>
+                        <summary className="recorded-more-summary">Manage job details</summary>
                         <form action={updateRecordedTaskAction} className="recorded-edit-form">
                           <input type="hidden" name="taskId" value={task.id} />
                           <input type="hidden" name="returnTo" value={basePath} />
 
                           <label className="recorded-field">
-                            <span>Task</span>
+                            <span>Job</span>
                             <input name="title" type="text" defaultValue={task.title} className="recorded-edit-input" />
                           </label>
 

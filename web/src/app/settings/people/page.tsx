@@ -72,19 +72,21 @@ export default async function PeoplePage({
               <path d="M16 3.13a4 4 0 0 1 0 7.75" />
             </svg>
           }
+          cornerAction={
+            <form action={logoutAction}>
+              <FormActionButton className="action-btn subtle quiet compact" pendingLabel="Logging out">
+                Log out
+              </FormActionButton>
+            </form>
+          }
           actions={
             <>
               <Link href={adminMode ? "/settings" : "/"} className="action-btn subtle quiet">
                 {adminMode ? "Setup home" : "Home"}
               </Link>
               <Link href="/tasks" className="action-btn subtle quiet">
-                Tasks
+                Jobs
               </Link>
-              <form action={logoutAction}>
-                <FormActionButton className="action-btn subtle quiet" pendingLabel="Logging out">
-                  Log out
-                </FormActionButton>
-              </form>
             </>
           }
         />

@@ -2,7 +2,7 @@ import { logoutAction } from "@/app/actions";
 import { AppPageHeader } from "@/app/components/AppPageHeader";
 import { AutoSubmitSelect } from "@/app/components/AutoSubmitSelect";
 import { FormActionButton } from "@/app/components/FormActionButton";
-import { requireSessionContext } from "@/lib/auth";
+import { canAccessReportingViewsRole, requireSessionContext } from "@/lib/auth";
 import { hasLocationRestrictions } from "@/lib/location-access";
 import { canAccessExtendedViews, getMemberThemeClassName } from "@/lib/member-audience";
 import { getStatsData } from "@/lib/stats-data";
@@ -19,8 +19,8 @@ type SearchParams = {
 };
 
 export default async function StatsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  const { householdId, allowedLocationIds, audienceBand, profileTheme } = await requireSessionContext("/stats");
-  if (!canAccessExtendedViews(audienceBand)) {
+  const { householdId, allowedLocationIds, audienceBand, profileTheme, role } = await requireSessionContext("/stats");
+  if (!canAccessExtendedViews(audienceBand) || !canAccessReportingViewsRole(role)) {
     redirect("/tasks");
   }
   const params = await searchParams;
@@ -71,18 +71,20 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
               <line x1="2" y1="20" x2="22" y2="20" />
             </svg>
           }
+          cornerAction={
+            <form action={logoutAction}>
+              <FormActionButton className="action-btn subtle quiet compact" pendingLabel="Logging out">
+                Log out
+              </FormActionButton>
+            </form>
+          }
           actions={
             <>
               <Link href="/" className="action-btn subtle quiet">Home</Link>
               <Link href="/help" className="action-btn subtle quiet">Help</Link>
-              <Link href="/tasks" prefetch className="action-btn subtle quiet">Tasks</Link>
+              <Link href="/tasks" prefetch className="action-btn subtle quiet">Jobs</Link>
               <Link href="/projects" prefetch className="action-btn subtle quiet">Projects</Link>
               <Link href="/projects/timeline" className="action-btn subtle quiet">Timeline</Link>
-              <form action={logoutAction}>
-                <FormActionButton className="action-btn subtle quiet" pendingLabel="Logging out">
-                  Log out
-                </FormActionButton>
-              </form>
             </>
           }
         />
@@ -135,7 +137,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
           </div>
           <div className="stat-card">
             <span className="stat-number">{stats.openTasks}</span>
-            <span className="stat-label">Open tasks</span>
+            <span className="stat-label">Open jobs</span>
           </div>
           <div className="stat-card">
             <span className="stat-number">{stats.completionsAllTime}</span>

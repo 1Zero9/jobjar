@@ -2,7 +2,7 @@ import { luckyDipAction, logoutAction } from "@/app/actions";
 import { FormActionButton } from "@/app/components/FormActionButton";
 import { ResetViewButton } from "@/app/components/ResetViewButton";
 import { ThemeToggle } from "@/app/components/ThemeToggle";
-import { canManagePeopleRole, canUseMemberActions, requireSessionContext } from "@/lib/auth";
+import { canAccessProjectViewsRole, canAccessReportingViewsRole, canManagePeopleRole, canUseMemberActions, isMemberRole, requireSessionContext } from "@/lib/auth";
 import { APP_VERSION } from "@/lib/app-version";
 import { getRoomLocationAccessWhere } from "@/lib/location-access";
 import {
@@ -13,7 +13,7 @@ import {
   isTeenAudience,
 } from "@/lib/member-audience";
 import { prisma } from "@/lib/prisma";
-import { getProjectTaskWhere } from "@/lib/project-work";
+import { getMemberVisibleTaskWhere, getProjectTaskWhere } from "@/lib/project-work";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -25,7 +25,11 @@ export default async function HomePage() {
   const teenMode = isTeenAudience(audienceBand);
   const peopleManager = canManagePeopleRole(role);
   const canAct = canUseMemberActions(role);
+  const memberMode = isMemberRole(role);
+  const canSeeProjects = canAccessProjectViewsRole(role) && canAccessExtendedViews(audienceBand);
+  const canSeeReports = canAccessReportingViewsRole(role) && canAccessExtendedViews(audienceBand);
   const taskAudienceWhere = getAudienceAssignedTaskWhere(userId, audienceBand);
+  const memberVisibleTaskWhere = getMemberVisibleTaskWhere(role, userId);
   const weekStart = startOfThisWeek();
 
   const [currentUser, taskCount, projectCount, completedThisWeek] = await Promise.all([
@@ -39,6 +43,7 @@ export default async function HomePage() {
         captureStage: { not: "done" },
         room: { householdId, ...getRoomLocationAccessWhere(allowedLocationIds) },
         ...taskAudienceWhere,
+        ...(Object.keys(memberVisibleTaskWhere).length > 0 ? memberVisibleTaskWhere : {}),
       },
     }),
     prisma.task.count({
@@ -46,6 +51,7 @@ export default async function HomePage() {
         active: true,
         room: { householdId, ...getRoomLocationAccessWhere(allowedLocationIds) },
         ...taskAudienceWhere,
+        ...(Object.keys(memberVisibleTaskWhere).length > 0 ? memberVisibleTaskWhere : {}),
         ...getProjectTaskWhere(),
       },
     }),
@@ -69,6 +75,13 @@ export default async function HomePage() {
             <ResetViewButton />
             <ThemeToggle compact />
           </div>
+          <div className="hero-corner-action">
+            <form action={logoutAction}>
+              <FormActionButton className="action-btn subtle quiet compact" pendingLabel="Logging out">
+                Log out
+              </FormActionButton>
+            </form>
+          </div>
           <div className="landing-brand-row">
             <div className="page-hero-icon home">
               <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -81,11 +94,6 @@ export default async function HomePage() {
           </div>
           <div className="landing-meta-row">
             <span className="session-chip">{currentUser?.displayName ?? "You"}</span>
-            <form action={logoutAction}>
-              <FormActionButton className="action-btn subtle quiet" pendingLabel="Logging out">
-                Log out
-              </FormActionButton>
-            </form>
             <span className="version-chip">{APP_VERSION}</span>
           </div>
         </header>
@@ -104,6 +112,10 @@ export default async function HomePage() {
             <p className="landing-panel-copy">
               This view is read-only, so you can keep up with what is happening without changing anything.
             </p>
+          ) : memberMode ? (
+            <p className="landing-panel-copy">
+              Your home stays focused on the jobs you added, the jobs assigned to you, and anything private involving you.
+            </p>
           ) : teenMode ? (
             <p className="landing-panel-copy">
               Keep your board moving. Focus on what is assigned, due, or ready to finish.
@@ -120,7 +132,7 @@ export default async function HomePage() {
                 <polyline points="3 12 4 13 6 10"/>
                 <polyline points="3 18 4 19 6 16"/>
               </svg>
-              <strong>{childMode ? "My jobs" : teenMode ? "Task board" : "Tasks"}</strong>
+              <strong>{childMode ? "My jobs" : "Jobs"}</strong>
               {childMode ? <span>{taskCount > 0 ? `${taskCount} ready to do` : "Nothing waiting right now"}</span> : null}
             </Link>
 
@@ -146,9 +158,10 @@ export default async function HomePage() {
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                   </svg>
-                  <strong>{teenMode ? "Log a job" : "Log task"}</strong>
+                  <strong>Log job</strong>
                 </Link>
 
+                {!memberMode ? (
                 <Link href="/projects" className="landing-action-card setup">
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h4A2.5 2.5 0 0 1 12 7.5v1A2.5 2.5 0 0 1 9.5 11h-4A2.5 2.5 0 0 1 3 8.5z"/>
@@ -158,8 +171,10 @@ export default async function HomePage() {
                   <strong>{teenMode ? "Projects" : "Projects"}</strong>
                   <span>{projectCount} tracked</span>
                 </Link>
+                ) : null}
               </>
             ) : (
+              canSeeProjects ? (
               <Link href="/projects" className="landing-action-card setup">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h4A2.5 2.5 0 0 1 12 7.5v1A2.5 2.5 0 0 1 9.5 11h-4A2.5 2.5 0 0 1 3 8.5z"/>
@@ -169,11 +184,12 @@ export default async function HomePage() {
                 <strong>Projects</strong>
                 <span>{projectCount} tracked</span>
               </Link>
+              ) : null
             )}
 
             {canAccessExtendedViews(audienceBand) ? (
               <>
-                {canAct ? (
+                {canAct && !memberMode ? (
                   <form action={luckyDipAction} className="landing-action-form">
                     <input type="hidden" name="returnTo" value="/tasks" />
                     <FormActionButton className="landing-action-card lucky landing-action-button" pendingLabel="Picking…">
@@ -191,6 +207,7 @@ export default async function HomePage() {
                   </form>
                 ) : null}
 
+                {canSeeReports ? (
                 <Link href="/stats" className="landing-action-card stats">
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <line x1="18" y1="20" x2="18" y2="10"/>
@@ -200,7 +217,9 @@ export default async function HomePage() {
                   </svg>
                   <strong>{teenMode ? "Progress" : "Stats"}</strong>
                 </Link>
+                ) : null}
 
+                {canSeeProjects ? (
                 <Link href="/projects/timeline" className="landing-action-card timeline">
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <circle cx="12" cy="12" r="9"/>
@@ -209,6 +228,7 @@ export default async function HomePage() {
                   <strong>{teenMode ? "Timeline" : "Timeline"}</strong>
                   <span>Dates and checkpoints</span>
                 </Link>
+                ) : null}
 
                 {role === "admin" ? (
                   <Link href="/settings" className="landing-action-card setup">
@@ -240,7 +260,7 @@ export default async function HomePage() {
                 <path d="M12 17h.01" />
               </svg>
               <strong>Help</strong>
-              <span>{canAct ? "Quick guides and tips" : "How this view works"}</span>
+              <span>{memberMode ? "Simple help for your jobs" : canAct ? "Quick guides and tips" : "How this view works"}</span>
             </Link>
           </div>
         </section>

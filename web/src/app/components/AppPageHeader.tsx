@@ -9,15 +9,19 @@ type Props = {
   icon?: ReactNode;
   iconClassName?: string;
   actions?: ReactNode;
+  cornerAction?: ReactNode;
   className?: string;
 };
 
-export function AppPageHeader({ title, subtitle, icon, iconClassName = "", actions, className = "" }: Props) {
+export function AppPageHeader({ title, subtitle, icon, iconClassName = "", actions, cornerAction, className = "" }: Props) {
   return (
     <header className={`page-hero-card ${className}`.trim()}>
-      <div className="hero-corner-tools">
-        <ResetViewButton />
-        <ThemeToggle compact />
+      <div className="hero-corner-stack">
+        <div className="hero-corner-tools">
+          <ResetViewButton />
+          <ThemeToggle compact />
+        </div>
+        {cornerAction ? <div className="hero-corner-action">{cornerAction}</div> : null}
       </div>
       <div className="page-hero-topline">
         {icon ? <div className={`page-hero-icon ${iconClassName}`.trim()}>{icon}</div> : null}

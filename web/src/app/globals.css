@@ -844,14 +844,29 @@ html[data-theme="dark"] .profile-girl-pink .page-hero-icon {
   color: var(--text-soft);
 }
 
-.hero-corner-tools {
+.hero-corner-stack {
   position: absolute;
   top: 1rem;
   right: 1rem;
   z-index: 2;
+  display: grid;
+  justify-items: end;
+  gap: 0.45rem;
+}
+
+.hero-corner-tools {
   display: flex;
   align-items: center;
   gap: 0.45rem;
+}
+
+.hero-corner-action {
+  display: grid;
+}
+
+.action-btn.compact {
+  padding: 0.5rem 0.72rem;
+  font-size: 0.78rem;
 }
 
 .theme-toggle {
@@ -1235,6 +1250,37 @@ html[data-theme="dark"] .kid-task-panel {
   border-radius: 1.1rem;
   background: var(--surface);
   padding: 0.8rem;
+}
+
+.recorded-toolbar-details {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.recorded-toolbar-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  font-weight: 700;
+  list-style: none;
+}
+
+.recorded-toolbar-summary::-webkit-details-marker {
+  display: none;
+}
+
+.recorded-toolbar-details .recorded-row-chevron {
+  width: 1.8rem;
+  height: 1.8rem;
+  flex: 0 0 1.8rem;
+}
+
+.recorded-toolbar-details[open] .recorded-row-chevron {
+  transform: rotate(180deg);
 }
 
 .recorded-filter-field {
@@ -2773,10 +2819,12 @@ html[data-theme="dark"] .recorded-row[open] {
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  font-size: clamp(3rem, 12vw, 4.5rem);
+  display: block;
+  font-size: clamp(3.25rem, 13vw, 4.9rem);
   font-weight: 900;
   letter-spacing: -0.05em;
-  line-height: 0.94;
+  line-height: 1.02;
+  padding-bottom: 0.12em;
 }
 
 .login-heading {
@@ -2834,8 +2882,13 @@ html[data-theme="dark"] .recorded-row[open] {
 }
 
 .login-label {
-  display: block;
+  display: grid;
+  gap: 0.3rem;
   margin-top: 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 12%, var(--border));
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--accent-soft) 46%, var(--surface));
+  padding: 0.85rem 0.9rem 0.9rem;
 }
 
 .login-label:first-of-type {
@@ -2848,7 +2901,6 @@ html[data-theme="dark"] .recorded-row[open] {
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.14em;
-  margin-bottom: 0.35rem;
   text-transform: uppercase;
 }
 
@@ -2941,7 +2993,7 @@ html[data-theme="dark"] .recorded-row[open] {
   }
 
   .login-brand-title {
-    font-size: clamp(2.5rem, 8vw, 3.2rem);
+    font-size: clamp(2.8rem, 9vw, 3.45rem);
   }
 
   .login-copy,
@@ -4012,7 +4064,7 @@ html[data-theme="dark"] .landing-action-card.stats {
   }
 
   .login-brand-title {
-    font-size: clamp(2.6rem, 16vw, 3.45rem);
+    font-size: clamp(2.95rem, 17vw, 3.7rem);
   }
 
   .login-heading {

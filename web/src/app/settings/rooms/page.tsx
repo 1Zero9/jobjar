@@ -66,19 +66,21 @@ export default async function RoomsPage({
               <path d="M9 21v-6h6v6" />
             </svg>
           }
+          cornerAction={
+            <form action={logoutAction}>
+              <FormActionButton className="action-btn subtle quiet compact" pendingLabel="Logging out">
+                Log out
+              </FormActionButton>
+            </form>
+          }
           actions={
             <>
               <Link href="/settings" className="action-btn subtle quiet">
                 Setup home
               </Link>
               <Link href="/tasks" className="action-btn subtle quiet">
-                Tasks
+                Jobs
               </Link>
-              <form action={logoutAction}>
-                <FormActionButton className="action-btn subtle quiet" pendingLabel="Logging out">
-                  Log out
-                </FormActionButton>
-              </form>
             </>
           }
         />

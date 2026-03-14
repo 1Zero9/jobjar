@@ -7,7 +7,7 @@ Current routes:
 - `/login`: bootstrap and sign-in
 - `/`: home
 - `/log`: quick capture
-- `/tasks`: general task board
+- `/tasks`: jobs board, with a personal jobs flow for `member`
 - `/projects`: project board
 - `/projects/timeline`: project timeline
 - `/help`: in-app onboarding and audience guides
@@ -17,7 +17,7 @@ Current routes:
 - `/api/health/db`: DB health check
 
 Current package version:
-- `web/package.json`: `0.4.5`
+- `web/package.json`: `0.4.6`
 
 ## Auth model
 - custom auth, not NextAuth/Auth.js
@@ -29,7 +29,7 @@ Current package version:
 - role model:
   - `admin`: full setup and task management
   - `power_user`: project planning and project management
-  - `member`: normal task usage
+  - `member`: personal jobs flow by default
   - `viewer`: read-only
 - audience bands:
   - `adult`: current full household UI

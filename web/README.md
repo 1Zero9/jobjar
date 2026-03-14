@@ -20,7 +20,7 @@ npm run db:seed
 
 ## Current product routes
 - `/log`: fast capture
-- `/tasks`: general task board
+- `/tasks`: jobs board, with a personal jobs flow for `member`
 - `/projects`: project planning, child tasks, costs, milestones, and materials
 - `/projects/timeline`: project dates, overdue items, and recent completions
 - `/help`: in-app onboarding and audience guides
@@ -31,7 +31,7 @@ npm run db:seed
 ## Roles
 - `admin`: full setup and management access
 - `power_user`: can manage projects without full admin access
-- `member`: can use normal task workflows
+- `member`: works from a personal jobs flow by default
 - `viewer`: read-only access
 
 ## Audience guides

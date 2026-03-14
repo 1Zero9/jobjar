@@ -5,11 +5,11 @@ import { LocationRoomSelect } from "@/app/components/LocationRoomSelect";
 import { SimilarTaskField } from "@/app/components/SimilarTaskField";
 import { TasksPanelClient } from "@/app/components/TasksPanelClient";
 import { ToastNotice } from "@/app/components/ToastNotice";
-import { canManagePeopleRole, canManageProjectsRole, canUseMemberActions, isAdminRole, requireSessionContext } from "@/lib/auth";
+import { canAccessProjectViewsRole, canManagePeopleRole, canManageProjectsRole, canUseMemberActions, isAdminRole, isMemberRole, requireSessionContext } from "@/lib/auth";
 import { getRoomLocationAccessWhere, hasLocationRestrictions } from "@/lib/location-access";
 import { canAccessExtendedViews, getAudienceAssignedTaskWhere, getMemberThemeClassName, isChildAudience, isTeenAudience } from "@/lib/member-audience";
 import { prisma } from "@/lib/prisma";
-import { getPrivateTaskAccessWhere, getProjectTaskWhere } from "@/lib/project-work";
+import { getMemberVisibleTaskWhere, getPrivateTaskAccessWhere, getProjectTaskWhere } from "@/lib/project-work";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -18,6 +18,7 @@ type SearchParams = {
   updated?: string;
   lucky?: string;
   assignee?: string;
+  view?: string;
   room?: string;
   state?: string;
   location?: string;
@@ -31,6 +32,7 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
     redirect("/tasks");
   }
   const peopleManager = canManagePeopleRole(role);
+  const memberMode = isMemberRole(role);
   const restrictedToLocations = hasLocationRestrictions(allowedLocationIds);
   const audienceThemeClass = getMemberThemeClassName(audienceBand, profileTheme);
 
@@ -89,14 +91,21 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
     <div className={`capture-shell page-log ${audienceThemeClass} min-h-screen px-4 py-5`}>
       <main className="capture-app-shell mx-auto flex w-full max-w-[28rem] flex-col gap-6">
         <AppPageHeader
-          title="Log task"
-          subtitle="Keep capture fast. Task first, room second, everything else optional."
+          title="Log job"
+          subtitle="Keep capture fast. Job first, room second, everything else optional."
           iconClassName="log"
           icon={
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
             </svg>
+          }
+          cornerAction={
+            <form action={logoutAction}>
+              <FormActionButton className="action-btn subtle quiet compact" pendingLabel="Logging out">
+                Log out
+              </FormActionButton>
+            </form>
           }
           actions={
             <>
@@ -108,11 +117,13 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
                 Help
               </Link>
               <Link href="/tasks" prefetch className="action-btn subtle quiet">
-                View tasks
+                Jobs
               </Link>
-              <Link href="/projects" className="action-btn subtle quiet">
-                Projects
-              </Link>
+              {!memberMode ? (
+                <Link href="/projects" className="action-btn subtle quiet">
+                  Projects
+                </Link>
+              ) : null}
               {isAdminRole(role) ? (
                 <Link href="/settings" className="action-btn subtle quiet">
                   Setup
@@ -122,20 +133,15 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
                   People
                 </Link>
               ) : null}
-              <form action={logoutAction}>
-                <FormActionButton className="action-btn subtle quiet" pendingLabel="Logging out">
-                  Log out
-                </FormActionButton>
-              </form>
             </>
           }
         />
 
-        {params.added === "task" ? <ToastNotice message="Task recorded." tone="success" /> : null}
-        {params.added === "done" ? <ToastNotice message="Completed task recorded." tone="success" /> : null}
+        {params.added === "task" ? <ToastNotice message="Job recorded." tone="success" /> : null}
+        {params.added === "done" ? <ToastNotice message="Completed job recorded." tone="success" /> : null}
         {(params.added === "task" || params.added === "done") && params.taskId ? (
           <Link href={`/tasks#task-${params.taskId}`} className="view-task-link">
-            View the task you just logged
+            View the job you just logged
           </Link>
         ) : null}
 
@@ -181,7 +187,7 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
               <summary className="recorded-row-summary">
                 <div className="min-w-0">
                   <p className="recorded-row-title">Add details</p>
-                  <p className="recorded-row-placeholder">Notes, priority, or set it as recurring.</p>
+                  <p className="recorded-row-placeholder">Notes, priority, or set it as repeating.</p>
                 </div>
                 <div className="recorded-row-meta">
                   <span className="recorded-row-edit">Optional</span>
@@ -212,7 +218,7 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
                 </label>
 
                 <details className="recorded-more-details">
-                  <summary className="recorded-more-summary">Recurring task</summary>
+                  <summary className="recorded-more-summary">Repeating job</summary>
                   <div className="capture-meta-grid">
                     <label className="recorded-field">
                       <span>Repeats</span>
@@ -249,8 +255,8 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
               </div>
             </details>
 
-            <FormActionButton className="capture-submit-btn" pendingLabel="Saving task">
-              Save task
+            <FormActionButton className="capture-submit-btn" pendingLabel="Saving job">
+              Save job
             </FormActionButton>
           </form>
         </section>
@@ -270,16 +276,18 @@ export async function ProjectsWorkspace({ params }: { params: SearchParams }) {
 
 async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode: "tasks" | "projects" }) {
   const { householdId, userId, role, audienceBand, profileTheme, allowedLocationIds } = await requireSessionContext(mode === "projects" ? "/projects" : "/tasks");
-  if (mode === "projects" && !canAccessExtendedViews(audienceBand)) {
+  if (mode === "projects" && (!canAccessExtendedViews(audienceBand) || !canAccessProjectViewsRole(role))) {
     redirect("/tasks");
   }
   const privateTaskAccess = isAdminRole(role) ? undefined : getPrivateTaskAccessWhere(userId);
   const projectOnlyWhere = mode === "projects" ? getProjectTaskWhere() : undefined;
+  const memberVisibleTaskWhere = getMemberVisibleTaskWhere(role, userId);
   const restrictedToLocations = hasLocationRestrictions(allowedLocationIds);
   const taskAudienceWhere = getAudienceAssignedTaskWhere(userId, audienceBand);
   const audienceThemeClass = getMemberThemeClassName(audienceBand, profileTheme);
   const childMode = isChildAudience(audienceBand);
   const teenMode = isTeenAudience(audienceBand);
+  const memberMode = isMemberRole(role);
   const peopleManager = canManagePeopleRole(role);
   const canEditTasks = canUseMemberActions(role);
   const taskTake = mode === "projects" ? 28 : 48;
@@ -319,6 +327,7 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
         room: { householdId, ...getRoomLocationAccessWhere(allowedLocationIds) },
         ...taskAudienceWhere,
         AND: [
+          ...(Object.keys(memberVisibleTaskWhere).length > 0 ? [memberVisibleTaskWhere] : []),
           ...(privateTaskAccess ? [{ OR: privateTaskAccess }] : []),
           ...(projectOnlyWhere ? [projectOnlyWhere] : []),
         ],
@@ -453,6 +462,10 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
     params.projectState === "at_risk"
       ? params.projectState
       : "all";
+  const selectedPersonalFilter =
+    params.view === "logged" || params.view === "assigned" || params.view === "private"
+      ? params.view
+      : "all";
   const luckyTask = params.lucky && params.lucky !== "empty"
     ? recordedTasks.find((task) => task.id === params.lucky)
     : null;
@@ -467,14 +480,18 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
               : mode === "projects"
                 ? "Projects"
                 : teenMode
-                  ? "Task board"
-                  : "Tasks"
+                  ? "Jobs"
+                  : memberMode
+                    ? "My jobs"
+                    : "Jobs"
           }
           subtitle={
             childMode
               ? "See the jobs picked for you, start one, and mark it finished when you are done."
               : mode === "projects"
               ? "Track larger household work, project steps, dates, budget, spend, and materials."
+              : memberMode
+                ? "See the jobs that belong to you, the ones you logged, and any private jobs involving you."
               : teenMode
                 ? "See what is assigned, what is due, and what is ready to finish."
                 : "View, filter, prioritise, and complete what has already been logged."
@@ -491,6 +508,13 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
               <polyline points="3 18 4 19 6 16" />
             </svg>
           }
+          cornerAction={
+            <form action={logoutAction}>
+              <FormActionButton className="action-btn subtle quiet compact" pendingLabel="Logging out">
+                Log out
+              </FormActionButton>
+            </form>
+          }
           actions={
             <>
               <span className="session-chip">{currentUser?.displayName ?? "You"}</span>
@@ -504,12 +528,14 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
                 <>
                   {canEditTasks ? (
                     <Link href="/log" className="action-btn subtle quiet">
-                      {teenMode ? "Log job" : "Log task"}
+                      Log job
                     </Link>
                   ) : null}
-                  <Link href={mode === "projects" ? "/tasks" : "/projects"} prefetch className="action-btn subtle quiet">
-                    {mode === "projects" ? (teenMode ? "Board" : "Tasks") : "Projects"}
-                  </Link>
+                  {!memberMode ? (
+                    <Link href={mode === "projects" ? "/tasks" : "/projects"} prefetch className="action-btn subtle quiet">
+                      {mode === "projects" ? "Jobs" : "Projects"}
+                    </Link>
+                  ) : null}
                   {mode === "projects" ? (
                     <Link href="/projects/timeline" className="action-btn subtle quiet">
                       Timeline
@@ -526,20 +552,15 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
                   ) : null}
                 </>
               ) : null}
-              <form action={logoutAction}>
-                <FormActionButton className="action-btn subtle quiet" pendingLabel="Logging out">
-                  Log out
-                </FormActionButton>
-              </form>
             </>
           }
         />
 
-        {params.added === "task" ? <ToastNotice message="Task recorded." tone="success" /> : null}
-        {params.added === "done" ? <ToastNotice message="Completed task recorded." tone="success" /> : null}
-        {params.updated === "task" ? <ToastNotice message="Task updated." tone="info" /> : null}
-        {params.updated === "done" ? <ToastNotice message="Task marked completed." tone="success" /> : null}
-        {params.lucky === "empty" ? <ToastNotice message="No tasks available for lucky dip." tone="info" /> : null}
+        {params.added === "task" ? <ToastNotice message="Job recorded." tone="success" /> : null}
+        {params.added === "done" ? <ToastNotice message="Completed job recorded." tone="success" /> : null}
+        {params.updated === "task" ? <ToastNotice message="Job updated." tone="info" /> : null}
+        {params.updated === "done" ? <ToastNotice message="Job marked completed." tone="success" /> : null}
+        {params.lucky === "empty" ? <ToastNotice message="No jobs available for lucky dip." tone="info" /> : null}
         {luckyTask ? <ToastNotice message={`Lucky dip: ${luckyTask.title}`} tone="info" /> : null}
 
         <TasksPanelClient
@@ -552,28 +573,32 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
           initialState={selectedState}
           initialLuckyId={params.lucky && params.lucky !== "empty" ? params.lucky : null}
           initialProjectState={selectedProjectState}
+          initialPersonalFilter={selectedPersonalFilter}
           audienceBand={audienceBand}
           canEditTasks={canEditTasks}
           canManageProjects={canManageProjectsRole(role)}
           canDeleteTasks={isAdminRole(role)}
+          memberMode={memberMode}
+          currentUserId={userId}
           basePath={mode === "projects" ? "/projects" : "/tasks"}
           viewMode={mode}
           panelKicker={
-            childMode ? "My jobs" : mode === "projects" ? "Projects" : teenMode ? "My board" : "Tasks"
+            childMode ? "My jobs" : mode === "projects" ? "Projects" : memberMode ? "My jobs" : teenMode ? "My board" : "Jobs"
           }
           panelTitle={
-            childMode ? "Jobs picked for you" : mode === "projects" ? "Project board" : "Task board"
+            childMode ? "Jobs picked for you" : mode === "projects" ? "Project board" : memberMode ? "Your jobs" : "Job board"
           }
           emptyMessage={
             childMode
               ? "No jobs waiting right now. Nice work."
               : mode === "projects"
                 ? "No projects yet. Promote a task or add project steps from an existing project."
-                : "No tasks on the board yet."
+                : memberMode ? "No jobs for you right now." : "No jobs on the board yet."
           }
           tasks={recordedTasks.map((task) => ({
             id: task.id,
             title: task.title,
+            createdByUserId: task.createdByUserId,
             roomId: task.roomId,
             roomName: task.room.name,
             locationId: task.room.location?.id ?? null,

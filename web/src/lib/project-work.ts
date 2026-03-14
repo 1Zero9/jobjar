@@ -1,3 +1,5 @@
+import type { MemberRole } from "@prisma/client";
+
 export function getProjectTaskWhere() {
   return {
     OR: [
@@ -18,4 +20,17 @@ export function getPrivateTaskAccessWhere(userId: string) {
     { isPrivate: true, createdByUserId: userId },
     { isPrivate: true, assignments: { some: { userId, assignedTo: null } } },
   ];
+}
+
+export function getMemberVisibleTaskWhere(role: MemberRole, userId: string) {
+  if (role !== "member") {
+    return {};
+  }
+
+  return {
+    OR: [
+      { createdByUserId: userId },
+      { assignments: { some: { userId, assignedTo: null } } },
+    ],
+  };
 }

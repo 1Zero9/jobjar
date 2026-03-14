@@ -37,8 +37,20 @@ export function canManagePeopleRole(role: MemberRole) {
   return role === "admin" || role === "power_user";
 }
 
+export function isMemberRole(role: MemberRole) {
+  return role === "member";
+}
+
 export function canUseMemberActions(role: MemberRole) {
   return role !== "viewer";
+}
+
+export function canAccessProjectViewsRole(role: MemberRole) {
+  return role === "admin" || role === "power_user" || role === "viewer";
+}
+
+export function canAccessReportingViewsRole(role: MemberRole) {
+  return role === "admin" || role === "power_user" || role === "viewer";
 }
 
 export async function getSessionUserId() {
