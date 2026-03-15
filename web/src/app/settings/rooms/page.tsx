@@ -75,7 +75,7 @@ export default async function RoomsPage({
                 Setup home
               </Link>
               <Link href="/tasks" className="action-btn subtle quiet">
-                Jobs
+                View jobs
               </Link>
             </>
           }

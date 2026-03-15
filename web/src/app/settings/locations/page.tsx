@@ -58,7 +58,7 @@ export default async function LocationsPage({
                 Rooms
               </Link>
               <Link href="/tasks" className="action-btn subtle quiet">
-                Jobs
+                View jobs
               </Link>
             </>
           }

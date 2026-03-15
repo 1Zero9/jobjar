@@ -42,11 +42,11 @@ export default async function SettingsPage() {
           scopeLabel="All locations"
           actions={
             <>
-              <Link href="/" className="action-btn subtle quiet">
+              <Link href="/" className="action-btn subtle quiet home-action">
                 Home
               </Link>
               <Link href="/tasks" className="action-btn subtle quiet">
-                Jobs
+                View jobs
               </Link>
               <Link href="/projects" className="action-btn subtle quiet">
                 Projects
@@ -76,7 +76,7 @@ export default async function SettingsPage() {
             </Link>
 
             <Link href="/admin" className="landing-action-card">
-              <span className="landing-action-kicker">Jobs</span>
+              <span className="landing-action-kicker">View jobs</span>
               <strong>Shape jobs</strong>
               <span>Type, stage, schedule, and assign jobs.</span>
             </Link>

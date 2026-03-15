@@ -75,8 +75,8 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
           scopeLabel={locationScopeLabel}
           actions={
             <>
-              <Link href="/" className="action-btn subtle quiet">Home</Link>
-              <Link href="/tasks" prefetch className="action-btn subtle quiet">Jobs</Link>
+              <Link href="/" className="action-btn subtle quiet home-action">Home</Link>
+              <Link href="/tasks" prefetch className="action-btn subtle quiet">View jobs</Link>
               <Link href="/projects" prefetch className="action-btn subtle quiet">Projects</Link>
               <Link href="/projects/timeline" className="action-btn subtle quiet">Timeline</Link>
             </>

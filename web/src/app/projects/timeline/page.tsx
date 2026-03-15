@@ -90,7 +90,7 @@ export default async function ProjectsTimelinePage({
           actions={
             <>
               <span className="session-chip">{currentUser?.displayName ?? "You"}</span>
-              <Link href="/" className="action-btn subtle quiet">
+              <Link href="/" className="action-btn subtle quiet home-action">
                 Home
               </Link>
               <Link href="/projects" className="action-btn subtle quiet">

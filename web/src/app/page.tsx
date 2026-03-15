@@ -1,4 +1,3 @@
-import { HeaderIconLink } from "@/app/components/HeaderIconLink";
 import { luckyDipAction } from "@/app/actions";
 import { FormActionButton } from "@/app/components/FormActionButton";
 import { LogoutIconButton } from "@/app/components/LogoutIconButton";
@@ -91,6 +90,7 @@ export default async function HomePage() {
                   </svg>
                 </div>
                 <h1 className="landing-title">Jobjar</h1>
+                <span className="version-chip">{APP_VERSION}</span>
               </div>
               <div className="landing-meta-row">
                 <span className="session-chip">{currentUser?.displayName ?? "You"}</span>
@@ -98,20 +98,12 @@ export default async function HomePage() {
                   <span>Location</span>
                   <strong>{locationScopeLabel}</strong>
                 </span>
-                <span className="version-chip">{APP_VERSION}</span>
               </div>
             </div>
             <div className="hero-corner-stack">
               <div className="hero-corner-tools">
                 <ResetViewButton />
                 <ThemeToggle compact />
-                <HeaderIconLink href="/help" label="Help">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M9.09 9a3 3 0 1 1 5.82 1c0 2-3 2-3 4" />
-                    <path d="M12 17h.01" />
-                  </svg>
-                </HeaderIconLink>
                 <LogoutIconButton />
               </div>
             </div>
@@ -152,7 +144,7 @@ export default async function HomePage() {
                 <polyline points="3 12 4 13 6 10"/>
                 <polyline points="3 18 4 19 6 16"/>
               </svg>
-              <strong>{childMode ? "My jobs" : "Jobs"}</strong>
+              <strong>{childMode ? "My jobs" : "View jobs"}</strong>
               {childMode ? <span>{taskCount > 0 ? `${taskCount} ready to do` : "Nothing waiting right now"}</span> : null}
             </Link>
 
@@ -178,7 +170,7 @@ export default async function HomePage() {
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                   </svg>
-                  <strong>Log job</strong>
+                  <strong>Log a Job</strong>
                 </Link>
 
                 {!memberMode ? (

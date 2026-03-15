@@ -93,7 +93,7 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
     <div className={`capture-shell page-log ${audienceThemeClass} min-h-screen px-4 py-5`}>
       <main className="capture-app-shell mx-auto flex w-full max-w-[28rem] flex-col gap-6">
         <AppPageHeader
-          title="Log job"
+          title="Log a Job"
           subtitle="Keep capture fast. Job first, room second, everything else optional."
           iconClassName="log"
           icon={
@@ -107,11 +107,11 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
           actions={
             <>
               <span className="session-chip">{currentUser?.displayName ?? "You"}</span>
-              <Link href="/" className="action-btn subtle quiet">
+              <Link href="/" className="action-btn subtle quiet home-action">
                 Home
               </Link>
               <Link href="/tasks" prefetch className="action-btn subtle quiet">
-                Jobs
+                View jobs
               </Link>
               {!memberMode ? (
                 <Link href="/projects" className="action-btn subtle quiet">
@@ -488,10 +488,10 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
               : mode === "projects"
                 ? "Projects"
                 : teenMode
-                  ? "Jobs"
+                  ? "View jobs"
                   : memberMode
                     ? "My jobs"
-                    : "Jobs"
+                    : "View jobs"
           }
           subtitle={
             childMode
@@ -521,19 +521,19 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
           actions={
             <>
               <span className="session-chip">{currentUser?.displayName ?? "You"}</span>
-              <Link href="/" className="action-btn subtle quiet">
+              <Link href="/" className="action-btn subtle quiet home-action">
                 Home
               </Link>
               {canAccessExtendedViews(audienceBand) ? (
                 <>
                   {canEditTasks ? (
                     <Link href="/log" className="action-btn subtle quiet">
-                      Log job
+                      Log a Job
                     </Link>
                   ) : null}
                   {!memberMode ? (
                     <Link href={mode === "projects" ? "/tasks" : "/projects"} prefetch className="action-btn subtle quiet">
-                      {mode === "projects" ? "Jobs" : "Projects"}
+                      {mode === "projects" ? "View jobs" : "Projects"}
                     </Link>
                   ) : null}
                   {mode === "projects" ? (
@@ -592,7 +592,7 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
           basePath={mode === "projects" ? "/projects" : "/tasks"}
           viewMode={mode}
           panelKicker={
-            childMode ? "My jobs" : mode === "projects" ? "Projects" : memberMode ? "My jobs" : teenMode ? "My board" : "Jobs"
+            childMode ? "My jobs" : mode === "projects" ? "Projects" : memberMode ? "My jobs" : teenMode ? "My board" : "View jobs"
           }
           panelTitle={
             childMode ? "Jobs picked for you" : mode === "projects" ? "Project board" : memberMode ? "Your jobs" : "Job board"

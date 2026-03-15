@@ -86,11 +86,10 @@ export default async function HelpPage() {
             </svg>
           }
           cornerAction={<LogoutIconButton />}
-          showHelpTool={false}
           actions={
             <>
-              <Link href="/" className="action-btn subtle quiet">Home</Link>
-              <Link href="/tasks" className="action-btn subtle quiet">Jobs</Link>
+              <Link href="/" className="action-btn subtle quiet home-action">Home</Link>
+              <Link href="/tasks" className="action-btn subtle quiet">View jobs</Link>
               {canSeeProjects ? <Link href="/projects" className="action-btn subtle quiet">Projects</Link> : null}
               {canSeeReports ? <Link href="/stats" className="action-btn subtle quiet">Stats</Link> : null}
             </>

@@ -76,11 +76,11 @@ export default async function PeoplePage({
           scopeLabel="All locations"
           actions={
             <>
-              <Link href={adminMode ? "/settings" : "/"} className="action-btn subtle quiet">
+              <Link href={adminMode ? "/settings" : "/"} className={`action-btn subtle quiet${adminMode ? "" : " home-action"}`}>
                 {adminMode ? "Setup home" : "Home"}
               </Link>
               <Link href="/tasks" className="action-btn subtle quiet">
-                Jobs
+                View jobs
               </Link>
             </>
           }

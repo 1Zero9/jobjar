@@ -129,7 +129,13 @@
 - Trimmed quick-log highlight and mobile hero overlap in `0.4.11`:
   - removed the yellow styling from the outer task and room cards so only the typing controls stay highlighted
   - moved the mobile top-right tool icons onto their own line below the hero title row to stop overlap
-- Updated product docs to match the current `0.4.11` app shape.
+- Simplified home navigation and hero hierarchy in `0.4.12`:
+  - renamed the main job actions to `View jobs` and `Log a Job`
+  - moved the version chip up onto the same line as the `Jobjar` title
+  - removed the help icon from the hero tools and left help as a panel action instead
+  - highlighted the `Home` action button more clearly on secondary screens
+  - tightened the landing hero spacing to reduce the dead space at the top
+- Updated product docs to match the current `0.4.12` app shape.
 - Validation completed:
   - `npm run db:generate` passed
   - `npm run lint` passed
