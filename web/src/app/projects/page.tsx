@@ -6,6 +6,9 @@ export default async function ProjectsPage({
   searchParams,
 }: {
   searchParams: Promise<{
+    added?: string;
+    updated?: string;
+    removed?: string;
     error?: string;
     room?: string;
     assignee?: string;

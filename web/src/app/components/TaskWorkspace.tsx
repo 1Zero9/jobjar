@@ -17,6 +17,7 @@ import { redirect } from "next/navigation";
 type SearchParams = {
   added?: string;
   error?: string;
+  removed?: string;
   updated?: string;
   lucky?: string;
   assignee?: string;
@@ -563,8 +564,20 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
 
         {params.added === "task" ? <ToastNotice message="Job recorded." tone="success" /> : null}
         {params.added === "done" ? <ToastNotice message="Completed job recorded." tone="success" /> : null}
+        {params.added === "project-child" ? <ToastNotice message="Project step added." tone="success" /> : null}
+        {params.added === "project-cost" ? <ToastNotice message="Project cost added." tone="success" /> : null}
+        {params.added === "project-material" ? <ToastNotice message="Project material added." tone="success" /> : null}
+        {params.added === "project-milestone" ? <ToastNotice message="Project milestone added." tone="success" /> : null}
         {params.updated === "task" ? <ToastNotice message="Job updated." tone="info" /> : null}
         {params.updated === "done" ? <ToastNotice message="Job marked completed." tone="success" /> : null}
+        {params.updated === "project-promoted" ? <ToastNotice message="Job promoted to project." tone="success" /> : null}
+        {params.updated === "project-demoted" ? <ToastNotice message="Project returned to a job." tone="success" /> : null}
+        {params.updated === "project-plan" ? <ToastNotice message="Project plan updated." tone="success" /> : null}
+        {params.updated === "project-material" ? <ToastNotice message="Project material updated." tone="success" /> : null}
+        {params.updated === "project-milestone" ? <ToastNotice message="Project milestone updated." tone="success" /> : null}
+        {params.removed === "project-cost" ? <ToastNotice message="Project cost removed." tone="success" /> : null}
+        {params.removed === "project-material" ? <ToastNotice message="Project material removed." tone="success" /> : null}
+        {params.removed === "project-milestone" ? <ToastNotice message="Project milestone removed." tone="success" /> : null}
         {params.lucky === "empty" ? <ToastNotice message="No jobs available for lucky dip." tone="info" /> : null}
         {luckyTask ? <ToastNotice message={`Lucky dip: ${luckyTask.title}`} tone="info" /> : null}
         {params.error ? <ToastNotice message={getTaskWorkspaceErrorMessage(params.error)} tone="error" /> : null}
@@ -734,6 +747,33 @@ function getTaskWorkspaceErrorMessage(error?: string) {
   }
   if (error === "task-strict-minutes-required") {
     return "This strict job needs more tracked time before it can be finished.";
+  }
+  if (error === "project-demote-blocked") {
+    return "Remove project steps, costs, materials, and milestones before demoting this project.";
+  }
+  if (error === "project-child-title-required") {
+    return "Enter a title before adding a project step.";
+  }
+  if (error === "project-cost-title-required") {
+    return "Enter a title for the project cost.";
+  }
+  if (error === "project-cost-amount-invalid") {
+    return "Enter a valid amount greater than zero for the project cost.";
+  }
+  if (error === "project-cost-not-found") {
+    return "That project cost could not be found.";
+  }
+  if (error === "project-material-title-required") {
+    return "Enter a title before adding a project material.";
+  }
+  if (error === "project-material-not-found") {
+    return "That project material could not be found.";
+  }
+  if (error === "project-milestone-title-required") {
+    return "Enter a title before adding a project milestone.";
+  }
+  if (error === "project-milestone-not-found") {
+    return "That project milestone could not be found.";
   }
   return "We could not save that job change.";
 }

@@ -942,6 +942,7 @@ export async function promoteTaskToProjectAction(formData: FormData) {
     select: { id: true, title: true, jobKind: true },
   });
   if (!task) {
+    redirectToReturnPath(returnTo, { error: "task-not-found" });
     return;
   }
 
@@ -957,7 +958,7 @@ export async function promoteTaskToProjectAction(formData: FormData) {
   }
 
   refreshViews(["/", "/tasks", "/projects", "/projects/timeline", "/stats", "/admin"]);
-  redirect(`${returnTo}#task-${task.id}`);
+  redirectToReturnPath(returnTo, { updated: "project-promoted" }, `task-${task.id}`);
 }
 
 export async function demoteProjectToTaskAction(formData: FormData) {
@@ -996,6 +997,7 @@ export async function demoteProjectToTaskAction(formData: FormData) {
     },
   });
   if (!task) {
+    redirectToReturnPath(returnTo, { error: "task-not-found" });
     return;
   }
 
@@ -1006,7 +1008,7 @@ export async function demoteProjectToTaskAction(formData: FormData) {
     task.projectMilestones.length > 0;
 
   if (hasProjectContent) {
-    redirect(`${returnTo}#task-${task.id}`);
+    redirectToReturnPath(returnTo, { error: "project-demote-blocked" }, `task-${task.id}`);
   }
 
   await prisma.task.update({
@@ -1024,7 +1026,7 @@ export async function demoteProjectToTaskAction(formData: FormData) {
 
   refreshViews(["/", "/tasks", "/projects", "/projects/timeline", "/stats", "/admin"]);
   const destination = returnTo.startsWith("/projects") ? "/tasks" : returnTo;
-  redirect(`${destination}?updated=task#task-${task.id}`);
+  redirectToReturnPath(destination, { updated: "project-demoted" }, `task-${task.id}`);
 }
 
 export async function updateProjectPlanAction(formData: FormData) {
@@ -1044,6 +1046,7 @@ export async function updateProjectPlanAction(formData: FormData) {
     select: { id: true, estimatedMinutes: true },
   });
   if (!task) {
+    redirectToReturnPath(returnTo, { error: "task-not-found" });
     return;
   }
 
@@ -1066,7 +1069,7 @@ export async function updateProjectPlanAction(formData: FormData) {
   });
 
   refreshViews(["/", "/tasks", "/projects", "/projects/timeline", "/stats", "/admin"]);
-  redirect(`${returnTo}#task-${task.id}`);
+  redirectToReturnPath(returnTo, { updated: "project-plan" }, `task-${task.id}`);
 }
 
 export async function createProjectChildTaskAction(formData: FormData) {
@@ -1078,7 +1081,11 @@ export async function createProjectChildTaskAction(formData: FormData) {
   const dueAt = toDate(formData.get("dueAt"));
   const estimatedMinutes = toPositiveInt(formData.get("estimatedMinutes"), 30);
   const returnTo = getReturnPath(formData.get("returnTo"), "/tasks");
-  if (!projectId || !title) {
+  if (!projectId) {
+    return;
+  }
+  if (!title) {
+    redirectToReturnPath(returnTo, { error: "project-child-title-required" }, `task-${projectId}`);
     return;
   }
 
@@ -1091,6 +1098,7 @@ export async function createProjectChildTaskAction(formData: FormData) {
     select: { id: true, roomId: true, title: true },
   });
   if (!project) {
+    redirectToReturnPath(returnTo, { error: "task-not-found" });
     return;
   }
 
@@ -1142,7 +1150,7 @@ export async function createProjectChildTaskAction(formData: FormData) {
   });
 
   refreshViews(["/", "/tasks", "/projects", "/projects/timeline", "/stats", "/admin"]);
-  redirect(`${returnTo}#task-${project.id}`);
+  redirectToReturnPath(returnTo, { added: "project-child" }, `task-${project.id}`);
 }
 
 export async function createProjectCostAction(formData: FormData) {
@@ -1151,7 +1159,15 @@ export async function createProjectCostAction(formData: FormData) {
   const title = String(formData.get("title") ?? "").trim();
   const amountCents = toCurrencyCentsOrNull(formData.get("amount"));
   const returnTo = getReturnPath(formData.get("returnTo"), "/tasks");
-  if (!taskId || !title || amountCents === null || amountCents <= 0) {
+  if (!taskId) {
+    return;
+  }
+  if (!title) {
+    redirectToReturnPath(returnTo, { error: "project-cost-title-required" }, `task-${taskId}`);
+    return;
+  }
+  if (amountCents === null || amountCents <= 0) {
+    redirectToReturnPath(returnTo, { error: "project-cost-amount-invalid" }, `task-${taskId}`);
     return;
   }
 
@@ -1164,6 +1180,7 @@ export async function createProjectCostAction(formData: FormData) {
     select: { id: true },
   });
   if (!task) {
+    redirectToReturnPath(returnTo, { error: "task-not-found" });
     return;
   }
 
@@ -1176,7 +1193,7 @@ export async function createProjectCostAction(formData: FormData) {
   });
 
   refreshViews(["/", "/tasks", "/projects", "/projects/timeline", "/stats", "/admin"]);
-  redirect(`${returnTo}#task-${task.id}`);
+  redirectToReturnPath(returnTo, { added: "project-cost" }, `task-${task.id}`);
 }
 
 export async function deleteProjectCostAction(formData: FormData) {
@@ -1199,6 +1216,7 @@ export async function deleteProjectCostAction(formData: FormData) {
     select: { id: true, taskId: true },
   });
   if (!cost) {
+    redirectToReturnPath(returnTo, { error: "project-cost-not-found" }, `task-${taskId}`);
     return;
   }
 
@@ -1207,7 +1225,7 @@ export async function deleteProjectCostAction(formData: FormData) {
   });
 
   refreshViews(["/", "/tasks", "/projects", "/projects/timeline", "/stats", "/admin"]);
-  redirect(`${returnTo}#task-${cost.taskId}`);
+  redirectToReturnPath(returnTo, { removed: "project-cost" }, `task-${cost.taskId}`);
 }
 
 export async function createProjectMaterialAction(formData: FormData) {
@@ -1218,7 +1236,11 @@ export async function createProjectMaterialAction(formData: FormData) {
   const source = String(formData.get("source") ?? "").trim() || null;
   const estimatedCostCents = toCurrencyCentsOrNull(formData.get("estimatedCost"));
   const returnTo = getReturnPath(formData.get("returnTo"), "/projects");
-  if (!taskId || !title) {
+  if (!taskId) {
+    return;
+  }
+  if (!title) {
+    redirectToReturnPath(returnTo, { error: "project-material-title-required" }, `task-${taskId}`);
     return;
   }
 
@@ -1231,6 +1253,7 @@ export async function createProjectMaterialAction(formData: FormData) {
     select: { id: true },
   });
   if (!task) {
+    redirectToReturnPath(returnTo, { error: "task-not-found" });
     return;
   }
 
@@ -1251,7 +1274,7 @@ export async function createProjectMaterialAction(formData: FormData) {
   });
 
   refreshViews(["/", "/tasks", "/projects", "/projects/timeline", "/stats", "/admin"]);
-  redirect(`${returnTo}#task-${task.id}`);
+  redirectToReturnPath(returnTo, { added: "project-material" }, `task-${task.id}`);
 }
 
 export async function toggleProjectMaterialPurchasedAction(formData: FormData) {
@@ -1276,6 +1299,7 @@ export async function toggleProjectMaterialPurchasedAction(formData: FormData) {
     select: { id: true, taskId: true, purchasedAt: true, source: true },
   });
   if (!material) {
+    redirectToReturnPath(returnTo, { error: "project-material-not-found" }, `task-${taskId}`);
     return;
   }
 
@@ -1294,7 +1318,7 @@ export async function toggleProjectMaterialPurchasedAction(formData: FormData) {
   });
 
   refreshViews(["/", "/tasks", "/projects", "/projects/timeline", "/stats", "/admin"]);
-  redirect(`${returnTo}#task-${material.taskId}`);
+  redirectToReturnPath(returnTo, { updated: "project-material" }, `task-${material.taskId}`);
 }
 
 export async function deleteProjectMaterialAction(formData: FormData) {
@@ -1317,6 +1341,7 @@ export async function deleteProjectMaterialAction(formData: FormData) {
     select: { id: true, taskId: true },
   });
   if (!material) {
+    redirectToReturnPath(returnTo, { error: "project-material-not-found" }, `task-${taskId}`);
     return;
   }
 
@@ -1325,7 +1350,7 @@ export async function deleteProjectMaterialAction(formData: FormData) {
   });
 
   refreshViews(["/", "/tasks", "/projects", "/projects/timeline", "/stats", "/admin"]);
-  redirect(`${returnTo}#task-${material.taskId}`);
+  redirectToReturnPath(returnTo, { removed: "project-material" }, `task-${material.taskId}`);
 }
 
 export async function createProjectMilestoneAction(formData: FormData) {
@@ -1334,7 +1359,11 @@ export async function createProjectMilestoneAction(formData: FormData) {
   const title = String(formData.get("title") ?? "").trim();
   const targetAt = toDate(formData.get("targetAt"));
   const returnTo = getReturnPath(formData.get("returnTo"), "/projects");
-  if (!taskId || !title) {
+  if (!taskId) {
+    return;
+  }
+  if (!title) {
+    redirectToReturnPath(returnTo, { error: "project-milestone-title-required" }, `task-${taskId}`);
     return;
   }
 
@@ -1347,6 +1376,7 @@ export async function createProjectMilestoneAction(formData: FormData) {
     select: { id: true },
   });
   if (!task) {
+    redirectToReturnPath(returnTo, { error: "task-not-found" });
     return;
   }
 
@@ -1365,7 +1395,7 @@ export async function createProjectMilestoneAction(formData: FormData) {
   });
 
   refreshViews(["/", "/tasks", "/projects", "/projects/timeline", "/stats", "/admin"]);
-  redirect(`${returnTo}#task-${task.id}`);
+  redirectToReturnPath(returnTo, { added: "project-milestone" }, `task-${task.id}`);
 }
 
 export async function toggleProjectMilestoneAction(formData: FormData) {
@@ -1388,6 +1418,7 @@ export async function toggleProjectMilestoneAction(formData: FormData) {
     select: { id: true, taskId: true, completedAt: true },
   });
   if (!milestone) {
+    redirectToReturnPath(returnTo, { error: "project-milestone-not-found" }, `task-${taskId}`);
     return;
   }
 
@@ -1397,7 +1428,7 @@ export async function toggleProjectMilestoneAction(formData: FormData) {
   });
 
   refreshViews(["/", "/tasks", "/projects", "/projects/timeline", "/stats", "/admin"]);
-  redirect(`${returnTo}#task-${milestone.taskId}`);
+  redirectToReturnPath(returnTo, { updated: "project-milestone" }, `task-${milestone.taskId}`);
 }
 
 export async function deleteProjectMilestoneAction(formData: FormData) {
@@ -1420,6 +1451,7 @@ export async function deleteProjectMilestoneAction(formData: FormData) {
     select: { id: true, taskId: true },
   });
   if (!milestone) {
+    redirectToReturnPath(returnTo, { error: "project-milestone-not-found" }, `task-${taskId}`);
     return;
   }
 
@@ -1428,7 +1460,7 @@ export async function deleteProjectMilestoneAction(formData: FormData) {
   });
 
   refreshViews(["/", "/tasks", "/projects", "/projects/timeline", "/stats", "/admin"]);
-  redirect(`${returnTo}#task-${milestone.taskId}`);
+  redirectToReturnPath(returnTo, { removed: "project-milestone" }, `task-${milestone.taskId}`);
 }
 
 export async function deleteTaskAction(formData: FormData) {
