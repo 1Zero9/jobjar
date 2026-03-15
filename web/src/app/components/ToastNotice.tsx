@@ -7,7 +7,7 @@ export function ToastNotice({
   tone = "info",
 }: {
   message: string;
-  tone?: "info" | "success";
+  tone?: "error" | "info" | "success";
 }) {
   const [visible, setVisible] = useState(true);
 

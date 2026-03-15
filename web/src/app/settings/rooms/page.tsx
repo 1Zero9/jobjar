@@ -21,7 +21,7 @@ const roomPresets = [
 export default async function RoomsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ added?: string; duplicate?: string }>;
+  searchParams: Promise<{ added?: string; duplicate?: string; error?: string }>;
 }) {
   const params = await searchParams;
   const { householdId } = await requireAdmin("/settings/rooms");
@@ -83,6 +83,7 @@ export default async function RoomsPage({
 
         {params.added === "room" ? <ToastNotice message="Room added." tone="success" /> : null}
         {params.duplicate === "room" ? <ToastNotice message="That room name already exists." tone="info" /> : null}
+        {params.error ? <ToastNotice message={getRoomsErrorMessage(params.error)} tone="error" /> : null}
 
         <section className="settings-panel">
           <div className="room-setup-header">
@@ -212,6 +213,16 @@ export default async function RoomsPage({
       </main>
     </div>
   );
+}
+
+function getRoomsErrorMessage(error?: string) {
+  if (error === "room-name-required") {
+    return "Enter a room name before saving.";
+  }
+  if (error === "room-not-found") {
+    return "That room could not be found.";
+  }
+  return "We could not save that room.";
 }
 
 function groupRoomsByLocation<T extends { location?: { name: string } | null }>(rooms: T[]) {

@@ -11,13 +11,26 @@ import { AdminTasksClient } from "@/app/components/AdminTasksClient";
 import { LogoutIconButton } from "@/app/components/LogoutIconButton";
 import { ResetViewButton } from "@/app/components/ResetViewButton";
 import { ThemeToggle } from "@/app/components/ThemeToggle";
+import { ToastNotice } from "@/app/components/ToastNotice";
 import { requireAdmin } from "@/lib/auth";
 import { getAdminData } from "@/lib/admin-data";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminPage() {
+export default async function AdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    added?: string;
+    updated?: string;
+    archived?: string;
+    removed?: string;
+    duplicate?: string;
+    error?: string;
+  }>;
+}) {
+  const params = await searchParams;
   const { householdId } = await requireAdmin("/admin");
   const { rooms, tasks, people } = await getAdminData({ householdId });
   const projectOptions = tasks.filter((task) => task.jobKind === "project" || task.childCount > 0);
@@ -70,11 +83,23 @@ export default async function AdminPage() {
           </div>
         </header>
 
+        {params.added === "person" ? <ToastNotice message="Person added." tone="success" /> : null}
+        {params.added === "room" ? <ToastNotice message="Room added." tone="success" /> : null}
+        {params.added === "task" ? <ToastNotice message="Task added." tone="success" /> : null}
+        {params.updated === "passcode" ? <ToastNotice message="Passcode updated." tone="success" /> : null}
+        {params.updated === "task" ? <ToastNotice message="Task updated." tone="success" /> : null}
+        {params.archived === "room" ? <ToastNotice message="Room archived." tone="success" /> : null}
+        {params.archived === "task" ? <ToastNotice message="Task archived." tone="success" /> : null}
+        {params.removed === "person" ? <ToastNotice message="Person removed." tone="success" /> : null}
+        {params.duplicate === "room" ? <ToastNotice message="That room name already exists." tone="info" /> : null}
+        {params.error ? <ToastNotice message={getAdminErrorMessage(params.error)} tone="error" /> : null}
+
         <section id="section-people" className="board-shell admin-step people p-4">
           <h2 className="text-lg font-semibold">People</h2>
           <p className="text-xs text-muted">Add the people who will notice, own, and complete tasks.</p>
 
           <form action={createPersonAction} className="mt-3 grid grid-cols-1 gap-2 rounded-xl border-accent-muted bg-accent-soft p-3 md:grid-cols-5">
+            <input type="hidden" name="returnTo" value="/admin#section-people" />
             <input name="displayName" type="text" required placeholder="Name" className="admin-input px-3 py-2 text-sm" />
             <input name="email" type="email" placeholder="Email (optional)" className="admin-input px-3 py-2 text-sm" />
             <select name="role" defaultValue="member" className="admin-input px-3 py-2 text-sm">
@@ -107,6 +132,7 @@ export default async function AdminPage() {
                     <td className="border-b border-border px-3 py-2">
                       <form action={setPersonPasscodeAction} className="flex gap-2">
                         <input type="hidden" name="userId" value={person.id} />
+                        <input type="hidden" name="returnTo" value="/admin#section-people" />
                         <input name="passcode" type="password" minLength={4} placeholder="Reset" className="admin-input w-28 px-2 py-1.5 text-xs" />
                         <button className="action-btn subtle">Set</button>
                       </form>
@@ -114,6 +140,7 @@ export default async function AdminPage() {
                     <td className="border-b border-border px-3 py-2">
                       <form action={removePersonAction}>
                         <input type="hidden" name="userId" value={person.id} />
+                        <input type="hidden" name="returnTo" value="/admin#section-people" />
                         <button className="rounded-lg border border-error px-2 py-1 text-xs font-semibold text-error">Remove</button>
                       </form>
                     </td>
@@ -129,6 +156,7 @@ export default async function AdminPage() {
           <p className="text-xs text-muted">Define the real-world areas tasks belong to: rooms, garden, attic, car, outside.</p>
 
           <form action={createRoomAction} className="mt-3 grid grid-cols-1 gap-2 rounded-xl border-accent-muted bg-accent-soft p-3 md:grid-cols-3">
+            <input type="hidden" name="returnTo" value="/admin#section-rooms" />
             <input name="name" type="text" required placeholder="Room name" className="admin-input px-3 py-2 text-sm" />
             <input name="designation" type="text" placeholder="Group e.g. Upstairs / Outside" className="admin-input px-3 py-2 text-sm" />
             <button className="action-btn bright">Add room</button>
@@ -139,6 +167,7 @@ export default async function AdminPage() {
               <article key={room.id} className="rounded-xl border border-accent-muted bg-surface p-3">
                 <form action={updateRoomAction} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_auto_auto]">
                   <input type="hidden" name="roomId" value={room.id} />
+                  <input type="hidden" name="returnTo" value="/admin#section-rooms" />
                   <input name="name" type="text" defaultValue={room.name} className="admin-input px-3 py-2 text-sm" />
                   <input name="designation" type="text" defaultValue={room.designation} className="admin-input px-3 py-2 text-sm" />
                   <button className="action-btn subtle">Save</button>
@@ -146,6 +175,7 @@ export default async function AdminPage() {
                 </form>
                 <form action={deleteRoomAction} className="mt-2">
                   <input type="hidden" name="roomId" value={room.id} />
+                  <input type="hidden" name="returnTo" value="/admin#section-rooms" />
                   <button className="rounded-lg border border-error px-2 py-1 text-xs font-semibold text-error">Archive room</button>
                 </form>
               </article>
@@ -158,6 +188,7 @@ export default async function AdminPage() {
           <p className="text-xs text-muted">Give tasks structure: type, stage, location, schedule, and ownership.</p>
 
           <form action={createTaskAction} className="mt-3 grid grid-cols-1 gap-2 rounded-xl border-accent-muted bg-accent-soft p-3 md:grid-cols-4">
+            <input type="hidden" name="returnTo" value="/admin#section-tasks" />
             <input name="title" type="text" required placeholder="Task title" className="admin-input px-3 py-2 text-sm" />
             <select name="roomId" required className="admin-input px-3 py-2 text-sm">
               <option value="">Pick room</option>
@@ -248,6 +279,40 @@ export default async function AdminPage() {
       </main>
     </div>
   );
+}
+
+function getAdminErrorMessage(error?: string) {
+  if (error === "person-name-required") {
+    return "Enter a name before adding a person.";
+  }
+  if (error === "person-passcode-too-short") {
+    return "Passcodes must be at least 4 characters.";
+  }
+  if (error === "person-not-found") {
+    return "That person could not be found.";
+  }
+  if (error === "person-remove-self-protected") {
+    return "You cannot remove your own admin account here.";
+  }
+  if (error === "room-name-required") {
+    return "Enter a room name before saving.";
+  }
+  if (error === "room-not-found") {
+    return "That room could not be found.";
+  }
+  if (error === "task-title-required") {
+    return "Enter a task title before saving.";
+  }
+  if (error === "task-room-required") {
+    return "Pick a room before saving the task.";
+  }
+  if (error === "task-room-invalid") {
+    return "That room is no longer available.";
+  }
+  if (error === "task-not-found") {
+    return "That task could not be found.";
+  }
+  return "We could not save that admin change.";
 }
 
 function ProgressChip({ label, value }: { label: string; value: string }) {

@@ -488,6 +488,7 @@ export function TasksPanelClient({
                             <form action={completeTaskAction}>
                               <input type="hidden" name="taskId" value={task.id} />
                               <input type="hidden" name="note" value="" />
+                              <input type="hidden" name="returnTo" value={`${basePath}#task-${task.id}`} />
                               <FormActionButton className="action-btn bright quiet" pendingLabel="Finishing">
                                 I finished this
                               </FormActionButton>
@@ -546,6 +547,7 @@ export function TasksPanelClient({
                               <form action={completeTaskAction}>
                                 <input type="hidden" name="taskId" value={task.id} />
                                 <input type="hidden" name="note" value="" />
+                                <input type="hidden" name="returnTo" value={`${basePath}#task-${task.id}`} />
                                 <FormActionButton className="action-btn bright quiet" pendingLabel="Finishing">
                                   Finish job
                                 </FormActionButton>

@@ -66,6 +66,7 @@ export function AdminTasksClient({ tasks, rooms, people }: Props) {
             <article key={task.id} className="rounded-lg border border-border bg-surface p-2">
               <form action={updateTaskAction} className="space-y-2">
                 <input type="hidden" name="taskId" value={task.id} />
+                <input type="hidden" name="returnTo" value="/admin#section-tasks" />
                 <input type="hidden" name="strictModeMarker" value="1" />
 
                 {/* Title + Room */}
@@ -165,6 +166,7 @@ export function AdminTasksClient({ tasks, rooms, people }: Props) {
 
               <form action={deleteTaskAction} className="mt-2">
                 <input type="hidden" name="taskId" value={task.id} />
+                <input type="hidden" name="returnTo" value="/admin#section-tasks" />
                 <button className="action-btn warn">Archive</button>
               </form>
 

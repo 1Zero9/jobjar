@@ -16,6 +16,7 @@ import { redirect } from "next/navigation";
 
 type SearchParams = {
   added?: string;
+  error?: string;
   updated?: string;
   lucky?: string;
   assignee?: string;
@@ -135,6 +136,7 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
 
         {params.added === "task" ? <ToastNotice message="Job recorded." tone="success" /> : null}
         {params.added === "done" ? <ToastNotice message="Completed job recorded." tone="success" /> : null}
+        {params.error ? <ToastNotice message={getTaskWorkspaceErrorMessage(params.error)} tone="error" /> : null}
         {(params.added === "task" || params.added === "done") && params.taskId ? (
           <Link href={`/tasks#task-${params.taskId}`} className="view-task-link">
             View the job you just logged
@@ -565,6 +567,7 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
         {params.updated === "done" ? <ToastNotice message="Job marked completed." tone="success" /> : null}
         {params.lucky === "empty" ? <ToastNotice message="No jobs available for lucky dip." tone="info" /> : null}
         {luckyTask ? <ToastNotice message={`Lucky dip: ${luckyTask.title}`} tone="info" /> : null}
+        {params.error ? <ToastNotice message={getTaskWorkspaceErrorMessage(params.error)} tone="error" /> : null}
 
         <TasksPanelClient
           key={[
@@ -711,4 +714,26 @@ function uniqueRoomsByName<T extends { id: string; name: string }>(rooms: T[]) {
     seen.add(key);
     return true;
   });
+}
+
+function getTaskWorkspaceErrorMessage(error?: string) {
+  if (error === "task-title-required") {
+    return "Add a job title before saving.";
+  }
+  if (error === "task-room-required") {
+    return "Pick a room before saving this job.";
+  }
+  if (error === "task-not-found") {
+    return "That job could not be found.";
+  }
+  if (error === "task-strict-note-required") {
+    return "Add a short note before finishing this strict job.";
+  }
+  if (error === "task-strict-start-required") {
+    return "Start this strict job before marking it finished.";
+  }
+  if (error === "task-strict-minutes-required") {
+    return "This strict job needs more tracked time before it can be finished.";
+  }
+  return "We could not save that job change.";
 }

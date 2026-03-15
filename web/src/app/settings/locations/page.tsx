@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 export default async function LocationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ added?: string; duplicate?: string }>;
+  searchParams: Promise<{ added?: string; duplicate?: string; error?: string }>;
 }) {
   const params = await searchParams;
   const { householdId } = await requireAdmin("/settings/locations");
@@ -66,6 +66,7 @@ export default async function LocationsPage({
 
         {params.added === "location" ? <ToastNotice message="Location added." tone="success" /> : null}
         {params.duplicate === "location" ? <ToastNotice message="That location name already exists." tone="info" /> : null}
+        {params.error ? <ToastNotice message={getLocationsErrorMessage(params.error)} tone="error" /> : null}
 
         <section className="settings-panel">
           <div className="room-setup-header">
@@ -163,4 +164,14 @@ export default async function LocationsPage({
       </main>
     </div>
   );
+}
+
+function getLocationsErrorMessage(error?: string) {
+  if (error === "location-name-required") {
+    return "Enter a location name before saving.";
+  }
+  if (error === "location-not-found") {
+    return "That location could not be found.";
+  }
+  return "We could not save that location.";
 }

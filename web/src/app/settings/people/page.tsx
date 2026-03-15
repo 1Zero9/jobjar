@@ -21,7 +21,7 @@ export const dynamic = "force-dynamic";
 export default async function PeoplePage({
   searchParams,
 }: {
-  searchParams: Promise<{ added?: string; updated?: string }>;
+  searchParams: Promise<{ added?: string; updated?: string; error?: string }>;
 }) {
   const params = await searchParams;
   const { householdId, role } = await requirePeopleManager("/settings/people");
@@ -91,6 +91,8 @@ export default async function PeoplePage({
         {params.updated === "audience" ? <ToastNotice message="Age group updated." tone="success" /> : null}
         {params.updated === "theme" ? <ToastNotice message="Profile theme updated." tone="success" /> : null}
         {params.updated === "locations" ? <ToastNotice message="Location access updated." tone="success" /> : null}
+        {params.updated === "passcode" ? <ToastNotice message="Passcode updated." tone="success" /> : null}
+        {params.error ? <ToastNotice message={getPeopleErrorMessage(params.error)} tone="error" /> : null}
 
         <section className="settings-panel">
           <div className="room-setup-header">
@@ -261,6 +263,7 @@ export default async function PeoplePage({
                     <>
                       <form action={setPersonPasscodeAction} className="recorded-edit-form">
                         <input type="hidden" name="userId" value={person.user.id} />
+                        <input type="hidden" name="returnTo" value="/settings/people" />
                         <label className="recorded-field">
                           <span>Reset passcode</span>
                           <input name="passcode" type="password" minLength={4} placeholder="New passcode" className="recorded-edit-input" />
@@ -287,6 +290,25 @@ export default async function PeoplePage({
       </main>
     </div>
   );
+}
+
+function getPeopleErrorMessage(error?: string) {
+  if (error === "person-name-required") {
+    return "Enter a name before adding a person.";
+  }
+  if (error === "person-role-self-admin-required") {
+    return "Keep at least one admin account for yourself.";
+  }
+  if (error === "person-location-self-protected") {
+    return "You cannot restrict your own location access here.";
+  }
+  if (error === "person-passcode-too-short") {
+    return "Passcodes must be at least 4 characters.";
+  }
+  if (error === "person-not-found") {
+    return "That person could not be found.";
+  }
+  return "We could not save that person change.";
 }
 
 function rowTone(index: number) {

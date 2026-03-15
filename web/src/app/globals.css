@@ -1446,6 +1446,12 @@ html[data-theme="dark"] .profile-girl-pink .page-hero-icon {
   color: var(--accent);
 }
 
+.toast-notice.error {
+  border-color: color-mix(in srgb, var(--error) 36%, transparent);
+  background: color-mix(in srgb, var(--error) 12%, white);
+  color: var(--error);
+}
+
 .room-setup-header {
   display: flex;
   align-items: center;

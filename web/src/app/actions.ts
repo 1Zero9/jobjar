@@ -27,6 +27,7 @@ export async function createRoomAction(formData: FormData) {
   const returnTo = getReturnPath(formData.get("returnTo"), "");
 
   if (!name) {
+    redirectToReturnPath(returnTo, { error: "room-name-required" });
     return;
   }
 
@@ -40,7 +41,7 @@ export async function createRoomAction(formData: FormData) {
     select: { id: true },
   });
   if (duplicateRoom) {
-    if (returnTo) redirect(`${returnTo}?duplicate=room`);
+    redirectToReturnPath(returnTo, { duplicate: "room" });
     return;
   }
 
@@ -65,7 +66,7 @@ export async function createRoomAction(formData: FormData) {
 
   refreshViews(["/", "/log", "/tasks", "/settings", "/settings/rooms", "/settings/locations"]);
   if (returnTo) {
-    redirect(`${returnTo}?added=room`);
+    redirectToReturnPath(returnTo, { added: "room" });
   }
 }
 
@@ -76,7 +77,12 @@ export async function updateRoomAction(formData: FormData) {
   const designation = String(formData.get("designation") ?? "").trim() || "General";
   const returnTo = getReturnPath(formData.get("returnTo"), "");
 
-  if (!roomId || !name) {
+  if (!roomId) {
+    return;
+  }
+
+  if (!name) {
+    redirectToReturnPath(returnTo, { error: "room-name-required" });
     return;
   }
 
@@ -96,7 +102,12 @@ export async function updateRoomAction(formData: FormData) {
     select: { id: true },
   });
   if (duplicateRoom) {
-    if (returnTo) redirect(`${returnTo}?duplicate=room`);
+    redirectToReturnPath(returnTo, { duplicate: "room" });
+    return;
+  }
+
+  if (!currentRoom) {
+    redirectToReturnPath(returnTo, { error: "room-not-found" });
     return;
   }
 
@@ -111,6 +122,7 @@ export async function updateRoomAction(formData: FormData) {
 export async function deleteRoomAction(formData: FormData) {
   const { householdId } = await requireAdminAction();
   const roomId = String(formData.get("roomId") ?? "").trim();
+  const returnTo = getReturnPath(formData.get("returnTo"), "");
   if (!roomId) {
     return;
   }
@@ -120,6 +132,7 @@ export async function deleteRoomAction(formData: FormData) {
     select: { id: true },
   });
   if (!room) {
+    redirectToReturnPath(returnTo, { error: "room-not-found" });
     return;
   }
 
@@ -134,6 +147,9 @@ export async function deleteRoomAction(formData: FormData) {
     }),
   ]);
   refreshViews(["/", "/log", "/tasks", "/settings", "/settings/rooms", "/settings/locations"]);
+  if (returnTo) {
+    redirectToReturnPath(returnTo, { archived: "room" });
+  }
 }
 
 export async function createLocationAction(formData: FormData) {
@@ -142,6 +158,7 @@ export async function createLocationAction(formData: FormData) {
   const returnTo = getReturnPath(formData.get("returnTo"), "");
 
   if (!name) {
+    redirectToReturnPath(returnTo, { error: "location-name-required" });
     return;
   }
 
@@ -150,7 +167,7 @@ export async function createLocationAction(formData: FormData) {
     select: { id: true },
   });
   if (duplicate) {
-    if (returnTo) redirect(`${returnTo}?duplicate=location`);
+    redirectToReturnPath(returnTo, { duplicate: "location" });
     return;
   }
 
@@ -164,7 +181,7 @@ export async function createLocationAction(formData: FormData) {
   });
 
   refreshViews(["/", "/log", "/tasks", "/settings", "/settings/locations"]);
-  if (returnTo) redirect(`${returnTo}?added=location`);
+  if (returnTo) redirectToReturnPath(returnTo, { added: "location" });
 }
 
 export async function updateLocationAction(formData: FormData) {
@@ -173,7 +190,12 @@ export async function updateLocationAction(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const returnTo = getReturnPath(formData.get("returnTo"), "");
 
-  if (!locationId || !name) {
+  if (!locationId) {
+    return;
+  }
+
+  if (!name) {
+    redirectToReturnPath(returnTo, { error: "location-name-required" });
     return;
   }
 
@@ -182,14 +204,19 @@ export async function updateLocationAction(formData: FormData) {
     select: { id: true },
   });
   if (duplicate) {
-    if (returnTo) redirect(`${returnTo}?duplicate=location`);
+    redirectToReturnPath(returnTo, { duplicate: "location" });
     return;
   }
 
-  await prisma.location.updateMany({
+  const result = await prisma.location.updateMany({
     where: { id: locationId, householdId, active: true },
     data: { name },
   });
+
+  if (result.count === 0) {
+    redirectToReturnPath(returnTo, { error: "location-not-found" });
+    return;
+  }
 
   refreshViews(["/", "/log", "/tasks", "/settings", "/settings/locations"]);
 }
@@ -256,8 +283,14 @@ export async function createTaskAction(formData: FormData) {
   const recurrenceInterval = toPositiveInt(formData.get("recurrenceInterval"), 1);
   const recurrenceTime = String(formData.get("recurrenceTime") ?? "").trim() || "09:00";
   const assigneeUserId = String(formData.get("assigneeUserId") ?? "").trim();
+  const returnTo = getReturnPath(formData.get("returnTo"), "");
 
   if (!title || !requestedRoomId) {
+    if (!title) {
+      redirectToReturnPath(returnTo, { error: "task-title-required" });
+    } else {
+      redirectToReturnPath(returnTo, { error: "task-room-required" });
+    }
     return;
   }
 
@@ -266,6 +299,7 @@ export async function createTaskAction(formData: FormData) {
     select: { id: true },
   });
   if (!room) {
+    redirectToReturnPath(returnTo, { error: "task-room-invalid" });
     return;
   }
 
@@ -331,6 +365,9 @@ export async function createTaskAction(formData: FormData) {
   });
 
   refreshViews(["/", "/log", "/tasks"]);
+  if (returnTo) {
+    redirectToReturnPath(returnTo, { added: "task" });
+  }
 }
 
 export async function createQuickTaskAction(formData: FormData) {
@@ -350,6 +387,7 @@ export async function createQuickTaskAction(formData: FormData) {
   const requestedNextDueAt = toDate(formData.get("nextDueAt"));
   const returnTo = getReturnPath(formData.get("returnTo"), "/log");
   if (!title) {
+    redirectToReturnPath(returnTo, { error: "task-title-required" });
     return;
   }
 
@@ -370,6 +408,7 @@ export async function createQuickTaskAction(formData: FormData) {
     }
   }
   if (!roomId) {
+    redirectToReturnPath(returnTo, { error: "task-room-required" });
     return;
   }
 
@@ -434,7 +473,10 @@ export async function createQuickTaskAction(formData: FormData) {
   }
 
   refreshViews(["/", "/log", "/tasks"]);
-  redirect(`${returnTo}?added=${recordStatus === "done" ? "done" : "task"}&taskId=${task.id}#recorded`);
+  redirectToReturnPath(returnTo, {
+    added: recordStatus === "done" ? "done" : "task",
+    taskId: task.id,
+  }, "recorded");
 }
 
 export async function luckyDipAction(formData?: FormData) {
@@ -477,7 +519,12 @@ export async function updateRecordedTaskAction(formData: FormData) {
   const requestedNextDueAt = toDate(formData.get("nextDueAt"));
   const returnTo = getReturnPath(formData.get("returnTo"), "/tasks");
 
-  if (!taskId || !title) {
+  if (!taskId) {
+    return;
+  }
+
+  if (!title) {
+    redirectToReturnPath(returnTo, { error: "task-title-required" });
     return;
   }
 
@@ -500,6 +547,7 @@ export async function updateRecordedTaskAction(formData: FormData) {
     },
   });
   if (!existingTask) {
+    redirectToReturnPath(returnTo, { error: "task-not-found" });
     return;
   }
 
@@ -693,6 +741,7 @@ export async function updateTaskAssigneeAction(formData: FormData) {
 export async function updateTaskAction(formData: FormData) {
   const { householdId, userId: actorUserId } = await requireAdminAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
+  const returnTo = getReturnPath(formData.get("returnTo"), "");
   if (!taskId) {
     return;
   }
@@ -715,10 +764,17 @@ export async function updateTaskAction(formData: FormData) {
     },
   });
   if (!existing) {
+    redirectToReturnPath(returnTo, { error: "task-not-found" });
     return;
   }
 
-  const title = String(formData.get("title") ?? existing.title).trim() || existing.title;
+  const requestedTitle = String(formData.get("title") ?? existing.title).trim();
+  if (!requestedTitle) {
+    redirectToReturnPath(returnTo, { error: "task-title-required" });
+    return;
+  }
+
+  const title = requestedTitle;
   const requestedRoomId = String(formData.get("roomId") ?? existing.roomId).trim() || existing.roomId;
   const detailNotes = formData.has("detailNotes") ? String(formData.get("detailNotes") ?? "").trim() || null : existing.detailNotes;
   const locationDetails = formData.has("locationDetails") ? String(formData.get("locationDetails") ?? "").trim() || null : existing.locationDetails;
@@ -750,6 +806,9 @@ export async function updateTaskAction(formData: FormData) {
     });
     if (targetRoom) {
       roomId = targetRoom.id;
+    } else {
+      redirectToReturnPath(returnTo, { error: "task-room-invalid" });
+      return;
     }
   }
 
@@ -861,6 +920,9 @@ export async function updateTaskAction(formData: FormData) {
   }
 
   refreshViews(["/", "/log", "/tasks"]);
+  if (returnTo) {
+    redirectToReturnPath(returnTo, { updated: "task" });
+  }
 }
 
 export async function promoteTaskToProjectAction(formData: FormData) {
@@ -1372,6 +1434,7 @@ export async function deleteProjectMilestoneAction(formData: FormData) {
 export async function deleteTaskAction(formData: FormData) {
   const { householdId, userId: actorUserId } = await requireAdminAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
+  const returnTo = getReturnPath(formData.get("returnTo"), "");
   if (!taskId) {
     return;
   }
@@ -1384,6 +1447,7 @@ export async function deleteTaskAction(formData: FormData) {
     select: { id: true, roomId: true, title: true },
   });
   if (!task) {
+    redirectToReturnPath(returnTo, { error: "task-not-found" });
     return;
   }
 
@@ -1398,6 +1462,9 @@ export async function deleteTaskAction(formData: FormData) {
 
   await compactOpenTaskPriorities(task.roomId);
   refreshViews(["/", "/log", "/tasks", "/settings", "/settings/people"]);
+  if (returnTo) {
+    redirectToReturnPath(returnTo, { archived: "task" });
+  }
 }
 
 export async function createPersonAction(formData: FormData) {
@@ -1412,6 +1479,7 @@ export async function createPersonAction(formData: FormData) {
   const returnTo = getReturnPath(formData.get("returnTo"), "");
 
   if (!displayName) {
+    redirectToReturnPath(returnTo, { error: "person-name-required" });
     return;
   }
 
@@ -1456,7 +1524,7 @@ export async function createPersonAction(formData: FormData) {
 
   refreshViews(["/", "/log", "/tasks", "/settings", "/settings/people"]);
   if (returnTo) {
-    redirect(`${returnTo}?added=person`);
+    redirectToReturnPath(returnTo, { added: "person" });
   }
 }
 
@@ -1471,6 +1539,7 @@ export async function updatePersonRoleAction(formData: FormData) {
   }
 
   if (userId === currentUserId && role !== "admin") {
+    redirectToReturnPath(returnTo, { error: "person-role-self-admin-required" });
     return;
   }
 
@@ -1587,6 +1656,7 @@ export async function updatePersonLocationAccessAction(formData: FormData) {
   }
 
   if (userId === currentUserId) {
+    redirectToReturnPath(returnTo, { error: "person-location-self-protected" });
     return;
   }
 
@@ -1612,11 +1682,13 @@ export async function updatePersonLocationAccessAction(formData: FormData) {
 export async function removePersonAction(formData: FormData) {
   const { householdId, userId: currentUserId } = await requireAdminAction();
   const userId = String(formData.get("userId") ?? "").trim();
+  const returnTo = getReturnPath(formData.get("returnTo"), "");
   if (!userId) {
     return;
   }
 
   if (userId === currentUserId) {
+    redirectToReturnPath(returnTo, { error: "person-remove-self-protected" });
     return;
   }
 
@@ -1643,13 +1715,22 @@ export async function removePersonAction(formData: FormData) {
   }
 
   refreshViews(["/", "/log", "/tasks", "/settings", "/settings/people"]);
+  if (returnTo) {
+    redirectToReturnPath(returnTo, { removed: "person" });
+  }
 }
 
 export async function setPersonPasscodeAction(formData: FormData) {
   const { householdId } = await requireAdminAction();
   const userId = String(formData.get("userId") ?? "").trim();
   const passcode = String(formData.get("passcode") ?? "").trim();
-  if (!userId || passcode.length < 4) {
+  const returnTo = getReturnPath(formData.get("returnTo"), "");
+  if (!userId) {
+    return;
+  }
+
+  if (passcode.length < 4) {
+    redirectToReturnPath(returnTo, { error: "person-passcode-too-short" });
     return;
   }
 
@@ -1663,11 +1744,15 @@ export async function setPersonPasscodeAction(formData: FormData) {
     select: { userId: true },
   });
   if (!membership) {
+    redirectToReturnPath(returnTo, { error: "person-not-found" });
     return;
   }
 
   await setUserPasswordHash(userId, hashPassword(passcode));
   refreshViews();
+  if (returnTo) {
+    redirectToReturnPath(returnTo, { updated: "passcode" });
+  }
 }
 
 export async function startTaskAction(formData: FormData) {
@@ -1711,6 +1796,7 @@ export async function completeTaskAction(formData: FormData) {
   const { userId: currentUserId, householdId, allowedLocationIds, audienceBand } = await requireSessionMemberAction({ allowRestrictedChildAudience: true });
   const taskId = String(formData.get("taskId") ?? "").trim();
   const note = String(formData.get("note") ?? "").trim();
+  const returnTo = getReturnPath(formData.get("returnTo"), "/tasks");
   if (!taskId) {
     return;
   }
@@ -1755,15 +1841,18 @@ export async function completeTaskAction(formData: FormData) {
   const lastStart = task.logs[0]?.atTime;
   if (task.validationMode === "strict") {
     if (note.length < 8) {
+      redirectToReturnPath(returnTo, { error: "task-strict-note-required" });
       return;
     }
 
     if (!lastStart) {
+      redirectToReturnPath(returnTo, { error: "task-strict-start-required" });
       return;
     }
 
     const minutesWorked = (now.getTime() - lastStart.getTime()) / 60000;
     if (minutesWorked < task.minimumMinutes) {
+      redirectToReturnPath(returnTo, { error: "task-strict-minutes-required" });
       return;
     }
   }
@@ -2126,6 +2215,36 @@ function getReturnPath(value: FormDataEntryValue | null | undefined, fallback: s
     return fallback;
   }
   return raw;
+}
+
+function redirectToReturnPath(
+  returnTo: string,
+  params: Record<string, string>,
+  hash?: string,
+) {
+  if (!returnTo) {
+    return;
+  }
+
+  redirect(buildReturnPath(returnTo, params, hash));
+}
+
+function buildReturnPath(
+  path: string,
+  params: Record<string, string>,
+  hash?: string,
+) {
+  const [pathWithoutHash, currentHash] = path.split("#", 2);
+  const [pathname, search = ""] = pathWithoutHash.split("?", 2);
+  const nextSearch = new URLSearchParams(search);
+
+  for (const [key, value] of Object.entries(params)) {
+    nextSearch.set(key, value);
+  }
+
+  const query = nextSearch.toString();
+  const hashValue = hash ?? currentHash;
+  return `${pathname}${query ? `?${query}` : ""}${hashValue ? `#${hashValue}` : ""}`;
 }
 
 async function resolveMemberUserId(householdId: string, userId: string) {
