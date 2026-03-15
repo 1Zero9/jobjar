@@ -17,9 +17,10 @@ type Props = {
   locations: LocationOption[];
   rooms: RoomOption[];
   requireRoom?: boolean;
+  className?: string;
 };
 
-export function LocationRoomSelect({ locations, rooms, requireRoom = false }: Props) {
+export function LocationRoomSelect({ locations, rooms, requireRoom = false, className = "" }: Props) {
   const [selectedLocationId, setSelectedLocationId] = useState(
     locations.length > 0 ? locations[0].id : ""
   );
@@ -29,7 +30,7 @@ export function LocationRoomSelect({ locations, rooms, requireRoom = false }: Pr
     : rooms;
 
   return (
-    <div className="capture-step">
+    <div className={`capture-step ${className}`.trim()}>
       {locations.length > 1 ? (
         <label className="capture-step-inner">
           <span className="capture-step-label">Location (optional)</span>

@@ -118,7 +118,12 @@
   - added a discreet location scope chip in the header where the current view is location-limited
   - gave the filter panels stronger color treatment so they read as interactive controls
   - changed Lucky dip to a pot-of-gold style icon on home
-- Updated product docs to match the current `0.4.8` app shape.
+- Tightened quick log and portrait header spacing in `0.4.9`:
+  - moved the fast log flow to job title, room, then save, with optional extras folded lower
+  - highlighted the main quick-log fields and gave the save button a gentle pulse
+  - softened the similar-job helper so it stays optional instead of blocking the fast path
+  - nudged the top-right icon tools down on narrow portrait layouts to stop them crowding the title
+- Updated product docs to match the current `0.4.9` app shape.
 - Validation completed:
   - `npm run db:generate` passed
   - `npm run lint` passed

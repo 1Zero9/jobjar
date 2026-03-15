@@ -14,9 +14,10 @@ type LookupTask = {
 type SimilarTaskFieldProps = {
   tasks: LookupTask[];
   defaultTitle?: string;
+  className?: string;
 };
 
-export function SimilarTaskField({ tasks, defaultTitle = "" }: SimilarTaskFieldProps) {
+export function SimilarTaskField({ tasks, defaultTitle = "", className = "" }: SimilarTaskFieldProps) {
   const [title, setTitle] = useState(defaultTitle);
   const [debouncedTitle, setDebouncedTitle] = useState(defaultTitle);
   const [parentTask, setParentTask] = useState<LookupTask | null>(null);
@@ -44,7 +45,7 @@ export function SimilarTaskField({ tasks, defaultTitle = "" }: SimilarTaskFieldP
           .map((entry) => entry.task);
 
   return (
-    <div className="capture-step">
+    <div className={`capture-step ${className}`.trim()}>
       <span className="capture-step-label">Task</span>
       <input
         name="title"
@@ -70,11 +71,17 @@ export function SimilarTaskField({ tasks, defaultTitle = "" }: SimilarTaskFieldP
       ) : null}
 
       {similarTasks.length > 0 ? (
-        <div className="similar-task-warning">
-          <div className="similar-task-header">
-            <p>Similar tasks already exist.</p>
-            <span>Are you sure you want to create a new one?</span>
-          </div>
+        <details className="similar-task-warning">
+          <summary className="recorded-row-summary">
+            <div className="min-w-0">
+              <p className="recorded-row-title">Possible matches</p>
+              <p className="recorded-row-placeholder">Optional. Open an existing job or add this as a project step.</p>
+            </div>
+            <div className="recorded-row-meta">
+              <span className="recorded-row-edit">Optional</span>
+              <span className="recorded-row-chevron">+</span>
+            </div>
+          </summary>
 
           <div className="similar-task-list">
             {similarTasks.map((task) => (
@@ -94,13 +101,13 @@ export function SimilarTaskField({ tasks, defaultTitle = "" }: SimilarTaskFieldP
                     className="recorded-row-edit recorded-row-edit-bright"
                     onClick={() => setParentTask(task)}
                   >
-                    Sub-task
+                    Project step
                   </button>
                 </div>
               </article>
             ))}
           </div>
-        </div>
+        </details>
       ) : null}
     </div>
   );

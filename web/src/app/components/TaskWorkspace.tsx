@@ -142,46 +142,40 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
         <section className="capture-panel-simple">
           <form action={createQuickTaskAction} className="capture-form-simple" id="capture-form">
             <input type="hidden" name="returnTo" value="/log" />
-            <SimilarTaskField
-              tasks={lookupTasks.map((task) => ({
-                id: task.id,
-                title: task.title,
-                detailNotes: task.detailNotes,
-                roomName: task.room.name,
-                state: task.captureStage === "done" ? "done" : "open",
-              }))}
-            />
+            <section className="quick-log-panel">
+              <div className="quick-log-header">
+                <p className="settings-kicker">Quick log</p>
+                <p className="quick-log-copy">Just add the job and room. Everything else can wait.</p>
+              </div>
 
-            <LocationRoomSelect locations={locations} rooms={roomOptions} requireRoom={restrictedToLocations} />
+              <SimilarTaskField
+                className="quick-log-primary-step"
+                tasks={lookupTasks.map((task) => ({
+                  id: task.id,
+                  title: task.title,
+                  detailNotes: task.detailNotes,
+                  roomName: task.room.name,
+                  state: task.captureStage === "done" ? "done" : "open",
+                }))}
+              />
 
-            <div className="capture-step">
-              <label className="capture-step-inner">
-                <span className="capture-step-label">Assigned to (optional)</span>
-                <select name="assignedToUserId" defaultValue="" className="capture-room-select">
-                  <option value="">No one yet</option>
-                  {peopleOptions.map((person) => (
-                    <option key={person.id} value={person.id}>
-                      {person.displayName}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
+              <LocationRoomSelect
+                className="quick-log-primary-step"
+                locations={locations}
+                rooms={roomOptions}
+                requireRoom={restrictedToLocations}
+              />
 
-            <div className="capture-step">
-              <label className="capture-private-row">
-                <input type="checkbox" name="isPrivate" value="true" className="capture-private-check" />
-                <input type="hidden" name="isPrivate" value="false" />
-                <span className="capture-step-label">Private</span>
-                <span className="capture-private-hint">Only visible to you and the assigned person</span>
-              </label>
-            </div>
+              <FormActionButton className="capture-submit-btn quick-log-submit" pendingLabel="Saving job">
+                Save job
+              </FormActionButton>
+            </section>
 
-            <details className="recorded-row">
+            <details className="recorded-row quick-log-more">
               <summary className="recorded-row-summary">
                 <div className="min-w-0">
-                  <p className="recorded-row-title">Add details</p>
-                  <p className="recorded-row-placeholder">Notes, priority, or set it as repeating.</p>
+                  <p className="recorded-row-title">Add person or details</p>
+                  <p className="recorded-row-placeholder">Optional. Assign it, keep it private, add notes, or make it repeat.</p>
                 </div>
                 <div className="recorded-row-meta">
                   <span className="recorded-row-edit">Optional</span>
@@ -190,6 +184,29 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
               </summary>
 
               <div className="recorded-row-detail">
+                <div className="capture-step">
+                  <label className="capture-step-inner">
+                    <span className="capture-step-label">Assigned to (optional)</span>
+                    <select name="assignedToUserId" defaultValue="" className="capture-room-select">
+                      <option value="">No one yet</option>
+                      {peopleOptions.map((person) => (
+                        <option key={person.id} value={person.id}>
+                          {person.displayName}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
+                <div className="capture-step">
+                  <label className="capture-private-row">
+                    <input type="checkbox" name="isPrivate" value="true" className="capture-private-check" />
+                    <input type="hidden" name="isPrivate" value="false" />
+                    <span className="capture-step-label">Private</span>
+                    <span className="capture-private-hint">Only visible to you and the assigned person</span>
+                  </label>
+                </div>
+
                 <label className="recorded-field">
                   <span>Notes</span>
                   <textarea
@@ -248,10 +265,6 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
                 </details>
               </div>
             </details>
-
-            <FormActionButton className="capture-submit-btn" pendingLabel="Saving job">
-              Save job
-            </FormActionButton>
           </form>
         </section>
 
