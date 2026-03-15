@@ -337,11 +337,31 @@ html[data-theme="dark"] .admin-shell {
   width: 100%;
 }
 
+.landing-hero-topline {
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: start;
+  gap: 0.8rem;
+}
+
 .landing-hero-topline-main,
 .page-hero-topline-main {
   display: grid;
   gap: 0.65rem;
   min-width: 0;
+}
+
+.landing-hero-topline-main {
+  width: 100%;
+}
+
+.landing-hero .hero-corner-stack {
+  width: 100%;
+  justify-content: flex-end;
+}
+
+.landing-hero .hero-corner-tools {
+  margin-top: 0.15rem;
 }
 
 .page-hero-copy {
@@ -4057,7 +4077,6 @@ html[data-theme="dark"] .landing-action-card.stats {
     padding: 1rem;
   }
 
-  .landing-hero-topline,
   .page-hero-topline {
     display: grid;
     grid-template-columns: 1fr;
@@ -4065,20 +4084,17 @@ html[data-theme="dark"] .landing-action-card.stats {
     gap: 0.7rem;
   }
 
-  .landing-hero-topline-main,
   .page-hero-topline-main {
     width: 100%;
     padding-top: 0.15rem;
   }
 
-  .landing-hero .hero-corner-stack,
   .page-hero-card .hero-corner-stack {
     width: 100%;
     justify-content: flex-end;
     padding-top: 0;
   }
 
-  .landing-hero .hero-corner-tools,
   .page-hero-card .hero-corner-tools {
     margin-top: 0.15rem;
   }
