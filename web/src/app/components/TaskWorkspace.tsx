@@ -34,6 +34,7 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
   }
   const peopleManager = canManagePeopleRole(role);
   const memberMode = isMemberRole(role);
+  const easyLog = memberMode;
   const restrictedToLocations = hasLocationRestrictions(allowedLocationIds);
   const audienceThemeClass = getMemberThemeClassName(audienceBand, profileTheme);
 
@@ -91,10 +92,11 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
 
   return (
     <div className={`capture-shell page-log ${audienceThemeClass} min-h-screen px-4 py-5`}>
-      <main className="capture-app-shell mx-auto flex w-full max-w-[28rem] flex-col gap-6">
+      <main className={`capture-app-shell ${easyLog ? "capture-app-shell-easy" : ""} mx-auto flex w-full max-w-[28rem] flex-col gap-6`.trim()}>
         <AppPageHeader
           title="Log a Job"
-          subtitle="Keep capture fast. Job first, room second, everything else optional."
+          subtitle={memberMode ? "Add the job, pick the room, and save." : "Add the job, pick the room, and save."}
+          className={easyLog ? "page-hero-easy" : ""}
           iconClassName="log"
           icon={
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -139,13 +141,13 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
           </Link>
         ) : null}
 
-        <section className="capture-panel-simple">
+        <section className={`capture-panel-simple ${easyLog ? "capture-panel-easy" : ""}`.trim()}>
           <form action={createQuickTaskAction} className="capture-form-simple" id="capture-form">
             <input type="hidden" name="returnTo" value="/log" />
             <section className="quick-log-panel">
               <div className="quick-log-header">
                 <p className="settings-kicker">Quick log</p>
-                <p className="quick-log-copy">Just add the job and room. Everything else can wait.</p>
+                <p className="quick-log-copy">{easyLog ? "Start with the job and room." : "Start with the job and room."}</p>
               </div>
 
               <SimilarTaskField
@@ -175,7 +177,7 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
               <summary className="recorded-row-summary">
                 <div className="min-w-0">
                   <p className="recorded-row-title">Add person or details</p>
-                  <p className="recorded-row-placeholder">Optional. Assign it, keep it private, add notes, or make it repeat.</p>
+                  <p className="recorded-row-placeholder">Optional. Add a person, note, or repeat.</p>
                 </div>
                 <div className="recorded-row-meta">
                   <span className="recorded-row-edit">Optional</span>
@@ -297,6 +299,7 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
   const memberMode = isMemberRole(role);
   const peopleManager = canManagePeopleRole(role);
   const canEditTasks = canUseMemberActions(role);
+  const easyWorkspace = !childMode && (memberMode || !canEditTasks);
   const taskTake = mode === "projects" ? 28 : 48;
   const parentOccurrenceTake = mode === "projects" ? 8 : 6;
   const childOccurrenceTake = 2;
@@ -480,7 +483,7 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
 
   return (
     <div className={`capture-shell ${mode === "projects" ? "page-projects" : "page-tasks"} ${audienceThemeClass} min-h-screen px-4 py-5`}>
-      <main className="capture-app-shell mx-auto flex w-full max-w-[32rem] flex-col gap-6">
+      <main className={`capture-app-shell ${easyWorkspace ? "capture-app-shell-easy" : ""} mx-auto flex w-full max-w-[32rem] flex-col gap-6`.trim()}>
         <AppPageHeader
           title={
             childMode
@@ -495,16 +498,16 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
           }
           subtitle={
             childMode
-              ? "See the jobs picked for you, start one, and mark it finished when you are done."
+              ? "See your jobs, start one, and mark it finished."
               : mode === "projects"
-              ? "Track larger household work, project steps, dates, budget, spend, and materials."
+              ? "Track the bigger jobs, dates, budget, and supplies."
               : memberMode
-                ? "See the jobs that belong to you, the ones you logged, and any private jobs involving you."
+                ? "See your jobs and use filters only when you need them."
               : teenMode
-                ? "See what is assigned, what is due, and what is ready to finish."
-                : "View, filter, prioritise, and complete what has already been logged."
+                ? "See what is assigned, due, and ready to finish."
+                : "See what is logged, filter it, and move it forward."
           }
-          className={childMode ? "page-hero-kid" : teenMode ? "page-hero-teen" : ""}
+          className={`${easyWorkspace ? "page-hero-easy" : ""} ${childMode ? "page-hero-kid" : teenMode ? "page-hero-teen" : ""}`.trim()}
           iconClassName="tasks"
           icon={
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -588,6 +591,7 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
           canManageProjects={canManageProjectsRole(role)}
           canDeleteTasks={isAdminRole(role)}
           memberMode={memberMode}
+          easyMode={easyWorkspace}
           currentUserId={userId}
           basePath={mode === "projects" ? "/projects" : "/tasks"}
           viewMode={mode}

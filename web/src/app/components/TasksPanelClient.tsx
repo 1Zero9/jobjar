@@ -128,6 +128,7 @@ type Props = {
   canManageProjects: boolean;
   canDeleteTasks: boolean;
   memberMode: boolean;
+  easyMode?: boolean;
   currentUserId: string;
   basePath?: string;
   viewMode?: "tasks" | "projects";
@@ -156,6 +157,7 @@ export function TasksPanelClient({
   canManageProjects,
   canDeleteTasks,
   memberMode,
+  easyMode = false,
   currentUserId,
   basePath = "/tasks",
   viewMode = "tasks",
@@ -240,7 +242,7 @@ export function TasksPanelClient({
   }, [basePath, memberMode, projectMode, selectedAssigneeId, selectedPersonalFilter, selectedProjectState, selectedRoomId, selectedLocationId, selectedState]);
 
   return (
-    <section id="recorded" className="recorded-panel">
+    <section id="recorded" className={`recorded-panel ${easyMode ? "recorded-panel-easy" : ""}`.trim()}>
       <div className="recorded-header">
         <div>
           <p className="capture-kicker">{panelKicker}</p>
@@ -264,10 +266,10 @@ export function TasksPanelClient({
                   onChange={(event) => setSelectedPersonalFilter(event.target.value as PersonalFilterState)}
                   className={`recorded-filter-select${selectedPersonalFilter !== "all" ? " filter-active" : ""}`}
                 >
-                  <option value="all">All my jobs</option>
+                  <option value="all">My jobs</option>
                   <option value="assigned">Assigned to me</option>
                   <option value="logged">Added by me</option>
-                  <option value="private">My private jobs</option>
+                  <option value="private">Private</option>
                 </select>
               </label>
             ) : null}
@@ -373,7 +375,7 @@ export function TasksPanelClient({
               {childMode ? "Reset view" : "Clear filters"}
             </button>
           ) : (
-            <span className="recorded-toolbar-hint">{childMode ? "Your jobs update right away." : memberMode ? "Your jobs stay focused on you." : "Filters update instantly."}</span>
+            <span className="recorded-toolbar-hint">{childMode ? "Your jobs update right away." : memberMode ? "Only your jobs show here." : "Filters update instantly."}</span>
           )}
 
           {!projectMode && !childMode && canEditTasks ? (

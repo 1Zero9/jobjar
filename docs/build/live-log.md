@@ -143,7 +143,11 @@
   - widened the member/read-only home shell so it uses more of the phone and tablet screen
   - switched the limited home actions to a simpler one-column stack with larger tap targets
   - increased the key text, chips, and count sizing to make the home view easier to read
-- Updated product docs to match the current `0.4.14` app shape.
+- Extended the easy-reading pass to jobs and log in `0.4.15`:
+  - applied the larger member/read-only sizing pattern to the jobs and log page headers
+  - increased filter, count, and quick-log control sizing on the main working screens
+  - trimmed filler copy so the page text supports the action instead of competing with it
+- Updated product docs to match the current `0.4.15` app shape.
 - Validation completed:
   - `npm run db:generate` passed
   - `npm run lint` passed
