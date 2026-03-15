@@ -17,7 +17,11 @@ It started as a task tracker and now supports:
 - `docs/user-guide/`: guide hub plus adults, teens, kids, and grandparents guides
 
 ## Current app version
-- `web/package.json` is currently `0.4.12`
+- `web/package.json` is currently `0.4.13`
+
+## Current project behavior
+- jobs can be promoted into projects for planning
+- projects can be turned back into normal jobs when they no longer have project steps, milestones, materials, or cost lines
 
 ## Key routes
 - `/login`

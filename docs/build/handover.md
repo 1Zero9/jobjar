@@ -17,7 +17,7 @@ Current routes:
 - `/api/health/db`: DB health check
 
 Current package version:
-- `web/package.json`: `0.4.12`
+- `web/package.json`: `0.4.13`
 
 Recurring job behavior:
 - finishing a recurring job records the completion against the current occurrence
@@ -65,6 +65,11 @@ Project capabilities currently come from:
 - `ProjectCost`
 - `ProjectMaterial`
 - `ProjectMilestone`
+
+Project demotion behavior:
+- a project can be turned back into a normal job from the board
+- demotion is only allowed when it has no project steps, milestones, materials, or cost lines
+- demotion clears project-only planning fields and returns it to the jobs board
 
 ## Deployment notes
 - Vercel root directory is `web`

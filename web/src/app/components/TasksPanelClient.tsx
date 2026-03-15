@@ -11,6 +11,7 @@ import {
   deleteProjectMaterialAction,
   deleteProjectMilestoneAction,
   deleteTaskAction,
+  demoteProjectToTaskAction,
   luckyDipAction,
   promoteTaskToProjectAction,
   reopenTaskAction,
@@ -398,6 +399,11 @@ export function TasksPanelClient({
             const latestCompleted = getLatestCompletedOccurrence(task.occurrences);
             const isProject = isProjectTask(task);
             const projectSummary = summarizeProject(task);
+            const canDemoteProject =
+              task.projectChildren.length === 0 &&
+              task.projectCosts.length === 0 &&
+              task.projectMaterials.length === 0 &&
+              task.projectMilestones.length === 0;
 
             return (
               <details
@@ -798,6 +804,26 @@ export function TasksPanelClient({
                                   </FormActionButton>
                                 </div>
                               </form>
+                            </details>
+
+                            <details className="recorded-more-details">
+                              <summary className="recorded-more-summary">Turn back into a job</summary>
+                              <div className="recorded-edit-form">
+                                <p className="task-readonly-note">
+                                  {canDemoteProject
+                                    ? "This removes the project label and sends it back to the jobs board."
+                                    : "Clear project steps, milestones, shopping, and costs before changing this back into a normal job."}
+                                </p>
+                                {canDemoteProject ? (
+                                  <form action={demoteProjectToTaskAction}>
+                                    <input type="hidden" name="taskId" value={task.id} />
+                                    <input type="hidden" name="returnTo" value={basePath} />
+                                    <FormActionButton className="action-btn subtle quiet" pendingLabel="Changing">
+                                      Turn back into a job
+                                    </FormActionButton>
+                                  </form>
+                                ) : null}
+                              </div>
                             </details>
 
                             <details className="recorded-more-details">

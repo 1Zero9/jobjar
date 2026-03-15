@@ -898,6 +898,73 @@ export async function promoteTaskToProjectAction(formData: FormData) {
   redirect(`${returnTo}#task-${task.id}`);
 }
 
+export async function demoteProjectToTaskAction(formData: FormData) {
+  const { householdId, userId: actorUserId, allowedLocationIds } = await requireProjectManagerAction();
+  const taskId = String(formData.get("taskId") ?? "").trim();
+  const returnTo = getReturnPath(formData.get("returnTo"), "/tasks");
+  if (!taskId) {
+    return;
+  }
+
+  const task = await prisma.task.findFirst({
+    where: {
+      id: taskId,
+      active: true,
+      room: getAccessibleRoomWhere(householdId, allowedLocationIds),
+    },
+    select: {
+      id: true,
+      projectChildren: {
+        where: { active: true },
+        select: { id: true },
+        take: 1,
+      },
+      projectCosts: {
+        select: { id: true },
+        take: 1,
+      },
+      projectMaterials: {
+        select: { id: true },
+        take: 1,
+      },
+      projectMilestones: {
+        select: { id: true },
+        take: 1,
+      },
+    },
+  });
+  if (!task) {
+    return;
+  }
+
+  const hasProjectContent =
+    task.projectChildren.length > 0 ||
+    task.projectCosts.length > 0 ||
+    task.projectMaterials.length > 0 ||
+    task.projectMilestones.length > 0;
+
+  if (hasProjectContent) {
+    redirect(`${returnTo}#task-${task.id}`);
+  }
+
+  await prisma.task.update({
+    where: { id: task.id },
+    data: {
+      jobKind: "upkeep",
+      projectTargetAt: null,
+      projectBudgetCents: null,
+    },
+  });
+
+  await prisma.taskLog.create({
+    data: { taskId: task.id, action: "task_updated", actorUserId, note: "Returned project to job" },
+  });
+
+  refreshViews(["/", "/tasks", "/projects", "/projects/timeline", "/stats", "/admin"]);
+  const destination = returnTo.startsWith("/projects") ? "/tasks" : returnTo;
+  redirect(`${destination}?updated=task#task-${task.id}`);
+}
+
 export async function updateProjectPlanAction(formData: FormData) {
   const { householdId, userId: actorUserId, allowedLocationIds } = await requireProjectManagerAction();
   const taskId = String(formData.get("taskId") ?? "").trim();

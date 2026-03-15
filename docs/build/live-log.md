@@ -135,7 +135,11 @@
   - removed the help icon from the hero tools and left help as a panel action instead
   - highlighted the `Home` action button more clearly on secondary screens
   - tightened the landing hero spacing to reduce the dead space at the top
-- Updated product docs to match the current `0.4.12` app shape.
+- Added project demotion in `0.4.13`:
+  - added a board action to turn a project back into a normal job
+  - only allow demotion when no project steps, milestones, materials, or cost lines remain
+  - clear project-only planning fields when returning it to the jobs board
+- Updated product docs to match the current `0.4.13` app shape.
 - Validation completed:
   - `npm run db:generate` passed
   - `npm run lint` passed
