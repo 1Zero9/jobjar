@@ -126,7 +126,10 @@
 - Adjusted quick-log emphasis in `0.4.10`:
   - removed the yellow treatment from the outer quick-log panel
   - kept the pale yellow emphasis only on the main job and room controls
-- Updated product docs to match the current `0.4.10` app shape.
+- Trimmed quick-log highlight and mobile hero overlap in `0.4.11`:
+  - removed the yellow styling from the outer task and room cards so only the typing controls stay highlighted
+  - moved the mobile top-right tool icons onto their own line below the hero title row to stop overlap
+- Updated product docs to match the current `0.4.11` app shape.
 - Validation completed:
   - `npm run db:generate` passed
   - `npm run lint` passed
