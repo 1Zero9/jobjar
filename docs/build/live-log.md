@@ -123,7 +123,10 @@
   - highlighted the main quick-log fields and gave the save button a gentle pulse
   - softened the similar-job helper so it stays optional instead of blocking the fast path
   - nudged the top-right icon tools down on narrow portrait layouts to stop them crowding the title
-- Updated product docs to match the current `0.4.9` app shape.
+- Adjusted quick-log emphasis in `0.4.10`:
+  - removed the yellow treatment from the outer quick-log panel
+  - kept the pale yellow emphasis only on the main job and room controls
+- Updated product docs to match the current `0.4.10` app shape.
 - Validation completed:
   - `npm run db:generate` passed
   - `npm run lint` passed
