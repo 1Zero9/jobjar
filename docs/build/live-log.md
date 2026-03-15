@@ -139,7 +139,11 @@
   - added a board action to turn a project back into a normal job
   - only allow demotion when no project steps, milestones, materials, or cost lines remain
   - clear project-only planning fields when returning it to the jobs board
-- Updated product docs to match the current `0.4.13` app shape.
+- Improved limited home accessibility in `0.4.14`:
+  - widened the member/read-only home shell so it uses more of the phone and tablet screen
+  - switched the limited home actions to a simpler one-column stack with larger tap targets
+  - increased the key text, chips, and count sizing to make the home view easier to read
+- Updated product docs to match the current `0.4.14` app shape.
 - Validation completed:
   - `npm run db:generate` passed
   - `npm run lint` passed

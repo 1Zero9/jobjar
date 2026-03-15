@@ -27,6 +27,7 @@ export default async function HomePage() {
   const peopleManager = canManagePeopleRole(role);
   const canAct = canUseMemberActions(role);
   const memberMode = isMemberRole(role);
+  const easyHome = !childMode && (memberMode || !canAct);
   const canSeeProjects = canAccessProjectViewsRole(role) && canAccessExtendedViews(audienceBand);
   const canSeeReports = canAccessReportingViewsRole(role) && canAccessExtendedViews(audienceBand);
   const taskAudienceWhere = getAudienceAssignedTaskWhere(userId, audienceBand);
@@ -77,8 +78,8 @@ export default async function HomePage() {
 
   return (
     <div className={`capture-shell ${audienceThemeClass} min-h-screen px-4 py-5`}>
-      <main className="landing-shell mx-auto flex w-full max-w-[28rem] flex-col gap-6">
-        <header className={`landing-hero ${childMode ? "landing-hero-kid" : teenMode ? "landing-hero-teen" : ""}`.trim()}>
+      <main className={`landing-shell ${easyHome ? "landing-shell-easy" : ""} mx-auto flex w-full flex-col gap-6`.trim()}>
+        <header className={`landing-hero ${easyHome ? "landing-hero-easy" : ""} ${childMode ? "landing-hero-kid" : teenMode ? "landing-hero-teen" : ""}`.trim()}>
           <div className="landing-hero-topline">
             <div className="landing-hero-topline-main">
               <div className="landing-brand-row">
@@ -99,6 +100,11 @@ export default async function HomePage() {
                   <strong>{locationScopeLabel}</strong>
                 </span>
               </div>
+              {easyHome ? (
+                <p className="landing-easy-copy">
+                  Keep this simple. Open your jobs, log a new one, or use help if you get stuck.
+                </p>
+              ) : null}
             </div>
             <div className="hero-corner-stack">
               <div className="hero-corner-tools">
@@ -110,9 +116,9 @@ export default async function HomePage() {
           </div>
         </header>
 
-        <section className={`landing-panel ${childMode ? "landing-panel-kid" : teenMode ? "landing-panel-teen" : ""}`.trim()}>
+        <section className={`landing-panel ${easyHome ? "landing-panel-easy" : ""} ${childMode ? "landing-panel-kid" : teenMode ? "landing-panel-teen" : ""}`.trim()}>
           <div className="landing-stat-row">
-            <span className="landing-stat-label">{childMode ? "My jobs" : teenMode ? "Open jobs" : "Open tasks"}</span>
+            <span className="landing-stat-label">{childMode ? "My jobs" : easyHome ? "Your jobs" : teenMode ? "Open jobs" : "Open tasks"}</span>
             <span className="landing-stat-value">{taskCount}</span>
           </div>
 
@@ -121,11 +127,11 @@ export default async function HomePage() {
               Jump into your jobs, tick them off, and keep your streak going.
             </p>
           ) : !canAct ? (
-            <p className="landing-panel-copy">
+            <p className={`landing-panel-copy ${easyHome ? "landing-panel-copy-easy" : ""}`.trim()}>
               This view is read-only, so you can keep up with what is happening without changing anything.
             </p>
           ) : memberMode ? (
-            <p className="landing-panel-copy">
+            <p className={`landing-panel-copy ${easyHome ? "landing-panel-copy-easy" : ""}`.trim()}>
               Your home stays focused on the jobs you added, the jobs assigned to you, and anything private involving you.
             </p>
           ) : teenMode ? (
@@ -134,8 +140,8 @@ export default async function HomePage() {
             </p>
           ) : null}
 
-          <div className="landing-grid">
-            <Link href="/tasks" prefetch className={`landing-action-card ${childMode ? "lucky" : "view"}`}>
+          <div className={`landing-grid ${easyHome ? "landing-grid-easy" : ""}`.trim()}>
+            <Link href="/tasks" prefetch className={`landing-action-card ${easyHome ? "landing-action-card-easy landing-action-card-primary" : ""} ${childMode ? "lucky" : "view"}`.trim()}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <line x1="8" y1="6" x2="21" y2="6"/>
                 <line x1="8" y1="12" x2="21" y2="12"/>
@@ -145,7 +151,7 @@ export default async function HomePage() {
                 <polyline points="3 18 4 19 6 16"/>
               </svg>
               <strong>{childMode ? "My jobs" : "View jobs"}</strong>
-              {childMode ? <span>{taskCount > 0 ? `${taskCount} ready to do` : "Nothing waiting right now"}</span> : null}
+              {childMode ? <span>{taskCount > 0 ? `${taskCount} ready to do` : "Nothing waiting right now"}</span> : easyHome ? <span>{taskCount > 0 ? `${taskCount} open right now` : "Nothing is waiting right now"}</span> : null}
             </Link>
 
             {childMode ? (
@@ -165,12 +171,13 @@ export default async function HomePage() {
               </div>
             ) : canAct ? (
               <>
-                <Link href="/log" className="landing-action-card log">
+                <Link href="/log" className={`landing-action-card log ${easyHome ? "landing-action-card-easy" : ""}`.trim()}>
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                   </svg>
                   <strong>Log a Job</strong>
+                  {easyHome ? <span>Add something new that needs doing</span> : null}
                 </Link>
 
                 {!memberMode ? (
@@ -266,14 +273,14 @@ export default async function HomePage() {
               </>
             ) : null}
 
-            <Link href="/help" className="landing-action-card view">
+            <Link href="/help" className={`landing-action-card view ${easyHome ? "landing-action-card-easy" : ""}`.trim()}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <circle cx="12" cy="12" r="10" />
                 <path d="M9.09 9a3 3 0 1 1 5.82 1c0 2-3 2-3 4" />
                 <path d="M12 17h.01" />
               </svg>
               <strong>Help</strong>
-              <span>{memberMode ? "Simple help for your jobs" : canAct ? "Quick guides and tips" : "How this view works"}</span>
+              <span>{easyHome ? "Simple, easy steps" : memberMode ? "Simple help for your jobs" : canAct ? "Quick guides and tips" : "How this view works"}</span>
             </Link>
           </div>
         </section>
