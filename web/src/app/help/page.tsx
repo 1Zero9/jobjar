@@ -20,8 +20,8 @@ const GUIDE_SECTIONS = [
     points: [
       "Use /log to capture work quickly.",
       "Use /tasks to assign, tidy, and finish work.",
-      "Use /projects when a task becomes multi-step.",
-      "Use /stats and /projects/timeline for review.",
+      "Use /projects when a job needs subtasks.",
+      "Use /stats for review and progress.",
     ],
   },
   {
@@ -32,7 +32,7 @@ const GUIDE_SECTIONS = [
       "Open Jobs from home.",
       "Start one job, then finish it before moving on.",
       "Use notes when something needs explaining.",
-      "Projects are there when bigger work has several steps.",
+      "Parent jobs are there when bigger work has several steps.",
     ],
   },
   {
@@ -52,7 +52,7 @@ const GUIDE_SECTIONS = [
     subtitle: "For read-only family members who mainly want to see what is happening.",
     points: [
       "Viewer is the best role for read-only access.",
-      "Open home, tasks, projects, and stats to keep up.",
+      "Open home, jobs, parent jobs, and stats to keep up.",
       "This setup avoids edit controls completely.",
       "Location access can limit what part of the household is visible.",
     ],
@@ -62,9 +62,17 @@ const GUIDE_SECTIONS = [
 const UPDATE_TIMELINE = [
   {
     date: "16 Mar 2026",
+    title: "Parent jobs simplified",
+    points: [
+      "Parent jobs now behave more like normal jobs with subtasks.",
+      "Budgets, shopping, milestones, and timeline planning are no longer pushed as the default path.",
+    ],
+  },
+  {
+    date: "16 Mar 2026",
     title: "Validation feedback tightened",
     points: [
-      "Setup, admin, tasks, and projects now explain blocked or invalid actions instead of failing silently.",
+      "Setup, admin, tasks, and parent jobs now explain blocked or invalid actions instead of failing silently.",
       "Strict jobs now say whether a note, a start action, or more tracked time is missing.",
     ],
   },
@@ -74,14 +82,6 @@ const UPDATE_TIMELINE = [
     points: [
       "In-app help was added so the household can learn the app without leaving it.",
       "Audience-specific guides now cover adults, teens, kids, and grandparents.",
-    ],
-  },
-  {
-    date: "13 Mar 2026",
-    title: "Project workflow expanded",
-    points: [
-      "Projects now support milestones, materials, costs, and a dedicated timeline view.",
-      "Power users can manage project work without needing full admin access.",
     ],
   },
   {
@@ -147,7 +147,7 @@ export default async function HelpPage({
             <>
               <Link href="/" className="action-btn subtle quiet home-action">Home</Link>
               <Link href="/tasks" className="action-btn subtle quiet">View jobs</Link>
-              {canSeeProjects ? <Link href="/projects" className="action-btn subtle quiet">Projects</Link> : null}
+              {canSeeProjects ? <Link href="/projects" className="action-btn subtle quiet">Parent jobs</Link> : null}
               {canSeeReports ? <Link href="/stats" className="action-btn subtle quiet">Stats</Link> : null}
             </>
           }
@@ -170,7 +170,7 @@ export default async function HelpPage({
                       ? "view and work from your own jobs flow"
                       : "view, capture, and work from the full household flow"
                     : "work from the simplified jobs view"
-                  : "view the household without changing jobs or projects"}
+                  : "view the household without changing jobs or parent jobs"}
               </p>
             </div>
             <div className="rounded-2xl border border-border bg-surface p-4">
@@ -179,7 +179,7 @@ export default async function HelpPage({
                 {audienceBand === "under_12"
                   ? "Home, then My jobs."
                   : role === "viewer"
-                    ? "Home, then Jobs or Projects."
+                    ? "Home, then Jobs or Parent jobs."
                     : memberMode
                       ? "Home, then Jobs."
                       : "Home, then Jobs."}
@@ -282,7 +282,7 @@ export default async function HelpPage({
               <p className="settings-kicker">Need more access?</p>
               <h2 className="recorded-title">Ask for the right role</h2>
               <div className="help-checklist">
-                <p className="help-checklist-item">Ask for <strong>power user</strong> if you need projects, planning, or people setup.</p>
+                <p className="help-checklist-item">Ask for <strong>power user</strong> if you need parent jobs, subtasks, or people setup.</p>
                 <p className="help-checklist-item">Ask for <strong>admin</strong> if you need full household setup and control.</p>
               </div>
             </section>

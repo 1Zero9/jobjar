@@ -76,8 +76,8 @@ export default async function ProjectsTimelinePage({
     <div className={`capture-shell page-timeline ${audienceThemeClass} min-h-screen px-4 py-5`}>
       <main className="mx-auto flex w-full max-w-[34rem] flex-col gap-6">
         <AppPageHeader
-          title="Project timeline"
-          subtitle="See overdue dates, upcoming checkpoints, and recent completions across project work."
+          title="Legacy planning timeline"
+          subtitle="Older planning dates still show here, but the main workflow now centres on parent jobs and subtasks."
           iconClassName="timeline"
           icon={
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -94,7 +94,7 @@ export default async function ProjectsTimelinePage({
                 Home
               </Link>
               <Link href="/projects" className="action-btn subtle quiet">
-                Board
+                Parent jobs
               </Link>
               <Link href="/stats" className="action-btn subtle quiet">
                 Stats
@@ -147,7 +147,7 @@ export default async function ProjectsTimelinePage({
         <section className="stats-summary-grid">
           <div className="stat-card">
             <span className="stat-number">{timeline.counts.projects}</span>
-            <span className="stat-label">Projects</span>
+            <span className="stat-label">Parent jobs</span>
           </div>
           <div className="stat-card">
             <span className="stat-number">{timeline.counts.overdue}</span>
@@ -159,16 +159,16 @@ export default async function ProjectsTimelinePage({
           </div>
           <div className="stat-card">
             <span className="stat-number">{timeline.counts.undatedProjects}</span>
-            <span className="stat-label">Undated projects</span>
+            <span className="stat-label">Undated parent jobs</span>
           </div>
         </section>
 
         {timeline.events.length === 0 ? (
           <section className="stats-panel">
-            <p className="settings-kicker">Timeline</p>
+            <p className="settings-kicker">Legacy timeline</p>
             <h2 className="recorded-title">Nothing scheduled yet</h2>
             <p className="recorded-empty">
-              Add target dates, milestone dates, or project step due dates from the project board to build the timeline.
+              This view only fills up when older planning dates exist on parent jobs.
             </p>
           </section>
         ) : (
@@ -176,13 +176,13 @@ export default async function ProjectsTimelinePage({
             <TimelineSection
               title="Overdue now"
               kicker="Needs attention"
-              emptyText="No overdue project dates in this window."
+              emptyText="No overdue legacy dates in this window."
               events={overdueEvents}
             />
             <TimelineSection
               title="Coming up"
               kicker="Upcoming"
-              emptyText="No upcoming project dates in this window."
+              emptyText="No upcoming legacy dates in this window."
               events={upcomingEvents}
             />
             <TimelineSection
@@ -283,11 +283,11 @@ function formatTime(value: string) {
 }
 
 function formatKind(kind: ProjectTimelineEvent["kind"]) {
-  if (kind === "project_target") return "Project target";
+  if (kind === "project_target") return "Target date";
   if (kind === "milestone_target") return "Milestone";
   if (kind === "milestone_done") return "Milestone done";
-  if (kind === "child_done") return "Child done";
-  return "Child due";
+  if (kind === "child_done") return "Subtask done";
+  return "Subtask due";
 }
 
 function formatState(state: ProjectTimelineEvent["state"]) {

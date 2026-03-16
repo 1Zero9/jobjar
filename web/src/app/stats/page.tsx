@@ -77,8 +77,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
             <>
               <Link href="/" className="action-btn subtle quiet home-action">Home</Link>
               <Link href="/tasks" prefetch className="action-btn subtle quiet">View jobs</Link>
-              <Link href="/projects" prefetch className="action-btn subtle quiet">Projects</Link>
-              <Link href="/projects/timeline" className="action-btn subtle quiet">Timeline</Link>
+              <Link href="/projects" prefetch className="action-btn subtle quiet">Parent jobs</Link>
             </>
           }
         />
@@ -141,20 +140,17 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
 
         {stats.projectOverview.totalProjects > 0 ? (
           <section className="stats-panel">
-            <p className="settings-kicker">Projects</p>
+            <p className="settings-kicker">Parent jobs</p>
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h2 className="recorded-title">Project health</h2>
+                <h2 className="recorded-title">Subtask progress</h2>
                 <p className="text-sm text-muted">
-                  Budget, milestones, and overdue project steps across the current project board.
+                  Progress and overdue subtasks across the current parent-job board.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <Link href="/projects" className="action-btn subtle quiet">
                   Open board
-                </Link>
-                <Link href="/projects/timeline" className="action-btn subtle quiet">
-                  Timeline
                 </Link>
               </div>
             </div>
@@ -162,7 +158,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
             <div className="stats-summary-grid mt-4">
               <div className="stat-card">
                 <span className="stat-number">{stats.projectOverview.totalProjects}</span>
-                <span className="stat-label">Projects</span>
+                <span className="stat-label">Parent jobs</span>
               </div>
               <div className="stat-card">
                 <span className="stat-number">{stats.projectOverview.activeProjects}</span>
@@ -170,26 +166,11 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
               </div>
               <div className="stat-card">
                 <span className="stat-number">{stats.projectOverview.atRiskProjects}</span>
-                <span className="stat-label">At risk</span>
+                <span className="stat-label">Needs attention</span>
               </div>
               <div className="stat-card">
                 <span className="stat-number">{stats.projectOverview.completeProjects}</span>
                 <span className="stat-label">Complete</span>
-              </div>
-            </div>
-
-            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border border-border bg-surface p-4">
-                <p className="text-sm font-semibold text-foreground">Planned budget</p>
-                <p className="mt-1 text-2xl font-black tracking-tight text-foreground">
-                  {formatMoney(stats.projectOverview.plannedBudgetCents)}
-                </p>
-              </div>
-              <div className="rounded-2xl border border-border bg-surface p-4">
-                <p className="text-sm font-semibold text-foreground">Actual spend</p>
-                <p className="mt-1 text-2xl font-black tracking-tight text-foreground">
-                  {formatMoney(stats.projectOverview.actualSpendCents)}
-                </p>
               </div>
             </div>
 
@@ -212,27 +193,17 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
                       <p className="mt-1 text-sm text-muted">{project.roomName}</p>
                     </div>
                     <span className="text-sm font-semibold text-foreground">
-                      {project.totalChildren > 0 ? `${project.completedChildren}/${project.totalChildren} steps` : "No project steps"}
+                      {project.totalChildren > 0 ? `${project.completedChildren}/${project.totalChildren} subtasks` : "No subtasks"}
                     </span>
                   </div>
 
                   <div className="mt-3 grid grid-cols-1 gap-2 text-sm text-muted sm:grid-cols-2">
                     <p>
-                      <span className="font-semibold text-foreground">Spend</span>{" "}
-                      {project.budgetCents !== null
-                        ? `${formatMoney(project.actualSpendCents)} / ${formatMoney(project.budgetCents)}`
-                        : `${formatMoney(project.actualSpendCents)} spent`}
+                      <span className="font-semibold text-foreground">Open subtasks</span>{" "}
+                      {Math.max(project.totalChildren - project.completedChildren, 0)}
                     </p>
                     <p>
-                      <span className="font-semibold text-foreground">Milestones</span>{" "}
-                      {project.totalMilestones > 0 ? `${project.completedMilestones}/${project.totalMilestones}` : "None"}
-                    </p>
-                    <p>
-                      <span className="font-semibold text-foreground">Shopping</span>{" "}
-                      {project.totalMaterials > 0 ? `${project.purchasedMaterials}/${project.totalMaterials} bought` : "No materials"}
-                    </p>
-                    <p>
-                      <span className="font-semibold text-foreground">Overdue project steps</span> {project.overdueChildren}
+                      <span className="font-semibold text-foreground">Overdue subtasks</span> {project.overdueChildren}
                     </p>
                     <p>
                       <span className="font-semibold text-foreground">Target</span>{" "}
@@ -365,17 +336,9 @@ function formatDate(value: string) {
   return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" }).format(new Date(value));
 }
 
-function formatMoney(cents: number) {
-  return new Intl.NumberFormat("en-IE", {
-    style: "currency",
-    currency: "EUR",
-    maximumFractionDigits: 0,
-  }).format(cents / 100);
-}
-
 function formatProjectStatus(status: "planning" | "active" | "complete" | "at_risk") {
-  if (status === "at_risk") return "At risk";
+  if (status === "at_risk") return "Needs attention";
   if (status === "complete") return "Complete";
-  if (status === "planning") return "Planning";
+  if (status === "planning") return "No subtasks";
   return "Active";
 }

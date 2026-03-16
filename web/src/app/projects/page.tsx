@@ -14,7 +14,6 @@ export default async function ProjectsPage({
     assignee?: string;
     state?: string;
     location?: string;
-    projectState?: string;
     q?: string;
   }>;
 }) {

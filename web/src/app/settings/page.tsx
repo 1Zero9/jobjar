@@ -49,7 +49,7 @@ export default async function SettingsPage() {
                 View jobs
               </Link>
               <Link href="/projects" className="action-btn subtle quiet">
-                Projects
+                Parent jobs
               </Link>
             </>
           }

@@ -27,7 +27,6 @@ type SearchParams = {
   state?: string;
   location?: string;
   taskId?: string;
-  projectState?: string;
 };
 
 export async function LogWorkspace({ params }: { params: SearchParams }) {
@@ -120,7 +119,7 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
               </Link>
               {!memberMode ? (
                 <Link href="/projects" className="action-btn subtle quiet">
-                  Projects
+                  Parent jobs
                 </Link>
               ) : null}
               {isAdminRole(role) ? (
@@ -468,14 +467,6 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
   const selectedAssigneeId = peopleOptions.some((person) => person.id === params.assignee) ? (params.assignee ?? "") : "";
   const selectedLocationId = locations.some((loc) => loc.id === params.location) ? (params.location ?? "") : "";
   const selectedState: "all" | "open" | "done" = params.state === "done" || params.state === "open" ? params.state : "all";
-  const selectedProjectState =
-    params.projectState === "planning" ||
-    params.projectState === "active" ||
-    params.projectState === "complete" ||
-    params.projectState === "over_budget" ||
-    params.projectState === "at_risk"
-      ? params.projectState
-      : "all";
   const selectedPersonalFilter =
     params.view === "logged" || params.view === "assigned" || params.view === "private"
       ? params.view
@@ -493,7 +484,7 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
             childMode
               ? "My jobs"
               : mode === "projects"
-                ? "Projects"
+                ? "Parent jobs"
                 : teenMode
                   ? "View jobs"
                   : memberMode
@@ -504,7 +495,7 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
             childMode
               ? "See your jobs, start one, and mark it finished."
               : mode === "projects"
-              ? "Track the bigger jobs, dates, budget, and supplies."
+              ? "Use parent jobs to break bigger work into smaller subtasks."
               : memberMode
                 ? "See your jobs and use filters only when you need them."
               : teenMode
@@ -540,12 +531,7 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
                   ) : null}
                   {!memberMode ? (
                     <Link href={mode === "projects" ? "/tasks" : "/projects"} prefetch className="action-btn subtle quiet">
-                      {mode === "projects" ? "View jobs" : "Projects"}
-                    </Link>
-                  ) : null}
-                  {mode === "projects" ? (
-                    <Link href="/projects/timeline" className="action-btn subtle quiet">
-                      Timeline
+                      {mode === "projects" ? "View jobs" : "Parent jobs"}
                     </Link>
                   ) : null}
                   {isAdminRole(role) ? (
@@ -565,14 +551,14 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
 
         {params.added === "task" ? <ToastNotice message="Job recorded." tone="success" /> : null}
         {params.added === "done" ? <ToastNotice message="Completed job recorded." tone="success" /> : null}
-        {params.added === "project-child" ? <ToastNotice message="Project step added." tone="success" /> : null}
+        {params.added === "project-child" ? <ToastNotice message="Subtask added." tone="success" /> : null}
         {params.added === "project-cost" ? <ToastNotice message="Project cost added." tone="success" /> : null}
         {params.added === "project-material" ? <ToastNotice message="Project material added." tone="success" /> : null}
         {params.added === "project-milestone" ? <ToastNotice message="Project milestone added." tone="success" /> : null}
         {params.updated === "task" ? <ToastNotice message="Job updated." tone="info" /> : null}
         {params.updated === "done" ? <ToastNotice message="Job marked completed." tone="success" /> : null}
-        {params.updated === "project-promoted" ? <ToastNotice message="Job promoted to project." tone="success" /> : null}
-        {params.updated === "project-demoted" ? <ToastNotice message="Project returned to a job." tone="success" /> : null}
+        {params.updated === "project-promoted" ? <ToastNotice message="Job ready for subtasks." tone="success" /> : null}
+        {params.updated === "project-demoted" ? <ToastNotice message="Parent job returned to a normal job." tone="success" /> : null}
         {params.updated === "project-plan" ? <ToastNotice message="Project plan updated." tone="success" /> : null}
         {params.updated === "project-material" ? <ToastNotice message="Project material updated." tone="success" /> : null}
         {params.updated === "project-milestone" ? <ToastNotice message="Project milestone updated." tone="success" /> : null}
@@ -590,7 +576,6 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
             selectedAssigneeId,
             selectedLocationId,
             selectedState,
-            selectedProjectState,
             selectedPersonalFilter,
             params.q ?? "",
           ].join(":")}
@@ -603,7 +588,6 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
           initialState={selectedState}
           initialLuckyId={params.lucky && params.lucky !== "empty" ? params.lucky : null}
           initialQuery={params.q ?? ""}
-          initialProjectState={selectedProjectState}
           initialPersonalFilter={selectedPersonalFilter}
           audienceBand={audienceBand}
           canEditTasks={canEditTasks}
@@ -615,16 +599,16 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
           basePath={mode === "projects" ? "/projects" : "/tasks"}
           viewMode={mode}
           panelKicker={
-            childMode ? "My jobs" : mode === "projects" ? "Projects" : memberMode ? "My jobs" : teenMode ? "My board" : "View jobs"
+            childMode ? "My jobs" : mode === "projects" ? "Parent jobs" : memberMode ? "My jobs" : teenMode ? "My board" : "View jobs"
           }
           panelTitle={
-            childMode ? "Jobs picked for you" : mode === "projects" ? "Project board" : memberMode ? "Your jobs" : "Job board"
+            childMode ? "Jobs picked for you" : mode === "projects" ? "Tasks with subtasks" : memberMode ? "Your jobs" : "Job board"
           }
           emptyMessage={
             childMode
               ? "No jobs waiting right now. Nice work."
               : mode === "projects"
-                ? "No projects yet. Promote a task or add project steps from an existing project."
+                ? "No parent jobs yet. Add subtasks to a task when work needs breaking down."
                 : memberMode ? "No jobs for you right now." : "No jobs on the board yet."
           }
           tasks={recordedTasks.map((task) => ({
@@ -752,10 +736,10 @@ function getTaskWorkspaceErrorMessage(error?: string) {
     return "This strict job needs more tracked time before it can be finished.";
   }
   if (error === "project-demote-blocked") {
-    return "Remove project steps, costs, materials, and milestones before demoting this project.";
+    return "Remove subtasks and any legacy planning extras before turning this back into a normal job.";
   }
   if (error === "project-child-title-required") {
-    return "Enter a title before adding a project step.";
+    return "Enter a title before adding a subtask.";
   }
   if (error === "project-cost-title-required") {
     return "Enter a title for the project cost.";

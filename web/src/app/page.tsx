@@ -191,8 +191,8 @@ export default async function HomePage() {
                     <path d="M12 15.5A2.5 2.5 0 0 1 14.5 13h4a2.5 2.5 0 0 1 2.5 2.5v1a2.5 2.5 0 0 1-2.5 2.5h-4a2.5 2.5 0 0 1-2.5-2.5z"/>
                     <path d="M8 11v2a2 2 0 0 0 2 2h2"/>
                   </svg>
-                  <strong>{teenMode ? "Projects" : "Projects"}</strong>
-                  <span>{projectCount} tracked</span>
+                  <strong>{teenMode ? "Parent jobs" : "Parent jobs"}</strong>
+                  <span>{projectCount} with subtasks</span>
                 </Link>
                 ) : null}
               </>
@@ -204,8 +204,8 @@ export default async function HomePage() {
                   <path d="M12 15.5A2.5 2.5 0 0 1 14.5 13h4a2.5 2.5 0 0 1 2.5 2.5v1a2.5 2.5 0 0 1-2.5 2.5h-4a2.5 2.5 0 0 1-2.5-2.5z"/>
                   <path d="M8 11v2a2 2 0 0 0 2 2h2"/>
                 </svg>
-                <strong>Projects</strong>
-                <span>{projectCount} tracked</span>
+                <strong>Parent jobs</strong>
+                <span>{projectCount} with subtasks</span>
               </Link>
               ) : null
             )}
@@ -240,17 +240,6 @@ export default async function HomePage() {
                     <line x1="2" y1="20" x2="22" y2="20"/>
                   </svg>
                   <strong>{teenMode ? "Progress" : "Stats"}</strong>
-                </Link>
-                ) : null}
-
-                {canSeeProjects ? (
-                <Link href="/projects/timeline" className="landing-action-card timeline">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <circle cx="12" cy="12" r="9"/>
-                    <path d="M12 7v5l3 3"/>
-                  </svg>
-                  <strong>{teenMode ? "Timeline" : "Timeline"}</strong>
-                  <span>Dates and checkpoints</span>
                 </Link>
                 ) : null}
 
