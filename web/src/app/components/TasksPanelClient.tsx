@@ -504,7 +504,7 @@ export function TasksPanelClient({
                         )}
                       </div>
                     </section>
-                  ) : (
+                  ) : projectMode && isProject ? null : (
                     <>
                       <section className="task-overview-panel">
                         {task.detailNotes ? (
@@ -765,87 +765,81 @@ export function TasksPanelClient({
                       </p>
 
                       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                        <p><span>Subtasks</span><strong>{task.projectChildren.length}</strong></p>
-                        <p><span>Completed</span><strong>{projectSummary.completedChildren}</strong></p>
-                        <p><span>Open</span><strong>{Math.max(task.projectChildren.length - projectSummary.completedChildren, 0)}</strong></p>
+                        <p><span>Where</span><strong>{task.locationName ? `${task.locationName} · ${displayRoomName(task.roomName)}` : displayRoomName(task.roomName)}</strong></p>
+                        <p><span>Assigned</span><strong>{task.assignmentUserName ?? "No one yet"}</strong></p>
+                        <p><span>Done</span><strong>{projectSummary.completedChildren} of {task.projectChildren.length}</strong></p>
                         <p><span>Overdue</span><strong>{projectSummary.overdueChildren}</strong></p>
-                        <p><span>Total estimate</span><strong>{formatMinutes(projectSummary.totalEstimatedMinutes)}</strong></p>
-                        <p><span>Status</span><strong>{task.projectChildren.length > 0 && projectSummary.completedChildren === task.projectChildren.length ? "Done" : projectSummary.overdueChildren > 0 ? "Needs attention" : "In progress"}</strong></p>
                       </div>
 
                       {canManageProjects ? (
-                        <details className="recorded-more-details project-manage-details">
-                          <summary className="recorded-more-summary">Subtask actions</summary>
-                          <div className="project-manage-stack">
-                            <details className="recorded-more-details">
-                              <summary className="recorded-more-summary">Add subtask</summary>
-                              <form action={createProjectChildTaskAction} className="recorded-edit-form">
-                                <input type="hidden" name="projectId" value={task.id} />
-                                <input type="hidden" name="returnTo" value={basePath} />
-                                <label className="recorded-field">
-                                  <span>Subtask title</span>
-                                  <input name="title" type="text" required placeholder="Patch walls" className="recorded-edit-input" />
-                                </label>
-                                <label className="recorded-field">
-                                  <span>Notes</span>
-                                  <input name="detailNotes" type="text" placeholder="Optional detail" className="recorded-edit-input" />
-                                </label>
-                                <div className="capture-meta-grid">
-                                  <label className="recorded-field">
-                                    <span>Assign</span>
-                                    <select name="assigneeUserId" defaultValue="" className="recorded-edit-input">
-                                      <option value="">No person</option>
-                                      {peopleOptions.map((person) => (
-                                        <option key={person.id} value={person.id}>
-                                          {person.displayName}
-                                        </option>
-                                      ))}
-                                    </select>
-                                  </label>
-                                  <label className="recorded-field">
-                                    <span>Estimate minutes</span>
-                                    <input name="estimatedMinutes" type="number" min={1} defaultValue={30} className="recorded-edit-input" />
-                                  </label>
-                                </div>
-                                  <label className="recorded-field">
-                                    <span>Due date</span>
-                                    <input name="dueAt" type="datetime-local" className="recorded-edit-input" />
-                                  </label>
-                                  <div className="recorded-row-actions between">
-                                  <FormActionButton className="action-btn bright quiet" pendingLabel="Adding subtask">
-                                    Add subtask
-                                  </FormActionButton>
-                                </div>
-                              </form>
-                            </details>
+                        <div className="project-manage-stack">
+                          <form action={createProjectChildTaskAction} className="recorded-edit-form">
+                            <input type="hidden" name="projectId" value={task.id} />
+                            <input type="hidden" name="returnTo" value={basePath} />
+                            <p className="settings-kicker">Add a subtask</p>
+                            <label className="recorded-field">
+                              <span>Subtask title</span>
+                              <input name="title" type="text" required placeholder="Patch walls" className="recorded-edit-input" />
+                            </label>
+                            <label className="recorded-field">
+                              <span>Notes</span>
+                              <input name="detailNotes" type="text" placeholder="Optional detail" className="recorded-edit-input" />
+                            </label>
+                            <div className="capture-meta-grid">
+                              <label className="recorded-field">
+                                <span>Assign</span>
+                                <select name="assigneeUserId" defaultValue="" className="recorded-edit-input">
+                                  <option value="">No person</option>
+                                  {peopleOptions.map((person) => (
+                                    <option key={person.id} value={person.id}>
+                                      {person.displayName}
+                                    </option>
+                                  ))}
+                                </select>
+                              </label>
+                              <label className="recorded-field">
+                                <span>Estimate minutes</span>
+                                <input name="estimatedMinutes" type="number" min={1} defaultValue={30} className="recorded-edit-input" />
+                              </label>
+                            </div>
+                            <label className="recorded-field">
+                              <span>Due date</span>
+                              <input name="dueAt" type="datetime-local" className="recorded-edit-input" />
+                            </label>
+                            <div className="recorded-row-actions between">
+                              <FormActionButton className="action-btn bright quiet" pendingLabel="Adding subtask">
+                                Add subtask
+                              </FormActionButton>
+                            </div>
+                          </form>
 
-                            <details className="recorded-more-details">
-                              <summary className="recorded-more-summary">Turn back into a job</summary>
-                              <div className="recorded-edit-form">
-                                <p className="task-readonly-note">
-                                  {canDemoteProject
-                                    ? "This removes the parent-task label and sends it back to the jobs board."
-                                    : "Clear subtasks and any legacy planning extras before changing this back into a normal job."}
-                                </p>
-                                {canDemoteProject ? (
-                                  <form action={demoteProjectToTaskAction}>
-                                    <input type="hidden" name="taskId" value={task.id} />
-                                    <input type="hidden" name="returnTo" value={basePath} />
-                                    <FormActionButton className="action-btn subtle quiet" pendingLabel="Changing">
-                                      Turn back into a job
-                                    </FormActionButton>
-                                  </form>
-                                ) : null}
-                              </div>
-                            </details>
+                          <div className="recorded-edit-form">
+                            <p className="settings-kicker">Parent job</p>
+                            <p className="task-readonly-note">
+                              {canDemoteProject
+                                ? "Turn this back into a normal job if it no longer needs subtasks."
+                                : "Clear subtasks and any legacy planning extras before changing this back into a normal job."}
+                            </p>
+                            {canDemoteProject ? (
+                              <form action={demoteProjectToTaskAction}>
+                                <input type="hidden" name="taskId" value={task.id} />
+                                <input type="hidden" name="returnTo" value={basePath} />
+                                <FormActionButton className="action-btn subtle quiet" pendingLabel="Changing">
+                                  Turn back into a job
+                                </FormActionButton>
+                              </form>
+                            ) : null}
                           </div>
-                        </details>
+                        </div>
                       ) : null}
 
-                      <details className="recorded-more-details project-collection-details">
-                        <summary className="recorded-more-summary">Subtasks ({task.projectChildren.length})</summary>
+                      <div className="project-collection-details">
+                        <div className="mb-2 flex items-center justify-between gap-3">
+                          <p className="settings-kicker">Subtasks</p>
+                          <span className="recorded-count">{task.projectChildren.length}</span>
+                        </div>
                         {task.projectChildren.length === 0 ? (
-                          <p className="recorded-empty">No subtasks yet. Add the first step from Subtask actions.</p>
+                          <p className="recorded-empty">No subtasks yet. Add the first step below.</p>
                         ) : (
                           task.projectChildren.map((child) => (
                             <a key={child.id} href={`#task-${child.id}`} className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm text-foreground">
@@ -864,7 +858,7 @@ export function TasksPanelClient({
                             </a>
                           ))
                         )}
-                      </details>
+                      </div>
 
                       {hasLegacyProjectPlanning ? (
                         <details className="recorded-more-details project-collection-details">
