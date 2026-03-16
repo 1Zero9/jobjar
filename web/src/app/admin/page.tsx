@@ -62,9 +62,6 @@ export default async function AdminPage({
             <Link href="/" className="action-btn subtle text-center">
               Home
             </Link>
-            <Link href="/projects" className="action-btn subtle text-center">
-              Parent jobs
-            </Link>
             <a href="#section-people" className="action-btn subtle text-center">
               People
             </a>

@@ -77,7 +77,6 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
             <>
               <Link href="/" className="action-btn subtle quiet home-action">Home</Link>
               <Link href="/tasks" prefetch className="action-btn subtle quiet">View jobs</Link>
-              <Link href="/projects" prefetch className="action-btn subtle quiet">Parent jobs</Link>
             </>
           }
         />
@@ -148,11 +147,6 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
                   Progress and overdue subtasks across the current parent-job board.
                 </p>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <Link href="/projects" className="action-btn subtle quiet">
-                  Open board
-                </Link>
-              </div>
             </div>
 
             <div className="stats-summary-grid mt-4">
@@ -178,7 +172,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
               {stats.projects.map((project) => (
                 <Link
                   key={project.id}
-                  href={`/projects#task-${project.id}`}
+                  href={`/tasks#task-${project.id}`}
                   className="block rounded-2xl border border-border bg-surface p-4 transition hover:shadow-sm"
                 >
                   <div className="flex items-start justify-between gap-3">

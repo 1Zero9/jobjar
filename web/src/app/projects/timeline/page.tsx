@@ -93,8 +93,8 @@ export default async function ProjectsTimelinePage({
               <Link href="/" className="action-btn subtle quiet home-action">
                 Home
               </Link>
-              <Link href="/projects" className="action-btn subtle quiet">
-                Parent jobs
+              <Link href="/tasks" className="action-btn subtle quiet">
+                Jobs
               </Link>
               <Link href="/stats" className="action-btn subtle quiet">
                 Stats
@@ -231,7 +231,7 @@ function TimelineSection({
 
       <div className="timeline-list">
         {events.map((event) => (
-          <Link key={event.id} href={`/projects#task-${event.projectId}`} className="timeline-item">
+          <Link key={event.id} href={`/tasks#task-${event.projectId}`} className="timeline-item">
             <div className="timeline-date-badge">
               <span>{formatDay(event.when)}</span>
               <strong>{formatMonth(event.when)}</strong>

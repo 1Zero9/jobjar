@@ -3,7 +3,7 @@ import { FormActionButton } from "@/app/components/FormActionButton";
 import { LogoutIconButton } from "@/app/components/LogoutIconButton";
 import { ResetViewButton } from "@/app/components/ResetViewButton";
 import { ThemeToggle } from "@/app/components/ThemeToggle";
-import { canAccessProjectViewsRole, canAccessReportingViewsRole, canManagePeopleRole, canUseMemberActions, isMemberRole, requireSessionContext } from "@/lib/auth";
+import { canAccessReportingViewsRole, canManagePeopleRole, canUseMemberActions, isMemberRole, requireSessionContext } from "@/lib/auth";
 import { APP_VERSION } from "@/lib/app-version";
 import { getLocationScopeLabel, getRoomLocationAccessWhere, hasLocationRestrictions } from "@/lib/location-access";
 import {
@@ -14,7 +14,7 @@ import {
   isTeenAudience,
 } from "@/lib/member-audience";
 import { prisma } from "@/lib/prisma";
-import { getMemberVisibleTaskWhere, getProjectTaskWhere } from "@/lib/project-work";
+import { getMemberVisibleTaskWhere } from "@/lib/project-work";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -28,14 +28,13 @@ export default async function HomePage() {
   const canAct = canUseMemberActions(role);
   const memberMode = isMemberRole(role);
   const easyHome = !childMode && (memberMode || !canAct);
-  const canSeeProjects = canAccessProjectViewsRole(role) && canAccessExtendedViews(audienceBand);
   const canSeeReports = canAccessReportingViewsRole(role) && canAccessExtendedViews(audienceBand);
   const taskAudienceWhere = getAudienceAssignedTaskWhere(userId, audienceBand);
   const memberVisibleTaskWhere = getMemberVisibleTaskWhere(role, userId);
   const weekStart = startOfThisWeek();
   const restrictedToLocations = hasLocationRestrictions(allowedLocationIds);
 
-  const [currentUser, locations, taskCount, projectCount, completedThisWeek] = await Promise.all([
+  const [currentUser, locations, taskCount, completedThisWeek] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       select: { displayName: true },
@@ -54,15 +53,6 @@ export default async function HomePage() {
         room: { householdId, ...getRoomLocationAccessWhere(allowedLocationIds) },
         ...taskAudienceWhere,
         ...(Object.keys(memberVisibleTaskWhere).length > 0 ? memberVisibleTaskWhere : {}),
-      },
-    }),
-    prisma.task.count({
-      where: {
-        active: true,
-        room: { householdId, ...getRoomLocationAccessWhere(allowedLocationIds) },
-        ...taskAudienceWhere,
-        ...(Object.keys(memberVisibleTaskWhere).length > 0 ? memberVisibleTaskWhere : {}),
-        ...getProjectTaskWhere(),
       },
     }),
     prisma.taskOccurrence.count({
@@ -184,30 +174,9 @@ export default async function HomePage() {
                   {easyHome ? <span>Add something new that needs doing</span> : null}
                 </Link>
 
-                {!memberMode ? (
-                <Link href="/projects" className="landing-action-card setup">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h4A2.5 2.5 0 0 1 12 7.5v1A2.5 2.5 0 0 1 9.5 11h-4A2.5 2.5 0 0 1 3 8.5z"/>
-                    <path d="M12 15.5A2.5 2.5 0 0 1 14.5 13h4a2.5 2.5 0 0 1 2.5 2.5v1a2.5 2.5 0 0 1-2.5 2.5h-4a2.5 2.5 0 0 1-2.5-2.5z"/>
-                    <path d="M8 11v2a2 2 0 0 0 2 2h2"/>
-                  </svg>
-                  <strong>{teenMode ? "Parent jobs" : "Parent jobs"}</strong>
-                  <span>{projectCount} with subtasks</span>
-                </Link>
-                ) : null}
               </>
             ) : (
-              canSeeProjects ? (
-              <Link href="/projects" className="landing-action-card setup">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h4A2.5 2.5 0 0 1 12 7.5v1A2.5 2.5 0 0 1 9.5 11h-4A2.5 2.5 0 0 1 3 8.5z"/>
-                  <path d="M12 15.5A2.5 2.5 0 0 1 14.5 13h4a2.5 2.5 0 0 1 2.5 2.5v1a2.5 2.5 0 0 1-2.5 2.5h-4a2.5 2.5 0 0 1-2.5-2.5z"/>
-                  <path d="M8 11v2a2 2 0 0 0 2 2h2"/>
-                </svg>
-                <strong>Parent jobs</strong>
-                <span>{projectCount} with subtasks</span>
-              </Link>
-              ) : null
+              null
             )}
 
             {canAccessExtendedViews(audienceBand) ? (

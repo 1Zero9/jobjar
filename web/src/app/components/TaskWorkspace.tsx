@@ -117,11 +117,6 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
               <Link href="/tasks" prefetch className="action-btn subtle quiet">
                 View jobs
               </Link>
-              {!memberMode ? (
-                <Link href="/projects" className="action-btn subtle quiet">
-                  Parent jobs
-                </Link>
-              ) : null}
               {isAdminRole(role) ? (
                 <Link href="/settings" className="action-btn subtle quiet">
                   Setup
@@ -527,11 +522,6 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
                   {canEditTasks ? (
                     <Link href="/log" className="action-btn subtle quiet">
                       Log a Job
-                    </Link>
-                  ) : null}
-                  {!memberMode ? (
-                    <Link href={mode === "projects" ? "/tasks" : "/projects"} prefetch className="action-btn subtle quiet">
-                      {mode === "projects" ? "View jobs" : "Parent jobs"}
                     </Link>
                   ) : null}
                   {isAdminRole(role) ? (

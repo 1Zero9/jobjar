@@ -5,7 +5,7 @@ import { InstallPromptButton } from "@/app/components/InstallPromptButton";
 import { LogoutIconButton } from "@/app/components/LogoutIconButton";
 import { PushPermissionButton } from "@/app/components/PushPermissionButton";
 import { ToastNotice } from "@/app/components/ToastNotice";
-import { canAccessProjectViewsRole, canAccessReportingViewsRole, canManagePeopleRole, canUseMemberActions, isMemberRole, requireSessionContext } from "@/lib/auth";
+import { canAccessReportingViewsRole, canManagePeopleRole, canUseMemberActions, isMemberRole, requireSessionContext } from "@/lib/auth";
 import { canAccessExtendedViews, getMemberThemeClassName } from "@/lib/member-audience";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
@@ -107,7 +107,6 @@ export default async function HelpPage({
   const canSeeUpdatesTimeline = canManagePeopleRole(role);
   const canManageOwnNotifications = audienceBand !== "under_12";
   const memberMode = isMemberRole(role);
-  const canSeeProjects = canAccessProjectViewsRole(role) && canSeeExtended;
   const canSeeReports = canAccessReportingViewsRole(role) && canSeeExtended;
   const recommendedGuideId =
     role === "viewer"
@@ -147,7 +146,6 @@ export default async function HelpPage({
             <>
               <Link href="/" className="action-btn subtle quiet home-action">Home</Link>
               <Link href="/tasks" className="action-btn subtle quiet">View jobs</Link>
-              {canSeeProjects ? <Link href="/projects" className="action-btn subtle quiet">Parent jobs</Link> : null}
               {canSeeReports ? <Link href="/stats" className="action-btn subtle quiet">Stats</Link> : null}
             </>
           }
@@ -170,7 +168,7 @@ export default async function HelpPage({
                       ? "view and work from your own jobs flow"
                       : "view, capture, and work from the full household flow"
                     : "work from the simplified jobs view"
-                  : "view the household without changing jobs or parent jobs"}
+                  : "view the household without changing jobs"}
               </p>
             </div>
             <div className="rounded-2xl border border-border bg-surface p-4">
@@ -179,7 +177,7 @@ export default async function HelpPage({
                 {audienceBand === "under_12"
                   ? "Home, then My jobs."
                   : role === "viewer"
-                    ? "Home, then Jobs or Parent jobs."
+                    ? "Home, then Jobs."
                     : memberMode
                       ? "Home, then Jobs."
                       : "Home, then Jobs."}
