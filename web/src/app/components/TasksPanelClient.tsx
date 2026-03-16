@@ -11,6 +11,7 @@ import {
   demoteProjectToTaskAction,
   luckyDipAction,
   promoteTaskToProjectAction,
+  renameRecordedTaskTitleAction,
   reopenTaskAction,
   startTaskAction,
   updateRecordedTaskAction,
@@ -419,6 +420,9 @@ export function TasksPanelClient({
               >
                 <summary className="recorded-row-summary">
                   <div className="recorded-row-top">
+                    <span className={`recorded-row-icon recorded-row-icon-${getTaskIconTone(task, isProject)}`} aria-hidden="true">
+                      {renderTaskIcon(task, isProject)}
+                    </span>
                     <p className="recorded-row-title">{task.title}</p>
                     <span className="recorded-row-chevron">▾</span>
                   </div>
@@ -480,6 +484,23 @@ export function TasksPanelClient({
                 </summary>
 
                 <div className="recorded-row-detail">
+                  {!childMode && canEditTasks ? (
+                    <form action={renameRecordedTaskTitleAction} className="task-title-quick-edit">
+                      <input type="hidden" name="taskId" value={task.id} />
+                      <input type="hidden" name="returnTo" value={`${basePath}#task-${task.id}`} />
+                      <input
+                        name="title"
+                        type="text"
+                        defaultValue={task.title}
+                        aria-label="Quick edit task title"
+                        className="task-title-quick-edit-input"
+                      />
+                      <FormActionButton className="action-btn subtle quiet task-title-quick-edit-button" pendingLabel="Saving">
+                        Rename
+                      </FormActionButton>
+                    </form>
+                  ) : null}
+
                   {childMode ? (
                     <section className="kid-task-panel">
                       {task.detailNotes ? (
@@ -1298,6 +1319,62 @@ function formatJobKind(jobKind: string) {
     planning: "Planning",
   };
   return labels[jobKind] ?? jobKind;
+}
+
+function getTaskIconTone(
+  task: Pick<TaskItem, "captureStage" | "schedule" | "occurrences">,
+  isProject: boolean,
+) {
+  if (isProject) return "project";
+  if (getTaskState(task) === "done") return "done";
+  if (task.schedule) return "recurring";
+  return "standard";
+}
+
+function renderTaskIcon(
+  task: Pick<TaskItem, "captureStage" | "schedule" | "occurrences">,
+  isProject: boolean,
+) {
+  if (isProject) {
+    return (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9 6h11" />
+        <path d="M9 12h11" />
+        <path d="M9 18h11" />
+        <circle cx="4" cy="6" r="1.5" />
+        <circle cx="4" cy="12" r="1.5" />
+        <circle cx="4" cy="18" r="1.5" />
+      </svg>
+    );
+  }
+  if (getTaskState(task) === "done") {
+    return (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="8" />
+        <path d="m9 12 2 2 4-4" />
+      </svg>
+    );
+  }
+  if (task.schedule) {
+    return (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 11a8 8 0 0 1 13.66-5.66L19 7.5" />
+        <path d="M21 13a8 8 0 0 1-13.66 5.66L5 16.5" />
+        <path d="M19 3v4.5h-4.5" />
+        <path d="M5 21v-4.5h4.5" />
+      </svg>
+    );
+  }
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 6h11" />
+      <path d="M9 12h11" />
+      <path d="M9 18h11" />
+      <path d="m3 6 1.4 1.4L6.8 5" />
+      <path d="m3 12 1.4 1.4L6.8 11" />
+      <path d="m3 18 1.4 1.4L6.8 17" />
+    </svg>
+  );
 }
 
 function getTaskSearchText(task: TaskItem) {

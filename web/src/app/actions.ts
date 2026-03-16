@@ -713,6 +713,50 @@ export async function updateRecordedTaskAction(formData: FormData) {
   redirect(`${returnTo}?updated=${recordStatus === "done" ? "done" : "task"}#recorded`);
 }
 
+export async function renameRecordedTaskTitleAction(formData: FormData) {
+  const { householdId, allowedLocationIds } = await requireSessionMemberAction();
+  const taskId = String(formData.get("taskId") ?? "").trim();
+  const title = String(formData.get("title") ?? "").trim();
+  const returnTo = getReturnPath(formData.get("returnTo"), "/tasks");
+
+  if (!taskId) {
+    return;
+  }
+
+  if (!title) {
+    redirectToReturnPath(returnTo, { error: "task-title-required" }, `task-${taskId}`);
+    return;
+  }
+
+  const task = await prisma.task.findFirst({
+    where: {
+      id: taskId,
+      active: true,
+      room: getAccessibleRoomWhere(householdId, allowedLocationIds),
+    },
+    select: { id: true },
+  });
+  if (!task) {
+    redirectToReturnPath(returnTo, { error: "task-not-found" });
+    return;
+  }
+
+  await prisma.task.update({
+    where: { id: task.id },
+    data: { title },
+  });
+
+  await prisma.taskLog.create({
+    data: {
+      taskId: task.id,
+      action: "task_updated",
+    },
+  });
+
+  refreshViews(["/", "/log", "/tasks"]);
+  redirectToReturnPath(returnTo, { updated: "task" }, `task-${task.id}`);
+}
+
 export async function updateTaskAssigneeAction(formData: FormData) {
   const { householdId, userId: actorUserId, allowedLocationIds } = await requireSessionMemberAction();
   const taskId = String(formData.get("taskId") ?? "").trim();

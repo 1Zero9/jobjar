@@ -1901,6 +1901,43 @@ html[data-theme="dark"] .recorded-row[open] {
   min-width: 0;
 }
 
+.recorded-row-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  flex: 0 0 1.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
+}
+
+.recorded-row-icon-standard {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+
+.recorded-row-icon-recurring {
+  background: color-mix(in srgb, var(--accent-soft) 80%, var(--card));
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  color: var(--accent);
+}
+
+.recorded-row-icon-done {
+  background: var(--success-bg);
+  border-color: color-mix(in srgb, var(--success) 45%, transparent);
+  color: var(--success);
+}
+
+.recorded-row-icon-project {
+  background: #fff7e6;
+  border-color: #f5c96a;
+  color: #9a6700;
+}
+
 .recorded-row-sub {
   display: flex;
   align-items: center;
@@ -2038,6 +2075,35 @@ html[data-theme="dark"] .recorded-row[open] {
   display: grid;
   gap: 0.85rem;
   padding: 0.15rem 0 0.1rem;
+}
+
+.task-title-quick-edit {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.task-title-quick-edit-input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 0.92rem;
+  font-weight: 600;
+  padding: 0.72rem 0.85rem;
+}
+
+.task-title-quick-edit-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.task-title-quick-edit-button {
+  white-space: nowrap;
 }
 
 .task-overview-copy {
