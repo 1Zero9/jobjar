@@ -423,36 +423,59 @@ export function TasksPanelClient({
                     <span className="recorded-row-chevron">▾</span>
                   </div>
                   <div className="recorded-row-sub">
-                    {task.locationName ? (
-                      <span className="recorded-row-location">{task.locationName}</span>
-                    ) : null}
-                    <span className="recorded-row-room">{displayRoomName(task.roomName)}</span>
-                    {task.assignmentUserName && !childMode ? (
-                      <span className="recorded-row-assignee">
-                        <span className="assignee-avatar" style={nameToAvatarStyle(task.assignmentUserName)}>
-                          {nameInitials(task.assignmentUserName)}
-                        </span>
-                        {task.assignmentUserName}
-                      </span>
+                    {projectMode && isProject ? (
+                      <>
+                        {task.locationName ? (
+                          <span className="recorded-row-location">{task.locationName}</span>
+                        ) : null}
+                        <span className="recorded-row-room">{displayRoomName(task.roomName)}</span>
+                        {task.assignmentUserName ? (
+                          <span className="recorded-row-assignee">
+                            <span className="assignee-avatar" style={nameToAvatarStyle(task.assignmentUserName)}>
+                              {nameInitials(task.assignmentUserName)}
+                            </span>
+                            {task.assignmentUserName}
+                          </span>
+                        ) : null}
+                        <span className="task-chip task-chip-streak">{subtaskProgressLabel}</span>
+                        {projectSummary.overdueChildren > 0 ? (
+                          <span className="task-chip task-chip-lapsed">{projectSummary.overdueChildren} overdue</span>
+                        ) : null}
+                      </>
                     ) : (
-                      !childMode ? <span className="assignee-unset">Unassigned</span> : null
+                      <>
+                        {task.locationName ? (
+                          <span className="recorded-row-location">{task.locationName}</span>
+                        ) : null}
+                        <span className="recorded-row-room">{displayRoomName(task.roomName)}</span>
+                        {task.assignmentUserName && !childMode ? (
+                          <span className="recorded-row-assignee">
+                            <span className="assignee-avatar" style={nameToAvatarStyle(task.assignmentUserName)}>
+                              {nameInitials(task.assignmentUserName)}
+                            </span>
+                            {task.assignmentUserName}
+                          </span>
+                        ) : (
+                          !childMode ? <span className="assignee-unset">Unassigned</span> : null
+                        )}
+                        {!childMode ? <span className="task-chip task-chip-kind">{formatJobKind(task.jobKind)}</span> : null}
+                        {getTaskState(task) === "done" ? <span className="task-chip task-chip-done">{childMode ? "Finished" : "Done"}</span> : null}
+                        {recurrenceStateClassName(task) === "task-chip-lapsed" ? <span className="task-chip task-chip-lapsed">{childMode ? "Needs attention" : "Lapsed"}</span> : null}
+                        {recurrenceStateClassName(task) === "task-chip-due" ? <span className="task-chip task-chip-due">{childMode ? "Due today" : "Due today"}</span> : null}
+                        {task.isPrivate && !childMode ? <span className="task-chip task-chip-private">Private</span> : null}
+                        {task.projectParentTitle ? <span className="task-chip">↳ {task.projectParentTitle}</span> : null}
+                        {isProject ? <span className="task-chip task-chip-streak">{subtaskProgressLabel}</span> : null}
+                        {isProject && projectSummary.overdueChildren > 0 ? (
+                          <span className="task-chip task-chip-lapsed">
+                            {projectSummary.overdueChildren} overdue
+                          </span>
+                        ) : null}
+                        {isProject && hasLegacyProjectPlanning ? <span className="task-chip">Legacy extras</span> : null}
+                        {task.schedule && computeStreak(task.occurrences) >= 2 ? (
+                          <span className="task-chip task-chip-streak">{computeStreak(task.occurrences)} in a row</span>
+                        ) : null}
+                      </>
                     )}
-                    {!childMode ? <span className="task-chip task-chip-kind">{formatJobKind(task.jobKind)}</span> : null}
-                    {getTaskState(task) === "done" ? <span className="task-chip task-chip-done">{childMode ? "Finished" : "Done"}</span> : null}
-                    {recurrenceStateClassName(task) === "task-chip-lapsed" ? <span className="task-chip task-chip-lapsed">{childMode ? "Needs attention" : "Lapsed"}</span> : null}
-                    {recurrenceStateClassName(task) === "task-chip-due" ? <span className="task-chip task-chip-due">{childMode ? "Due today" : "Due today"}</span> : null}
-                    {task.isPrivate && !childMode ? <span className="task-chip task-chip-private">Private</span> : null}
-                    {task.projectParentTitle ? <span className="task-chip">↳ {task.projectParentTitle}</span> : null}
-                    {isProject ? <span className="task-chip task-chip-streak">{subtaskProgressLabel}</span> : null}
-                    {isProject && projectSummary.overdueChildren > 0 ? (
-                      <span className="task-chip task-chip-lapsed">
-                        {projectSummary.overdueChildren} overdue
-                      </span>
-                    ) : null}
-                    {isProject && hasLegacyProjectPlanning ? <span className="task-chip">Legacy extras</span> : null}
-                    {task.schedule && computeStreak(task.occurrences) >= 2 ? (
-                      <span className="task-chip task-chip-streak">{computeStreak(task.occurrences)} in a row</span>
-                    ) : null}
                   </div>
                 </summary>
 
@@ -757,79 +780,75 @@ export function TasksPanelClient({
                           <p className="settings-kicker">Parent job</p>
                           <h3 className="recorded-title">Subtasks</h3>
                         </div>
-                        <span className="recorded-count">{subtaskProgressLabel}</span>
                       </div>
 
-                      <p className="task-overview-copy">
-                        Use this parent job to keep the bigger task broken into smaller steps. Ignore the legacy planning extras unless you need to clean them up.
+                      <p className="task-readonly-note">
+                        Bigger jobs live here as a short list of steps.
                       </p>
-
-                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                        <p><span>Where</span><strong>{task.locationName ? `${task.locationName} · ${displayRoomName(task.roomName)}` : displayRoomName(task.roomName)}</strong></p>
-                        <p><span>Assigned</span><strong>{task.assignmentUserName ?? "No one yet"}</strong></p>
-                        <p><span>Done</span><strong>{projectSummary.completedChildren} of {task.projectChildren.length}</strong></p>
-                        <p><span>Overdue</span><strong>{projectSummary.overdueChildren}</strong></p>
-                      </div>
 
                       {canManageProjects ? (
                         <div className="project-manage-stack">
-                          <form action={createProjectChildTaskAction} className="recorded-edit-form">
-                            <input type="hidden" name="projectId" value={task.id} />
-                            <input type="hidden" name="returnTo" value={basePath} />
-                            <p className="settings-kicker">Add a subtask</p>
-                            <label className="recorded-field">
-                              <span>Subtask title</span>
-                              <input name="title" type="text" required placeholder="Patch walls" className="recorded-edit-input" />
-                            </label>
-                            <label className="recorded-field">
-                              <span>Notes</span>
-                              <input name="detailNotes" type="text" placeholder="Optional detail" className="recorded-edit-input" />
-                            </label>
-                            <div className="capture-meta-grid">
+                          <details className="recorded-more-details">
+                            <summary className="recorded-more-summary">Add subtask</summary>
+                            <form action={createProjectChildTaskAction} className="recorded-edit-form">
+                              <input type="hidden" name="projectId" value={task.id} />
+                              <input type="hidden" name="returnTo" value={basePath} />
                               <label className="recorded-field">
-                                <span>Assign</span>
-                                <select name="assigneeUserId" defaultValue="" className="recorded-edit-input">
-                                  <option value="">No person</option>
-                                  {peopleOptions.map((person) => (
-                                    <option key={person.id} value={person.id}>
-                                      {person.displayName}
-                                    </option>
-                                  ))}
-                                </select>
+                                <span>Subtask title</span>
+                                <input name="title" type="text" required placeholder="Patch walls" className="recorded-edit-input" />
                               </label>
                               <label className="recorded-field">
-                                <span>Estimate minutes</span>
-                                <input name="estimatedMinutes" type="number" min={1} defaultValue={30} className="recorded-edit-input" />
+                                <span>Notes</span>
+                                <input name="detailNotes" type="text" placeholder="Optional detail" className="recorded-edit-input" />
                               </label>
-                            </div>
-                            <label className="recorded-field">
-                              <span>Due date</span>
-                              <input name="dueAt" type="datetime-local" className="recorded-edit-input" />
-                            </label>
-                            <div className="recorded-row-actions between">
-                              <FormActionButton className="action-btn bright quiet" pendingLabel="Adding subtask">
-                                Add subtask
-                              </FormActionButton>
-                            </div>
-                          </form>
-
-                          <div className="recorded-edit-form">
-                            <p className="settings-kicker">Parent job</p>
-                            <p className="task-readonly-note">
-                              {canDemoteProject
-                                ? "Turn this back into a normal job if it no longer needs subtasks."
-                                : "Clear subtasks and any legacy planning extras before changing this back into a normal job."}
-                            </p>
-                            {canDemoteProject ? (
-                              <form action={demoteProjectToTaskAction}>
-                                <input type="hidden" name="taskId" value={task.id} />
-                                <input type="hidden" name="returnTo" value={basePath} />
-                                <FormActionButton className="action-btn subtle quiet" pendingLabel="Changing">
-                                  Turn back into a job
+                              <div className="capture-meta-grid">
+                                <label className="recorded-field">
+                                  <span>Assign</span>
+                                  <select name="assigneeUserId" defaultValue="" className="recorded-edit-input">
+                                    <option value="">No person</option>
+                                    {peopleOptions.map((person) => (
+                                      <option key={person.id} value={person.id}>
+                                        {person.displayName}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </label>
+                                <label className="recorded-field">
+                                  <span>Estimate minutes</span>
+                                  <input name="estimatedMinutes" type="number" min={1} defaultValue={30} className="recorded-edit-input" />
+                                </label>
+                              </div>
+                              <label className="recorded-field">
+                                <span>Due date</span>
+                                <input name="dueAt" type="datetime-local" className="recorded-edit-input" />
+                              </label>
+                              <div className="recorded-row-actions between">
+                                <FormActionButton className="action-btn bright quiet" pendingLabel="Adding subtask">
+                                  Add subtask
                                 </FormActionButton>
-                              </form>
-                            ) : null}
-                          </div>
+                              </div>
+                            </form>
+                          </details>
+
+                          <details className="recorded-more-details">
+                            <summary className="recorded-more-summary">More options</summary>
+                            <div className="recorded-edit-form">
+                              <p className="task-readonly-note">
+                                {canDemoteProject
+                                  ? "Turn this back into a normal job if it no longer needs subtasks."
+                                  : "Clear subtasks and any legacy planning extras before changing this back into a normal job."}
+                              </p>
+                              {canDemoteProject ? (
+                                <form action={demoteProjectToTaskAction}>
+                                  <input type="hidden" name="taskId" value={task.id} />
+                                  <input type="hidden" name="returnTo" value={basePath} />
+                                  <FormActionButton className="action-btn subtle quiet" pendingLabel="Changing">
+                                    Turn back into a job
+                                  </FormActionButton>
+                                </form>
+                              ) : null}
+                            </div>
+                          </details>
                         </div>
                       ) : null}
 
