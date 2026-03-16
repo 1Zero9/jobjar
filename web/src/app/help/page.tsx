@@ -53,11 +53,47 @@ const GUIDE_SECTIONS = [
   },
 ] as const;
 
+const UPDATE_TIMELINE = [
+  {
+    date: "16 Mar 2026",
+    title: "Validation feedback tightened",
+    points: [
+      "Setup, admin, tasks, and projects now explain blocked or invalid actions instead of failing silently.",
+      "Strict jobs now say whether a note, a start action, or more tracked time is missing.",
+    ],
+  },
+  {
+    date: "13 Mar 2026",
+    title: "Help and role guidance added",
+    points: [
+      "In-app help was added so the household can learn the app without leaving it.",
+      "Audience-specific guides now cover adults, teens, kids, and grandparents.",
+    ],
+  },
+  {
+    date: "13 Mar 2026",
+    title: "Project workflow expanded",
+    points: [
+      "Projects now support milestones, materials, costs, and a dedicated timeline view.",
+      "Power users can manage project work without needing full admin access.",
+    ],
+  },
+  {
+    date: "13 Mar 2026",
+    title: "Audience and access controls improved",
+    points: [
+      "Audience bands now tailor the app for adults, teens, and under-12 users.",
+      "Location access can limit what each person sees across properties or areas.",
+    ],
+  },
+] as const;
+
 export default async function HelpPage() {
   const { role, audienceBand, profileTheme } = await requireSessionContext("/help");
   const audienceThemeClass = getMemberThemeClassName(audienceBand, profileTheme);
   const canAct = canUseMemberActions(role);
   const canSeeExtended = canAccessExtendedViews(audienceBand);
+  const canSeeUpdatesTimeline = canManagePeopleRole(role);
   const memberMode = isMemberRole(role);
   const canSeeProjects = canAccessProjectViewsRole(role) && canSeeExtended;
   const canSeeReports = canAccessReportingViewsRole(role) && canSeeExtended;
@@ -132,6 +168,29 @@ export default async function HelpPage() {
             ))}
           </div>
         </section>
+
+        {canSeeUpdatesTimeline ? (
+          <section className="stats-panel">
+            <p className="settings-kicker">Recent updates</p>
+            <h2 className="recorded-title">Updates timeline</h2>
+            <p className="recorded-empty">Use this when you are helping the household adjust to recent changes in the app.</p>
+            <div className="help-timeline">
+              {UPDATE_TIMELINE.map((item) => (
+                <article key={`${item.date}-${item.title}`} className="help-timeline-item">
+                  <div className="help-timeline-top">
+                    <p className="help-timeline-date">{item.date}</p>
+                    <h3 className="help-timeline-title">{item.title}</h3>
+                  </div>
+                  <div className="help-checklist">
+                    {item.points.map((point) => (
+                      <p key={point} className="help-checklist-item">{point}</p>
+                    ))}
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         {memberMode ? (
           <>
