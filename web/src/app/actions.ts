@@ -5,6 +5,7 @@ import {
   canUseMemberActions,
   clearSession,
   getHouseholdPasscode,
+  isAdminRole,
   requireSessionContext,
   setSessionUserId,
 } from "@/lib/auth";
@@ -400,9 +401,15 @@ export async function createQuickTaskAction(formData: FormData) {
   const recurrenceType = parseOptionalRecurrenceType(formData.get("recurrenceType"));
   const recurrenceInterval = toPositiveInt(formData.get("recurrenceInterval"), 1);
   const requestedNextDueAt = toDate(formData.get("nextDueAt"));
+  const rewardInput = String(formData.get("reward") ?? "").trim();
+  const rewardCents = toCurrencyCentsOrNull(formData.get("reward"));
   const returnTo = getReturnPath(formData.get("returnTo"), "/log");
   if (!title) {
     redirectToReturnPath(returnTo, { error: "task-title-required" });
+    return;
+  }
+  if (rewardInput && rewardCents === null) {
+    redirectToReturnPath(returnTo, { error: "reward-amount-invalid" });
     return;
   }
 
@@ -440,6 +447,7 @@ export async function createQuickTaskAction(formData: FormData) {
       detailNotes,
       priority: recordStatus === "done" && !recurrenceType ? 999 : 1,
       isPrivate,
+      rewardCents,
     },
     select: { id: true },
   });
@@ -2070,6 +2078,186 @@ export async function completeTaskAction(formData: FormData) {
   refreshViews();
 }
 
+export async function acceptRewardAction(formData: FormData) {
+  const { userId: actorUserId, householdId, allowedLocationIds, audienceBand } = await requireSessionMemberAction({ allowRestrictedChildAudience: true });
+  const taskId = String(formData.get("taskId") ?? "").trim();
+  const returnTo = getReturnPath(formData.get("returnTo"), "/tasks");
+
+  if (!taskId) {
+    return;
+  }
+
+  const task = await prisma.task.findFirst({
+    where: {
+      id: taskId,
+      active: true,
+      room: getAccessibleRoomWhere(householdId, allowedLocationIds),
+      ...getAudienceAssignedTaskWhere(actorUserId, audienceBand),
+    },
+    select: {
+      id: true,
+      title: true,
+      createdByUserId: true,
+      rewardCents: true,
+      rewardConfirmed: true,
+      rewardPaidAt: true,
+      assignments: {
+        where: {
+          userId: actorUserId,
+          assignedTo: null,
+        },
+        take: 1,
+        select: { userId: true },
+      },
+    },
+  });
+
+  if (!task || task.rewardCents === null || task.assignments.length === 0) {
+    redirectToReturnPath(returnTo, { error: "reward-not-available" }, `task-${taskId}`);
+    return;
+  }
+
+  if (task.rewardConfirmed || task.rewardPaidAt) {
+    redirectToReturnPath(returnTo, { updated: "reward-accepted" }, `task-${task.id}`);
+    return;
+  }
+
+  await prisma.task.update({
+    where: { id: task.id },
+    data: { rewardConfirmed: true },
+  });
+
+  await prisma.taskLog.create({
+    data: {
+      taskId: task.id,
+      action: "task_updated",
+      actorUserId,
+      atTime: new Date(),
+      note: "Reward accepted",
+    },
+  });
+
+  if (task.createdByUserId && task.createdByUserId !== actorUserId) {
+    const [recipientUserId, actor] = await Promise.all([
+      resolveNotificationRecipientUserId(householdId, task.createdByUserId),
+      prisma.user.findUnique({
+        where: { id: actorUserId },
+        select: { displayName: true },
+      }),
+    ]);
+
+    if (recipientUserId && recipientUserId !== actorUserId) {
+      await notifyUser(
+        recipientUserId,
+        "reward_accepted",
+        {
+          title: "JobJar",
+          body: `${actor?.displayName ?? "Someone"} accepted "${task.title}" for ${formatCurrency(task.rewardCents)}.`,
+          url: `/tasks#task-${task.id}`,
+        },
+        task.id,
+      );
+    }
+  }
+
+  refreshViews(["/", "/tasks", "/stats"]);
+  redirectToReturnPath(returnTo, { updated: "reward-accepted" }, `task-${task.id}`);
+}
+
+export async function markRewardPaidAction(formData: FormData) {
+  const { userId: actorUserId, householdId, allowedLocationIds, role } = await requireSessionMemberAction({ allowRestrictedChildAudience: true });
+  const taskId = String(formData.get("taskId") ?? "").trim();
+  const returnTo = getReturnPath(formData.get("returnTo"), "/tasks");
+
+  if (!taskId) {
+    return;
+  }
+
+  const task = await prisma.task.findFirst({
+    where: {
+      id: taskId,
+      active: true,
+      room: getAccessibleRoomWhere(householdId, allowedLocationIds),
+    },
+    select: {
+      id: true,
+      title: true,
+      createdByUserId: true,
+      captureStage: true,
+      rewardCents: true,
+      rewardConfirmed: true,
+      rewardPaidAt: true,
+      assignments: {
+        where: { assignedTo: null },
+        orderBy: { assignedFrom: "desc" },
+        take: 1,
+        select: { userId: true },
+      },
+    },
+  });
+
+  if (!task || task.rewardCents === null) {
+    redirectToReturnPath(returnTo, { error: "reward-not-available" }, `task-${taskId}`);
+    return;
+  }
+
+  if (task.createdByUserId !== actorUserId && !isAdminRole(role)) {
+    redirectToReturnPath(returnTo, { error: "reward-pay-not-allowed" }, `task-${task.id}`);
+    return;
+  }
+
+  if (!task.rewardConfirmed) {
+    redirectToReturnPath(returnTo, { error: "reward-pay-before-accept" }, `task-${task.id}`);
+    return;
+  }
+
+  if (task.captureStage !== "done") {
+    redirectToReturnPath(returnTo, { error: "reward-pay-before-complete" }, `task-${task.id}`);
+    return;
+  }
+
+  if (task.rewardPaidAt) {
+    redirectToReturnPath(returnTo, { updated: "reward-paid" }, `task-${task.id}`);
+    return;
+  }
+
+  const paidAt = new Date();
+  await prisma.task.update({
+    where: { id: task.id },
+    data: { rewardPaidAt: paidAt },
+  });
+
+  await prisma.taskLog.create({
+    data: {
+      taskId: task.id,
+      action: "task_updated",
+      actorUserId,
+      atTime: paidAt,
+      note: "Reward paid",
+    },
+  });
+
+  const assignedUserId = task.assignments[0]?.userId ?? null;
+  if (assignedUserId && assignedUserId !== actorUserId) {
+    const recipientUserId = await resolveNotificationRecipientUserId(householdId, assignedUserId);
+    if (recipientUserId) {
+      await notifyUser(
+        recipientUserId,
+        "reward_paid",
+        {
+          title: "JobJar",
+          body: `${formatCurrency(task.rewardCents)} was marked paid for "${task.title}".`,
+          url: `/tasks#task-${task.id}`,
+        },
+        task.id,
+      );
+    }
+  }
+
+  refreshViews(["/", "/tasks", "/stats"]);
+  redirectToReturnPath(returnTo, { updated: "reward-paid" }, `task-${task.id}`);
+}
+
 export async function reopenTaskAction(formData: FormData) {
   const { householdId, userId: actorUserId, allowedLocationIds, audienceBand } = await requireSessionMemberAction({ allowRestrictedChildAudience: true });
   const taskId = String(formData.get("taskId") ?? "").trim();
@@ -2281,6 +2469,13 @@ function toCurrencyCentsOrNull(value: FormDataEntryValue | null) {
   }
 
   return Math.round(amount * 100);
+}
+
+function formatCurrency(cents: number) {
+  return new Intl.NumberFormat("en-IE", {
+    style: "currency",
+    currency: "EUR",
+  }).format(cents / 100);
 }
 
 function toDate(value: FormDataEntryValue | null) {

@@ -5,7 +5,9 @@ import { prisma } from "@/lib/prisma";
 type NotifyEvent =
   | "task_logged"
   | "task_assigned"
-  | "task_completed";
+  | "task_completed"
+  | "reward_accepted"
+  | "reward_paid";
 
 type PushPayload = {
   body: string;

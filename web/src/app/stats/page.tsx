@@ -137,6 +137,21 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
           </div>
         </section>
 
+        <section className="stats-panel">
+          <p className="settings-kicker">Rewards</p>
+          <h2 className="recorded-title">Money totals {periodLabel}</h2>
+          <div className="stats-summary-grid mt-4">
+            <div className="stat-card">
+              <span className="stat-number">{formatMoney(stats.rewardSummary.earnedCents)}</span>
+              <span className="stat-label">Earned</span>
+            </div>
+            <div className="stat-card">
+              <span className="stat-number">{formatMoney(stats.rewardSummary.paidOutCents)}</span>
+              <span className="stat-label">Paid out</span>
+            </div>
+          </div>
+        </section>
+
         {stats.projectOverview.totalProjects > 0 ? (
           <section className="stats-panel">
             <p className="settings-kicker">Parent jobs</p>
@@ -335,4 +350,12 @@ function formatProjectStatus(status: "planning" | "active" | "complete" | "at_ri
   if (status === "complete") return "Complete";
   if (status === "planning") return "No subtasks";
   return "Active";
+}
+
+function formatMoney(cents: number) {
+  return new Intl.NumberFormat("en-IE", {
+    style: "currency",
+    currency: "EUR",
+    maximumFractionDigits: 0,
+  }).format(cents / 100);
 }

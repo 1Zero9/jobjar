@@ -1,8 +1,7 @@
 import { luckyDipAction } from "@/app/actions";
 import { FormActionButton } from "@/app/components/FormActionButton";
-import { LogoutIconButton } from "@/app/components/LogoutIconButton";
-import { ResetViewButton } from "@/app/components/ResetViewButton";
-import { ThemeToggle } from "@/app/components/ThemeToggle";
+import { HomeQuickCaptureForm } from "@/app/components/HomeQuickCaptureForm";
+import { ToastNotice } from "@/app/components/ToastNotice";
 import { canAccessReportingViewsRole, canManagePeopleRole, canUseMemberActions, isMemberRole, requireSessionContext } from "@/lib/auth";
 import { APP_VERSION } from "@/lib/app-version";
 import { getLocationScopeLabel, getRoomLocationAccessWhere, hasLocationRestrictions } from "@/lib/location-access";
@@ -19,22 +18,29 @@ import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
-export default async function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ added?: string; error?: string; taskId?: string }>;
+}) {
+  const params = await searchParams;
   const { householdId, userId, role, audienceBand, profileTheme, allowedLocationIds } = await requireSessionContext("/");
   const audienceThemeClass = getMemberThemeClassName(audienceBand, profileTheme);
   const childMode = isChildAudience(audienceBand);
   const teenMode = isTeenAudience(audienceBand);
   const peopleManager = canManagePeopleRole(role);
   const canAct = canUseMemberActions(role);
+  const canSeeExtended = canAccessExtendedViews(audienceBand);
   const memberMode = isMemberRole(role);
   const easyHome = !childMode && (memberMode || !canAct);
-  const canSeeReports = canAccessReportingViewsRole(role) && canAccessExtendedViews(audienceBand);
+  const canSeeReports = canAccessReportingViewsRole(role) && canSeeExtended;
+  const canQuickCapture = canAct && canSeeExtended && !childMode;
   const taskAudienceWhere = getAudienceAssignedTaskWhere(userId, audienceBand);
   const memberVisibleTaskWhere = getMemberVisibleTaskWhere(role, userId);
   const weekStart = startOfThisWeek();
   const restrictedToLocations = hasLocationRestrictions(allowedLocationIds);
 
-  const [currentUser, locations, taskCount, completedThisWeek] = await Promise.all([
+  const [currentUser, locations, quickCaptureRooms, taskCount, completedThisWeek] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       select: { displayName: true },
@@ -44,6 +50,27 @@ export default async function HomePage() {
           where: { householdId, active: true, id: { in: allowedLocationIds! } },
           orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
           select: { name: true },
+        })
+      : Promise.resolve([]),
+    canQuickCapture
+      ? prisma.room.findMany({
+          where: {
+            householdId,
+            active: true,
+            ...getRoomLocationAccessWhere(allowedLocationIds),
+            name: { not: "Unsorted" },
+          },
+          orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+          select: {
+            id: true,
+            name: true,
+            location: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
         })
       : Promise.resolve([]),
     prisma.task.count({
@@ -67,10 +94,20 @@ export default async function HomePage() {
     }),
   ]);
   const locationScopeLabel = restrictedToLocations ? getLocationScopeLabel(locations, allowedLocationIds) : null;
+  const showQuickCapture = canQuickCapture && (!restrictedToLocations || quickCaptureRooms.length > 0);
 
   return (
     <div className={`capture-shell ${audienceThemeClass} min-h-screen px-4 py-5`}>
       <main className={`landing-shell ${easyHome ? "landing-shell-easy" : ""} mx-auto flex w-full flex-col gap-6`.trim()}>
+        {params.added === "task" ? <ToastNotice message="Job recorded." tone="success" /> : null}
+        {params.error === "task-title-required" ? <ToastNotice message="Enter a job title before saving." tone="error" /> : null}
+        {params.error === "task-room-required" ? <ToastNotice message="Choose a room first, then try again." tone="error" /> : null}
+        {params.added === "task" && params.taskId ? (
+          <Link href={`/tasks#task-${params.taskId}`} className="view-task-link">
+            View the job you just logged
+          </Link>
+        ) : null}
+
         <header className={`landing-hero ${easyHome ? "landing-hero-easy" : ""} ${childMode ? "landing-hero-kid" : teenMode ? "landing-hero-teen" : ""}`.trim()}>
           <div className="landing-hero-topline">
             <div className="landing-hero-topline-main">
@@ -100,15 +137,23 @@ export default async function HomePage() {
                 </p>
               ) : null}
             </div>
-            <div className="hero-corner-stack">
-              <div className="hero-corner-tools">
-                <ResetViewButton />
-                <ThemeToggle compact />
-                <LogoutIconButton />
-              </div>
-            </div>
           </div>
         </header>
+
+        {showQuickCapture ? (
+          <section className="landing-panel home-capture-panel">
+            <div className="landing-stat-row">
+              <span className="landing-stat-label">What needs doing?</span>
+              <Link href="/log" className="recorded-row-edit recorded-row-edit-bright">
+                Full log
+              </Link>
+            </div>
+            <p className="landing-panel-copy">
+              Type it, press add, and keep moving. The app remembers the room you used last on the full log page.
+            </p>
+            <HomeQuickCaptureForm rooms={quickCaptureRooms} requireRoom={restrictedToLocations} />
+          </section>
+        ) : null}
 
         <section className={`landing-panel ${easyHome ? "landing-panel-easy" : ""} ${childMode ? "landing-panel-kid" : teenMode ? "landing-panel-teen" : ""}`.trim()}>
           <div className="landing-stat-row">

@@ -78,6 +78,10 @@ export type StatsData = {
   completionsThisMonth: number;
   completionsAllTime: number;
   openTasks: number;
+  rewardSummary: {
+    earnedCents: number;
+    paidOutCents: number;
+  };
   recurringHealth: { onTrack: number; dueToday: number; overdue: number };
   byPerson: StatsPerson[];
   byRoom: StatsRoom[];
@@ -126,6 +130,7 @@ export async function getStatsData(householdId: string, filters: StatsFilters = 
     recurringTasks,
     recentDone,
     periodOccurrences,
+    rewardTasks,
     projectTasks,
   ] = await Promise.all([
     prisma.taskOccurrence.count({
@@ -202,6 +207,24 @@ export async function getStatsData(householdId: string, filters: StatsFilters = 
     prisma.task.findMany({
       where: {
         active: true,
+        rewardCents: { not: null },
+        rewardPaidAt: periodStart ? { gte: periodStart } : { not: null },
+        ...taskRoomWhere,
+      },
+      select: {
+        rewardCents: true,
+        createdByUserId: true,
+        assignments: {
+          where: { assignedTo: null },
+          orderBy: { assignedFrom: "desc" },
+          take: 1,
+          select: { userId: true },
+        },
+      },
+    }),
+    prisma.task.findMany({
+      where: {
+        active: true,
         ...taskRoomWhere,
         ...getProjectTaskWhere(),
       },
@@ -263,6 +286,26 @@ export async function getStatsData(householdId: string, filters: StatsFilters = 
     }))
     .filter((r) => r.openCount > 0 || r.doneThisPeriod > 0)
     .sort((a, b) => b.openCount - a.openCount);
+
+  const rewardSummary = rewardTasks.reduce(
+    (summary, task) => {
+      const rewardCents = task.rewardCents ?? 0;
+      const earnerUserId = task.assignments[0]?.userId ?? null;
+      const earnedMatches = userId ? earnerUserId === userId : true;
+      const paidOutMatches = userId ? task.createdByUserId === userId : true;
+
+      if (earnedMatches) {
+        summary.earnedCents += rewardCents;
+      }
+
+      if (paidOutMatches) {
+        summary.paidOutCents += rewardCents;
+      }
+
+      return summary;
+    },
+    { earnedCents: 0, paidOutCents: 0 },
+  );
 
   let onTrack = 0, dueToday = 0, overdue = 0;
   for (const task of recurringTasks) {
@@ -341,6 +384,7 @@ export async function getStatsData(householdId: string, filters: StatsFilters = 
     completionsThisMonth: monthCompletions,
     completionsAllTime: allCompletions,
     openTasks,
+    rewardSummary,
     recurringHealth: { onTrack, dueToday, overdue },
     byPerson,
     byRoom,

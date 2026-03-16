@@ -1,8 +1,8 @@
 import { createQuickTaskAction } from "@/app/actions";
 import { FormActionButton } from "@/app/components/FormActionButton";
 import { AppPageHeader } from "@/app/components/AppPageHeader";
-import { LocationRoomSelect } from "@/app/components/LocationRoomSelect";
 import { LogoutIconButton } from "@/app/components/LogoutIconButton";
+import { RoomPillSelect } from "@/app/components/RoomPillSelect";
 import { SimilarTaskField } from "@/app/components/SimilarTaskField";
 import { TasksPanelClient } from "@/app/components/TasksPanelClient";
 import { ToastNotice } from "@/app/components/ToastNotice";
@@ -157,9 +157,11 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
                   roomName: task.room.name,
                   state: task.captureStage === "done" ? "done" : "open",
                 }))}
+                label="What needs doing?"
+                placeholder="Buy milk"
               />
 
-              <LocationRoomSelect
+              <RoomPillSelect
                 className="quick-log-primary-step"
                 locations={locations}
                 rooms={roomOptions}
@@ -197,6 +199,17 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
                     </select>
                   </label>
                 </div>
+
+                <label className="recorded-field">
+                  <span>Value (optional)</span>
+                  <input
+                    name="reward"
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="5.00"
+                    className="recorded-edit-input"
+                  />
+                </label>
 
                 <div className="capture-step">
                   <label className="capture-private-row">
@@ -550,6 +563,8 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
         {params.updated === "project-promoted" ? <ToastNotice message="Job ready for subtasks." tone="success" /> : null}
         {params.updated === "project-demoted" ? <ToastNotice message="Parent job returned to a normal job." tone="success" /> : null}
         {params.updated === "project-plan" ? <ToastNotice message="Project plan updated." tone="success" /> : null}
+        {params.updated === "reward-accepted" ? <ToastNotice message="Reward accepted." tone="success" /> : null}
+        {params.updated === "reward-paid" ? <ToastNotice message="Reward marked paid." tone="success" /> : null}
         {params.updated === "project-material" ? <ToastNotice message="Project material updated." tone="success" /> : null}
         {params.updated === "project-milestone" ? <ToastNotice message="Project milestone updated." tone="success" /> : null}
         {params.removed === "project-cost" ? <ToastNotice message="Project cost removed." tone="success" /> : null}
@@ -621,6 +636,9 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
             captureStage: task.captureStage,
             createdAt: task.createdAt.toISOString(),
             estimatedMinutes: task.estimatedMinutes,
+            rewardCents: task.rewardCents,
+            rewardConfirmed: task.rewardConfirmed,
+            rewardPaidAt: task.rewardPaidAt?.toISOString() ?? null,
             projectTargetAt: task.projectTargetAt?.toISOString() ?? null,
             projectBudgetCents: task.projectBudgetCents,
             projectChildren: task.projectChildren.map((child) => ({
@@ -733,6 +751,21 @@ function getTaskWorkspaceErrorMessage(error?: string) {
   }
   if (error === "project-cost-title-required") {
     return "Enter a title for the project cost.";
+  }
+  if (error === "reward-amount-invalid") {
+    return "Enter a valid value like 5 or 5.50.";
+  }
+  if (error === "reward-not-available") {
+    return "That reward is not available for this job.";
+  }
+  if (error === "reward-pay-not-allowed") {
+    return "Only the person who logged this reward can mark it paid.";
+  }
+  if (error === "reward-pay-before-accept") {
+    return "Wait until the reward has been accepted before marking it paid.";
+  }
+  if (error === "reward-pay-before-complete") {
+    return "Finish the job before marking the reward paid.";
   }
   if (error === "project-cost-amount-invalid") {
     return "Enter a valid amount greater than zero for the project cost.";

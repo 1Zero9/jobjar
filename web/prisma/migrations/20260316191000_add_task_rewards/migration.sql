@@ -1,0 +1,4 @@
+ALTER TABLE "Task"
+ADD COLUMN "rewardCents" INTEGER,
+ADD COLUMN "rewardConfirmed" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN "rewardPaidAt" TIMESTAMPTZ;

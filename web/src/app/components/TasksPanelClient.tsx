@@ -2,6 +2,7 @@
 
 import type { MemberAudience } from "@prisma/client";
 import {
+  acceptRewardAction,
   completeTaskAction,
   createProjectChildTaskAction,
   deleteProjectCostAction,
@@ -10,6 +11,7 @@ import {
   deleteTaskAction,
   demoteProjectToTaskAction,
   luckyDipAction,
+  markRewardPaidAction,
   promoteTaskToProjectAction,
   renameRecordedTaskTitleAction,
   reopenTaskAction,
@@ -56,6 +58,9 @@ type TaskItem = {
   captureStage: string;
   createdAt: string;
   estimatedMinutes: number;
+  rewardCents: number | null;
+  rewardConfirmed: boolean;
+  rewardPaidAt: string | null;
   projectTargetAt: string | null;
   projectBudgetCents: number | null;
   projectChildren: Array<{
@@ -410,6 +415,20 @@ export function TasksPanelClient({
               task.projectCosts.length === 0 &&
               task.projectMaterials.length === 0 &&
               task.projectMilestones.length === 0;
+            const hasReward = task.rewardCents !== null;
+            const canAcceptReward =
+              hasReward &&
+              task.assignmentUserId === currentUserId &&
+              !task.rewardConfirmed &&
+              !task.rewardPaidAt;
+            const canMarkRewardPaid =
+              hasReward &&
+              task.createdByUserId === currentUserId &&
+              task.rewardConfirmed &&
+              !task.rewardPaidAt &&
+              getTaskState(task) === "done";
+            const rewardLabel = hasReward ? getRewardStatusLabel(task.rewardCents!, task.rewardConfirmed, task.rewardPaidAt) : null;
+            const rewardChipClassName = hasReward ? getRewardChipClassName(task.rewardConfirmed, task.rewardPaidAt) : null;
 
             return (
               <details
@@ -466,6 +485,7 @@ export function TasksPanelClient({
                         {getTaskState(task) === "done" ? <span className="task-chip task-chip-done">{childMode ? "Finished" : "Done"}</span> : null}
                         {recurrenceStateClassName(task) === "task-chip-lapsed" ? <span className="task-chip task-chip-lapsed">{childMode ? "Needs attention" : "Lapsed"}</span> : null}
                         {recurrenceStateClassName(task) === "task-chip-due" ? <span className="task-chip task-chip-due">{childMode ? "Due today" : "Due today"}</span> : null}
+                        {rewardLabel && rewardChipClassName ? <span className={`task-chip ${rewardChipClassName}`}>{rewardLabel}</span> : null}
                         {task.isPrivate && !childMode ? <span className="task-chip task-chip-private">Private</span> : null}
                         {task.projectParentTitle ? <span className="task-chip">↳ {task.projectParentTitle}</span> : null}
                         {isProject ? <span className="task-chip task-chip-streak">{subtaskProgressLabel}</span> : null}
@@ -508,12 +528,13 @@ export function TasksPanelClient({
                       ) : (
                         <p className="kid-task-copy">Pick this job up when you are ready.</p>
                       )}
-                      <div className="kid-task-meta">
-                        <p><span>Where</span><strong>{displayRoomName(task.roomName)}</strong></p>
-                        <p><span>Status</span><strong>{getTaskState(task) === "done" ? "Finished" : task.captureStage === "active" ? "In progress" : "Ready to go"}</strong></p>
-                        {task.schedule?.nextDueAt ? <p><span>Due</span><strong>{formatRecordedAt(task.schedule.nextDueAt)}</strong></p> : null}
-                        {latestCompleted?.completedAt ? <p><span>Last finished</span><strong>{formatRecordedAt(latestCompleted.completedAt)}</strong></p> : null}
-                      </div>
+                        <div className="kid-task-meta">
+                          <p><span>Where</span><strong>{displayRoomName(task.roomName)}</strong></p>
+                          <p><span>Status</span><strong>{getTaskState(task) === "done" ? "Finished" : task.captureStage === "active" ? "In progress" : "Ready to go"}</strong></p>
+                          {hasReward ? <p><span>Reward</span><strong>{rewardLabel}</strong></p> : null}
+                          {task.schedule?.nextDueAt ? <p><span>Due</span><strong>{formatRecordedAt(task.schedule.nextDueAt)}</strong></p> : null}
+                          {latestCompleted?.completedAt ? <p><span>Last finished</span><strong>{formatRecordedAt(latestCompleted.completedAt)}</strong></p> : null}
+                        </div>
                       <div className="recorded-row-actions kid-task-actions">
                         {getTaskState(task) === "done" ? (
                           canEditTasks ? (
@@ -527,6 +548,15 @@ export function TasksPanelClient({
                         ) : (
                           canEditTasks ? (
                           <>
+                            {canAcceptReward ? (
+                              <form action={acceptRewardAction}>
+                                <input type="hidden" name="taskId" value={task.id} />
+                                <input type="hidden" name="returnTo" value={`${basePath}#task-${task.id}`} />
+                                <FormActionButton className="action-btn subtle quiet" pendingLabel="Accepting">
+                                  Accept {formatMoney(task.rewardCents!)}
+                                </FormActionButton>
+                              </form>
+                            ) : null}
                             {task.captureStage !== "active" ? (
                               <form action={startTaskAction}>
                                 <input type="hidden" name="taskId" value={task.id} />
@@ -562,6 +592,7 @@ export function TasksPanelClient({
                           <p><span>Assigned</span><strong>{task.assignmentUserName ?? "No one yet"}</strong></p>
                           <p><span>Status</span><strong>{getTaskStatusLabel(task)}</strong></p>
                           <p><span>Estimate</span><strong>{formatMinutes(task.estimatedMinutes)}</strong></p>
+                          {hasReward ? <p><span>Reward</span><strong>{rewardLabel}</strong></p> : null}
                           {task.schedule ? (
                             <>
                               <p><span>Repeats</span><strong>{formatRecurrenceChip(task.schedule)}</strong></p>
@@ -586,6 +617,15 @@ export function TasksPanelClient({
                             </form>
                           ) : (
                             <>
+                              {canAcceptReward ? (
+                                <form action={acceptRewardAction}>
+                                  <input type="hidden" name="taskId" value={task.id} />
+                                  <input type="hidden" name="returnTo" value={`${basePath}#task-${task.id}`} />
+                                  <FormActionButton className="action-btn subtle quiet" pendingLabel="Accepting">
+                                    Accept {formatMoney(task.rewardCents!)}
+                                  </FormActionButton>
+                                </form>
+                              ) : null}
                               {task.captureStage !== "active" ? (
                                 <form action={startTaskAction}>
                                   <input type="hidden" name="taskId" value={task.id} />
@@ -604,6 +644,15 @@ export function TasksPanelClient({
                               </form>
                             </>
                           )}
+                          {canMarkRewardPaid ? (
+                            <form action={markRewardPaidAction}>
+                              <input type="hidden" name="taskId" value={task.id} />
+                              <input type="hidden" name="returnTo" value={`${basePath}#task-${task.id}`} />
+                              <FormActionButton className="action-btn subtle quiet" pendingLabel="Paying">
+                                Mark paid
+                              </FormActionButton>
+                            </form>
+                          ) : null}
                           {!isProject && canManageProjects ? (
                             <form action={promoteTaskToProjectAction}>
                               <input type="hidden" name="taskId" value={task.id} />
@@ -1307,6 +1356,27 @@ function formatMoney(cents: number) {
     style: "currency",
     currency: "EUR",
   }).format(cents / 100);
+}
+
+function getRewardStatusLabel(cents: number, confirmed: boolean, paidAt: string | null) {
+  const amount = formatMoney(cents);
+  if (paidAt) {
+    return `${amount} paid`;
+  }
+  if (confirmed) {
+    return `${amount} accepted`;
+  }
+  return `${amount} offer`;
+}
+
+function getRewardChipClassName(confirmed: boolean, paidAt: string | null) {
+  if (paidAt) {
+    return "task-chip-reward-paid";
+  }
+  if (confirmed) {
+    return "task-chip-reward";
+  }
+  return "task-chip-reward-offer";
 }
 
 function formatJobKind(jobKind: string) {

@@ -15,9 +15,17 @@ type SimilarTaskFieldProps = {
   tasks: LookupTask[];
   defaultTitle?: string;
   className?: string;
+  label?: string;
+  placeholder?: string;
 };
 
-export function SimilarTaskField({ tasks, defaultTitle = "", className = "" }: SimilarTaskFieldProps) {
+export function SimilarTaskField({
+  tasks,
+  defaultTitle = "",
+  className = "",
+  label = "Task",
+  placeholder = "Light bulb out",
+}: SimilarTaskFieldProps) {
   const [title, setTitle] = useState(defaultTitle);
   const [debouncedTitle, setDebouncedTitle] = useState(defaultTitle);
   const [parentTask, setParentTask] = useState<LookupTask | null>(null);
@@ -46,14 +54,14 @@ export function SimilarTaskField({ tasks, defaultTitle = "", className = "" }: S
 
   return (
     <div className={`capture-step ${className}`.trim()}>
-      <span className="capture-step-label">Task</span>
+      <span className="capture-step-label">{label}</span>
       <input
         name="title"
         type="text"
         required
         value={title}
         onChange={(event) => setTitle(event.target.value)}
-        placeholder="Light bulb out"
+        placeholder={placeholder}
         className="capture-main-input"
         autoFocus
       />

@@ -187,6 +187,9 @@ model Task {
   projectParentId  String?          @db.Uuid
   priority         Int              @default(3)
   estimatedMinutes Int              @default(15)
+  rewardCents      Int?
+  rewardConfirmed  Boolean          @default(false)
+  rewardPaidAt     DateTime?
   projectTargetAt  DateTime?
   projectBudgetCents Int?
   graceHours       Int              @default(12)

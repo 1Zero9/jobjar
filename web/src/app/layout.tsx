@@ -1,6 +1,14 @@
 import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
+import { AppShell } from "@/app/components/AppShell";
 import { SessionWatchdog } from "@/app/components/SessionWatchdog";
 import "./globals.css";
+
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-sans",
+});
 
 const themeInitScript = `
   (() => {
@@ -54,10 +62,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="antialiased">
+      <body className={`${inter.variable} antialiased`}>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <SessionWatchdog />
-        {children}
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );
