@@ -22,7 +22,7 @@ import {
   updateRecordedTaskAction,
 } from "@/app/actions";
 import { FormActionButton } from "@/app/components/FormActionButton";
-import { useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 
 type PersonOption = {
   id: string;
@@ -122,6 +122,7 @@ type Props = {
   initialLocationId: string;
   initialState: "all" | "open" | "done";
   initialLuckyId: string | null;
+  initialQuery?: string;
   initialProjectState?: ProjectFilterState;
   initialPersonalFilter?: PersonalFilterState;
   canEditTasks: boolean;
@@ -151,6 +152,7 @@ export function TasksPanelClient({
   initialLocationId,
   initialState,
   initialLuckyId,
+  initialQuery = "",
   initialProjectState = "all",
   initialPersonalFilter = "all",
   canEditTasks,
@@ -171,11 +173,16 @@ export function TasksPanelClient({
   const [selectedState, setSelectedState] = useState<"all" | "open" | "done">(initialState);
   const [selectedProjectState, setSelectedProjectState] = useState<ProjectFilterState>(initialProjectState);
   const [selectedPersonalFilter, setSelectedPersonalFilter] = useState<PersonalFilterState>(initialPersonalFilter);
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
 
   const groupedRoomOptions = groupRoomsByLocation(roomOptions);
   const projectMode = viewMode === "projects";
   const childMode = audienceBand === "under_12";
   const teenMode = audienceBand === "teen_12_18";
+  const showSearch = !childMode && !memberMode;
+  const deferredSearchQuery = useDeferredValue(searchQuery);
+  const normalizedSearchQuery = normalizeSearchText(deferredSearchQuery);
+  const hasSearchQuery = showSearch && normalizedSearchQuery.length > 0;
   const hasActiveFilters =
     !!selectedRoomId ||
     !!selectedAssigneeId ||
@@ -183,6 +190,7 @@ export function TasksPanelClient({
     selectedState !== "all" ||
     selectedPersonalFilter !== "all" ||
     (projectMode && selectedProjectState !== "all");
+  const hasActiveView = hasActiveFilters || hasSearchQuery;
 
   const visibleTasks = useMemo(() => {
     return tasks.filter((task) => {
@@ -200,9 +208,10 @@ export function TasksPanelClient({
       const taskState = getTaskState(task);
       const matchesState = selectedState === "all" ? true : taskState === selectedState;
       const matchesProjectState = projectMode ? projectMatchesFilter(task, selectedProjectState) : true;
-      return matchesRoom && matchesAssignee && matchesLocation && matchesPersonalFilter && matchesState && matchesProjectState;
+      const matchesQuery = !hasSearchQuery || getTaskSearchText(task).includes(normalizedSearchQuery);
+      return matchesRoom && matchesAssignee && matchesLocation && matchesPersonalFilter && matchesState && matchesProjectState && matchesQuery;
     });
-  }, [currentUserId, memberMode, projectMode, selectedAssigneeId, selectedPersonalFilter, selectedProjectState, selectedRoomId, selectedLocationId, selectedState, tasks]);
+  }, [currentUserId, hasSearchQuery, memberMode, normalizedSearchQuery, projectMode, selectedAssigneeId, selectedPersonalFilter, selectedProjectState, selectedRoomId, selectedLocationId, selectedState, tasks]);
 
   useEffect(() => {
     const search = new URLSearchParams(window.location.search);
@@ -236,10 +245,15 @@ export function TasksPanelClient({
     } else {
       search.delete("projectState");
     }
+    if (hasSearchQuery) {
+      search.set("q", searchQuery.trim());
+    } else {
+      search.delete("q");
+    }
     const query = search.toString();
     const nextUrl = query ? `${basePath}?${query}` : basePath;
     window.history.replaceState(null, "", nextUrl);
-  }, [basePath, memberMode, projectMode, selectedAssigneeId, selectedPersonalFilter, selectedProjectState, selectedRoomId, selectedLocationId, selectedState]);
+  }, [basePath, hasSearchQuery, memberMode, projectMode, searchQuery, selectedAssigneeId, selectedPersonalFilter, selectedProjectState, selectedRoomId, selectedLocationId, selectedState]);
 
   return (
     <section id="recorded" className={`recorded-panel ${easyMode ? "recorded-panel-easy" : ""}`.trim()}>
@@ -252,6 +266,21 @@ export function TasksPanelClient({
       </div>
 
       <div className="recorded-toolbar">
+        {showSearch ? (
+          <div className="recorded-search-wrap">
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder={`Search ${tasks.length} ${projectMode ? "projects" : "jobs"}...`}
+              className="recorded-search-input"
+            />
+            <span className="recorded-search-count">
+              {hasSearchQuery ? `${visibleTasks.length} match${visibleTasks.length === 1 ? "" : "es"}` : tasks.length}
+            </span>
+          </div>
+        ) : null}
+
         <details className="recorded-toolbar-details" open={hasActiveFilters}>
           <summary className="recorded-toolbar-summary">
             <span>Filters</span>
@@ -359,11 +388,12 @@ export function TasksPanelClient({
         </details>
 
         <div className="recorded-toolbar-actions">
-          {hasActiveFilters ? (
+          {hasActiveView ? (
             <button
               type="button"
               className="action-btn subtle quiet"
               onClick={() => {
+                setSearchQuery("");
                 setSelectedRoomId("");
                 setSelectedAssigneeId("");
                 setSelectedLocationId("");
@@ -372,10 +402,12 @@ export function TasksPanelClient({
                 setSelectedPersonalFilter("all");
               }}
             >
-              {childMode ? "Reset view" : "Clear filters"}
+              {childMode ? "Reset view" : hasSearchQuery ? "Clear search + filters" : "Clear filters"}
             </button>
           ) : (
-            <span className="recorded-toolbar-hint">{childMode ? "Your jobs update right away." : memberMode ? "Only your jobs show here." : "Filters update instantly."}</span>
+            <span className="recorded-toolbar-hint">
+              {childMode ? "Your jobs update right away." : memberMode ? "Only your jobs show here." : showSearch ? "Search and filters update instantly." : "Filters update instantly."}
+            </span>
           )}
 
           {!projectMode && !childMode && canEditTasks ? (
@@ -392,8 +424,12 @@ export function TasksPanelClient({
       <div className="recorded-list">
         {visibleTasks.length === 0 ? (
           <p className="recorded-empty">
-            {hasActiveFilters
-              ? childMode ? "No jobs match this view." : "No jobs match these filters."
+            {hasActiveView
+              ? childMode
+                ? "No jobs match this view."
+                : hasSearchQuery
+                  ? `No ${projectMode ? "projects" : "jobs"} match this search.`
+                  : "No jobs match these filters."
               : emptyMessage}
           </p>
         ) : (
@@ -1473,6 +1509,30 @@ function formatJobKind(jobKind: string) {
     planning: "Planning",
   };
   return labels[jobKind] ?? jobKind;
+}
+
+function getTaskSearchText(task: TaskItem) {
+  return normalizeSearchText(
+    [
+      task.title,
+      task.detailNotes,
+      task.roomName,
+      task.locationName,
+      task.loggerName,
+      task.assignmentUserName,
+      task.projectParentTitle,
+      ...task.projectChildren.map((child) => child.title),
+      ...task.projectCosts.map((cost) => cost.title),
+      ...task.projectMaterials.flatMap((material) => [material.title, material.quantityLabel, material.source]),
+      ...task.projectMilestones.map((milestone) => milestone.title),
+    ]
+      .filter(Boolean)
+      .join(" "),
+  );
+}
+
+function normalizeSearchText(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
 }
 
 function groupRoomsByLocation<T extends { location?: { name: string } | null; name: string }>(rooms: T[]) {

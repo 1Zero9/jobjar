@@ -20,6 +20,7 @@ type SearchParams = {
   removed?: string;
   updated?: string;
   lucky?: string;
+  q?: string;
   assignee?: string;
   view?: string;
   room?: string;
@@ -591,6 +592,7 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
             selectedState,
             selectedProjectState,
             selectedPersonalFilter,
+            params.q ?? "",
           ].join(":")}
           roomOptions={roomOptions}
           peopleOptions={peopleOptions}
@@ -600,6 +602,7 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
           initialLocationId={selectedLocationId}
           initialState={selectedState}
           initialLuckyId={params.lucky && params.lucky !== "empty" ? params.lucky : null}
+          initialQuery={params.q ?? ""}
           initialProjectState={selectedProjectState}
           initialPersonalFilter={selectedPersonalFilter}
           audienceBand={audienceBand}

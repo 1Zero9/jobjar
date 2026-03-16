@@ -15,6 +15,7 @@ export default async function ProjectsPage({
     state?: string;
     location?: string;
     projectState?: string;
+    q?: string;
   }>;
 }) {
   return <ProjectsWorkspace params={await searchParams} />;

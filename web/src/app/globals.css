@@ -1632,6 +1632,46 @@ html[data-theme="dark"] .kid-task-panel {
   padding: 0.95rem;
 }
 
+.recorded-search-wrap {
+  position: relative;
+}
+
+.recorded-search-input {
+  width: 100%;
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border) 78%);
+  border-radius: 0.95rem;
+  background: color-mix(in srgb, var(--surface) 88%, white 12%);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  padding: 0.72rem 1rem;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.recorded-search-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.recorded-search-input::placeholder {
+  color: var(--muted);
+}
+
+.recorded-search-count {
+  position: absolute;
+  right: 0.85rem;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.18rem 0.5rem;
+  pointer-events: none;
+}
+
 .recorded-toolbar-details {
   display: grid;
   gap: 0.7rem;
@@ -2457,6 +2497,10 @@ html[data-theme="dark"] .recorded-row[open] {
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: end;
     gap: 0.8rem;
+  }
+
+  .recorded-search-wrap {
+    grid-column: 1 / -1;
   }
 
   .recorded-row-title {
