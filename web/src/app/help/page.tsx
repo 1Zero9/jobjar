@@ -1,7 +1,13 @@
+import { updateNotificationSettingsAction } from "@/app/actions";
 import { AppPageHeader } from "@/app/components/AppPageHeader";
+import { FormActionButton } from "@/app/components/FormActionButton";
+import { InstallPromptButton } from "@/app/components/InstallPromptButton";
 import { LogoutIconButton } from "@/app/components/LogoutIconButton";
+import { PushPermissionButton } from "@/app/components/PushPermissionButton";
+import { ToastNotice } from "@/app/components/ToastNotice";
 import { canAccessProjectViewsRole, canAccessReportingViewsRole, canManagePeopleRole, canUseMemberActions, isMemberRole, requireSessionContext } from "@/lib/auth";
 import { canAccessExtendedViews, getMemberThemeClassName } from "@/lib/member-audience";
+import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -88,12 +94,18 @@ const UPDATE_TIMELINE = [
   },
 ] as const;
 
-export default async function HelpPage() {
-  const { role, audienceBand, profileTheme } = await requireSessionContext("/help");
+export default async function HelpPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ updated?: string; error?: string }>;
+}) {
+  const params = await searchParams;
+  const { userId, role, audienceBand, profileTheme } = await requireSessionContext("/help");
   const audienceThemeClass = getMemberThemeClassName(audienceBand, profileTheme);
   const canAct = canUseMemberActions(role);
   const canSeeExtended = canAccessExtendedViews(audienceBand);
   const canSeeUpdatesTimeline = canManagePeopleRole(role);
+  const canManageOwnNotifications = audienceBand !== "under_12";
   const memberMode = isMemberRole(role);
   const canSeeProjects = canAccessProjectViewsRole(role) && canSeeExtended;
   const canSeeReports = canAccessReportingViewsRole(role) && canSeeExtended;
@@ -106,6 +118,15 @@ export default async function HelpPage() {
           ? "teens"
           : "adults";
   const recommendedGuide = GUIDE_SECTIONS.find((section) => section.id === recommendedGuideId) ?? GUIDE_SECTIONS[0];
+  const currentUser = canManageOwnNotifications
+    ? await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          notifyVia: true,
+          phone: true,
+        },
+      })
+    : null;
 
   return (
     <div className={`capture-shell page-help ${audienceThemeClass} min-h-screen px-4 py-5`}>
@@ -131,6 +152,9 @@ export default async function HelpPage() {
             </>
           }
         />
+
+        {params.updated === "notifications" ? <ToastNotice message="Notification settings updated." tone="success" /> : null}
+        {params.error ? <ToastNotice message={getHelpErrorMessage(params.error)} tone="error" /> : null}
 
         <section className="stats-panel help-hero-panel">
           <p className="settings-kicker">Start here</p>
@@ -168,6 +192,56 @@ export default async function HelpPage() {
             ))}
           </div>
         </section>
+
+        <section className="stats-panel">
+          <p className="settings-kicker">Install app</p>
+          <h2 className="recorded-title">Put JobJar on this device</h2>
+          <div className="help-pwa-stack">
+            <p className="recorded-empty">
+              Installing JobJar gives you a full-screen app feel and is required for iPhone push notifications.
+            </p>
+            <InstallPromptButton />
+          </div>
+        </section>
+
+        {canManageOwnNotifications ? (
+          <section className="stats-panel">
+            <p className="settings-kicker">Notifications</p>
+            <h2 className="recorded-title">This account</h2>
+            <form action={updateNotificationSettingsAction} className="recorded-edit-form">
+              <input type="hidden" name="returnTo" value="/help" />
+              <label className="recorded-field">
+                <span>Notify me by</span>
+                <select name="notifyVia" defaultValue={currentUser?.notifyVia ?? "none"} className="recorded-edit-input">
+                  <option value="none">None</option>
+                  <option value="push">Push notification</option>
+                  <option value="sms">SMS fallback</option>
+                </select>
+              </label>
+              <label className="recorded-field">
+                <span>Phone number for SMS fallback</span>
+                <input
+                  name="phone"
+                  type="tel"
+                  defaultValue={currentUser?.phone ?? ""}
+                  placeholder="+353 87 123 4567"
+                  className="recorded-edit-input"
+                />
+              </label>
+              <div className="recorded-row-actions between">
+                <FormActionButton className="action-btn bright quiet" pendingLabel="Saving">
+                  Save notification settings
+                </FormActionButton>
+              </div>
+            </form>
+            <div className="help-pwa-stack">
+              <p className="recorded-row-placeholder">
+                Push notifications are device-specific. Turn them on here after installing the app.
+              </p>
+              <PushPermissionButton />
+            </div>
+          </section>
+        ) : null}
 
         {canSeeUpdatesTimeline ? (
           <section className="stats-panel">
@@ -262,4 +336,14 @@ export default async function HelpPage() {
       </main>
     </div>
   );
+}
+
+function getHelpErrorMessage(error?: string) {
+  if (error === "notification-phone-invalid") {
+    return "Enter a phone number in full international format, for example +353871234567.";
+  }
+  if (error === "notification-phone-required") {
+    return "Add a phone number before choosing SMS notifications.";
+  }
+  return "We could not save those notification settings.";
 }

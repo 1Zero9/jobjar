@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import withPWA from "@ducanh2912/next-pwa";
 
 const securityHeaders = [
   // Prevent the app from being embedded in an iframe on another origin
@@ -25,4 +26,17 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withPWA({
+  dest: "public",
+  cacheOnFrontEndNav: true,
+  aggressiveFrontEndNavCaching: true,
+  reloadOnOnline: true,
+  disable: process.env.NODE_ENV === "development",
+  customWorkerSrc: "src/worker",
+  fallbacks: {
+    document: "/offline",
+  },
+  workboxOptions: {
+    disableDevLogs: true,
+  },
+})(nextConfig);

@@ -11,6 +11,7 @@ import {
 import { getOrCreateHouseholdForUser } from "@/lib/household";
 import { hasLocationRestrictions } from "@/lib/location-access";
 import { canAccessExtendedViews, getAudienceAssignedTaskWhere } from "@/lib/member-audience";
+import { notifyUser, resolveNotificationRecipientUserId } from "@/lib/notify";
 import { prisma } from "@/lib/prisma";
 import { getUserPasswordHash, setUserPasswordHash } from "@/lib/auth-store";
 import { hashPassword, verifyPassword } from "@/lib/password";
@@ -296,7 +297,7 @@ export async function createTaskAction(formData: FormData) {
 
   const room = await prisma.room.findFirst({
     where: { id: requestedRoomId, householdId, active: true },
-    select: { id: true },
+    select: { id: true, name: true },
   });
   if (!room) {
     redirectToReturnPath(returnTo, { error: "task-room-invalid" });
@@ -357,6 +358,20 @@ export async function createTaskAction(formData: FormData) {
           assignedFrom: new Date(),
         },
       });
+
+      const recipientUserId = await resolveNotificationRecipientUserId(householdId, assigneeUserId);
+      if (recipientUserId && recipientUserId !== actorUserId) {
+        await notifyUser(
+          recipientUserId,
+          "task_assigned",
+          {
+            title: "JobJar",
+            body: `You were assigned "${title}" in ${room.name}.`,
+            url: `/tasks#task-${task.id}`,
+          },
+          task.id,
+        );
+      }
     }
   }
 
@@ -439,6 +454,20 @@ export async function createQuickTaskAction(formData: FormData) {
       await prisma.taskAssignment.create({
         data: { taskId: task.id, userId: assignedToUserId, assignedFrom: new Date() },
       });
+
+      const recipientUserId = await resolveNotificationRecipientUserId(householdId, assignedToUserId);
+      if (recipientUserId && recipientUserId !== userId) {
+        await notifyUser(
+          recipientUserId,
+          "task_assigned",
+          {
+            title: "JobJar",
+            body: `You were assigned "${title}".`,
+            url: `/tasks#task-${task.id}`,
+          },
+          task.id,
+        );
+      }
     }
   }
 
@@ -700,7 +729,7 @@ export async function updateTaskAssigneeAction(formData: FormData) {
       active: true,
       room: getAccessibleRoomWhere(householdId, allowedLocationIds),
     },
-    select: { id: true, roomId: true },
+    select: { id: true, roomId: true, title: true },
   });
   if (!task) {
     return;
@@ -727,6 +756,20 @@ export async function updateTaskAssigneeAction(formData: FormData) {
           assignedFrom: new Date(),
         },
       });
+
+      const recipientUserId = await resolveNotificationRecipientUserId(householdId, assigneeUserId);
+      if (recipientUserId && recipientUserId !== actorUserId) {
+        await notifyUser(
+          recipientUserId,
+          "task_assigned",
+          {
+            title: "JobJar",
+            body: `You were assigned "${task.title}".`,
+            url: `/tasks#task-${task.id}`,
+          },
+          task.id,
+        );
+      }
     }
   }
 
@@ -1842,6 +1885,8 @@ export async function completeTaskAction(formData: FormData) {
     },
     select: {
       id: true,
+      title: true,
+      createdByUserId: true,
       validationMode: true,
       minimumMinutes: true,
       captureStage: true,
@@ -1954,6 +1999,29 @@ export async function completeTaskAction(formData: FormData) {
       durationSeconds,
     },
   });
+
+  if (task.createdByUserId && task.createdByUserId !== currentUserId) {
+    const [recipientUserId, actor] = await Promise.all([
+      resolveNotificationRecipientUserId(householdId, task.createdByUserId),
+      prisma.user.findUnique({
+        where: { id: currentUserId },
+        select: { displayName: true },
+      }),
+    ]);
+
+    if (recipientUserId && recipientUserId !== currentUserId) {
+      await notifyUser(
+        recipientUserId,
+        "task_completed",
+        {
+          title: "JobJar",
+          body: `"${task.title}" was completed by ${actor?.displayName ?? "someone"}.`,
+          url: `/tasks#task-${task.id}`,
+        },
+        task.id,
+      );
+    }
+  }
 
   refreshViews();
 }
@@ -2081,6 +2149,35 @@ export async function logoutAction() {
   redirect("/login");
 }
 
+export async function updateNotificationSettingsAction(formData: FormData) {
+  const { userId } = await requireSessionContext("/help");
+  const returnTo = getReturnPath(formData.get("returnTo"), "/help");
+  const notifyVia = parseNotifyChannel(String(formData.get("notifyVia") ?? "").trim(), "none");
+  const phoneInput = String(formData.get("phone") ?? "").trim();
+  const normalizedPhone = normalizePhoneNumber(phoneInput);
+
+  if (phoneInput && !normalizedPhone) {
+    redirectToReturnPath(returnTo, { error: "notification-phone-invalid" });
+    return;
+  }
+
+  if (notifyVia === "sms" && !normalizedPhone) {
+    redirectToReturnPath(returnTo, { error: "notification-phone-required" });
+    return;
+  }
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      phone: normalizedPhone,
+      notifyVia,
+    },
+  });
+
+  refreshViews(["/help", "/settings/people"]);
+  redirectToReturnPath(returnTo, { updated: "notifications" });
+}
+
 function toPositiveInt(value: FormDataEntryValue | null, fallback: number) {
   const num = Number(value);
   if (!Number.isInteger(num) || num <= 0) {
@@ -2193,6 +2290,13 @@ function parseMemberProfileTheme(value: string, fallback: "default_theme" | "boy
   return fallback;
 }
 
+function parseNotifyChannel(value: string, fallback: "sms" | "push" | "none") {
+  if (value === "sms" || value === "push" || value === "none") {
+    return value;
+  }
+  return fallback;
+}
+
 function inferJobKindFromText(text: string): "upkeep" | "issue" | "project" | "clear_out" | "outdoor" | "planning" {
   const value = text.toLowerCase();
   if (value.includes("garden") || value.includes("hedge") || value.includes("grass") || value.includes("plants")) {
@@ -2211,6 +2315,19 @@ function inferJobKindFromText(text: string): "upkeep" | "issue" | "project" | "c
     return "planning";
   }
   return "upkeep";
+}
+
+function normalizePhoneNumber(value: string) {
+  if (!value) {
+    return null;
+  }
+
+  const normalized = value.replace(/[\s()-]/g, "");
+  if (!/^\+\d{8,15}$/.test(normalized)) {
+    return null;
+  }
+
+  return normalized;
 }
 
 async function resolveProjectParentId(
