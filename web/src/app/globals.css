@@ -491,6 +491,29 @@ html[data-theme="dark"] .page-hero-brand {
   gap: 0.7rem;
 }
 
+.landing-scope-note {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  margin: 0.1rem 0 0;
+  color: var(--text-soft);
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.landing-scope-note span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.landing-scope-note strong {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
 .session-chip {
   display: inline-flex;
   align-items: center;
@@ -1098,6 +1121,14 @@ html[data-theme="dark"] .profile-girl-pink .page-hero-icon {
 .landing-hero-easy .location-scope-chip,
 .landing-hero-easy .session-chip {
   font-size: 0.86rem;
+}
+
+.landing-hero-easy .landing-scope-note {
+  font-size: 0.96rem;
+}
+
+.landing-hero-easy .landing-scope-note span {
+  font-size: 0.7rem;
 }
 
 .landing-hero-easy .location-scope-chip {

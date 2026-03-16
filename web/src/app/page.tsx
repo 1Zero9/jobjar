@@ -40,11 +40,13 @@ export default async function HomePage() {
       where: { id: userId },
       select: { displayName: true },
     }),
-    prisma.location.findMany({
-      where: { householdId, active: true, ...(restrictedToLocations ? { id: { in: allowedLocationIds! } } : {}) },
-      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-      select: { name: true },
-    }),
+    restrictedToLocations
+      ? prisma.location.findMany({
+          where: { householdId, active: true, id: { in: allowedLocationIds! } },
+          orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+          select: { name: true },
+        })
+      : Promise.resolve([]),
     prisma.task.count({
       where: {
         active: true,
@@ -74,7 +76,7 @@ export default async function HomePage() {
       },
     }),
   ]);
-  const locationScopeLabel = getLocationScopeLabel(locations, allowedLocationIds);
+  const locationScopeLabel = restrictedToLocations ? getLocationScopeLabel(locations, allowedLocationIds) : null;
 
   return (
     <div className={`capture-shell ${audienceThemeClass} min-h-screen px-4 py-5`}>
@@ -95,11 +97,13 @@ export default async function HomePage() {
               </div>
               <div className="landing-meta-row">
                 <span className="session-chip">{currentUser?.displayName ?? "You"}</span>
-                <span className="location-scope-chip" title={`Current location scope: ${locationScopeLabel}`}>
-                  <span>Location</span>
-                  <strong>{locationScopeLabel}</strong>
-                </span>
               </div>
+              {locationScopeLabel ? (
+                <p className="landing-scope-note" title={`Current location scope: ${locationScopeLabel}`}>
+                  <span>Showing</span>
+                  <strong>{locationScopeLabel}</strong>
+                </p>
+              ) : null}
               {easyHome ? (
                 <p className="landing-easy-copy">
                   Keep this simple. Open your jobs, log a new one, or use help if you get stuck.
