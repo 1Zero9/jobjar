@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { SessionWatchdog } from "@/app/components/SessionWatchdog";
 import "./globals.css";
 
 const themeInitScript = `
@@ -55,6 +56,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className="antialiased">
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        <SessionWatchdog />
         {children}
       </body>
     </html>

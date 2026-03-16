@@ -14,13 +14,14 @@ type DbStatus =
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string; error?: string }>;
+  searchParams: Promise<{ next?: string; error?: string; reason?: string }>;
 }) {
   const params = await searchParams;
   const nextPath = params.next && params.next.startsWith("/") ? params.next : "/";
   const showError = params.error === "invalid";
   const showSetupError = params.error === "setup";
   const showRateLimitError = params.error === "rate-limited";
+  const showSessionExpired = params.reason === "expired";
 
   let users: Array<{ id: string; displayName: string }> = [];
   let dbStatus: DbStatus = { state: "ok" };
@@ -153,6 +154,10 @@ export default async function LoginPage({
               {showRateLimitError ? (
                 <p className="login-error-text">
                   Too many attempts. Please wait a few minutes and try again.
+                </p>
+              ) : showSessionExpired ? (
+                <p className="login-error-text">
+                  Signed out after a long idle gap. Sign in again to load the latest jobs.
                 </p>
               ) : showError ? (
                 <p className="login-error-text">

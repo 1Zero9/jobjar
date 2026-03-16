@@ -2188,9 +2188,23 @@ export async function loginAction(formData: FormData) {
   redirect(nextPath.startsWith("/") ? nextPath : "/");
 }
 
-export async function logoutAction() {
+export async function logoutAction(formData?: FormData) {
   await clearSession();
-  redirect("/login");
+
+  const nextPath = formData ? getReturnPath(formData.get("next"), "") : "";
+  const reason = formData ? String(formData.get("reason") ?? "").trim() : "";
+  const params = new URLSearchParams();
+
+  if (nextPath) {
+    params.set("next", nextPath);
+  }
+
+  if (reason) {
+    params.set("reason", reason);
+  }
+
+  const query = params.toString();
+  redirect(query ? `/login?${query}` : "/login");
 }
 
 export async function updateNotificationSettingsAction(formData: FormData) {
