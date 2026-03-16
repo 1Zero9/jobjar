@@ -473,12 +473,7 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
   const peopleOptions = people.map((member) => member.user);
   const selectedRoomId = roomOptions.some((room) => room.id === params.room) ? (params.room ?? "") : "";
   const selectedAssigneeId = peopleOptions.some((person) => person.id === params.assignee) ? (params.assignee ?? "") : "";
-  const selectedLocationId = locations.some((loc) => loc.id === params.location) ? (params.location ?? "") : "";
   const selectedState: "all" | "open" | "done" = params.state === "done" || params.state === "open" ? params.state : "all";
-  const selectedPersonalFilter =
-    params.view === "logged" || params.view === "assigned" || params.view === "private"
-      ? params.view
-      : "all";
   const luckyTask = params.lucky && params.lucky !== "empty"
     ? recordedTasks.find((task) => task.id === params.lucky)
     : null;
@@ -579,21 +574,16 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
             mode,
             selectedRoomId,
             selectedAssigneeId,
-            selectedLocationId,
             selectedState,
-            selectedPersonalFilter,
             params.q ?? "",
           ].join(":")}
           roomOptions={roomOptions}
           peopleOptions={peopleOptions}
-          locationOptions={locations}
           initialRoomId={selectedRoomId}
           initialAssigneeId={selectedAssigneeId}
-          initialLocationId={selectedLocationId}
           initialState={selectedState}
           initialLuckyId={params.lucky && params.lucky !== "empty" ? params.lucky : null}
           initialQuery={params.q ?? ""}
-          initialPersonalFilter={selectedPersonalFilter}
           audienceBand={audienceBand}
           canEditTasks={canEditTasks}
           canManageProjects={canManageProjectsRole(role)}

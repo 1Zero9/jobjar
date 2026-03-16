@@ -1,129 +1,24 @@
 "use client";
 
 import type { MemberAudience } from "@prisma/client";
-import {
-  acceptRewardAction,
-  completeTaskAction,
-  createProjectChildTaskAction,
-  deleteProjectCostAction,
-  deleteProjectMaterialAction,
-  deleteProjectMilestoneAction,
-  deleteTaskAction,
-  demoteProjectToTaskAction,
-  luckyDipAction,
-  markRewardPaidAction,
-  promoteTaskToProjectAction,
-  renameRecordedTaskTitleAction,
-  reopenTaskAction,
-  startTaskAction,
-  updateRecordedTaskAction,
-} from "@/app/actions";
+import { luckyDipAction } from "@/app/actions";
 import { FormActionButton } from "@/app/components/FormActionButton";
+import { TaskCard } from "@/app/components/TaskCard";
+import { TaskFilters } from "@/app/components/TaskFilters";
+import type { PersonOption, RoomOption, TaskItem } from "@/app/components/task-board-types";
+import { getTaskSearchText, getTaskState, groupRoomsByLocation, normalizeSearchText } from "@/app/components/task-board-utils";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
-
-type PersonOption = {
-  id: string;
-  displayName: string;
-};
-
-type RoomOption = {
-  id: string;
-  name: string;
-  designation?: string | null;
-  location?: { id: string; name: string } | null;
-};
-
-type LocationOption = {
-  id: string;
-  name: string;
-};
-
-type TaskItem = {
-  id: string;
-  title: string;
-  createdByUserId: string | null;
-  roomId: string;
-  roomName: string;
-  locationId: string | null;
-  locationName: string | null;
-  loggerName: string | null;
-  projectParentId: string | null;
-  projectParentTitle: string | null;
-  assignmentUserId: string | null;
-  assignmentUserName: string | null;
-  detailNotes: string | null;
-  priority: number;
-  isPrivate: boolean;
-  jobKind: string;
-  captureStage: string;
-  createdAt: string;
-  estimatedMinutes: number;
-  rewardCents: number | null;
-  rewardConfirmed: boolean;
-  rewardPaidAt: string | null;
-  projectTargetAt: string | null;
-  projectBudgetCents: number | null;
-  projectChildren: Array<{
-    id: string;
-    title: string;
-    captureStage: string;
-    estimatedMinutes: number;
-    assignmentUserName: string | null;
-    nextDueAt: string | null;
-    occurrences: Array<{
-      status: string;
-      dueAt: string;
-    }>;
-  }>;
-  projectCosts: Array<{
-    id: string;
-    title: string;
-    amountCents: number;
-    notedAt: string;
-  }>;
-  projectMaterials: Array<{
-    id: string;
-    title: string;
-    quantityLabel: string | null;
-    source: string | null;
-    estimatedCostCents: number | null;
-    actualCostCents: number | null;
-    purchasedAt: string | null;
-  }>;
-  projectMilestones: Array<{
-    id: string;
-    title: string;
-    targetAt: string | null;
-    completedAt: string | null;
-    sortOrder: number;
-  }>;
-  schedule: {
-    recurrenceType: string;
-    intervalCount: number;
-    nextDueAt: string | null;
-  } | null;
-  occurrences: Array<{
-    status: string;
-    dueAt: string;
-    completedAt: string | null;
-    completedBy: string | null;
-    completerName: string | null;
-  }>;
-};
 
 type Props = {
   roomOptions: RoomOption[];
   peopleOptions: PersonOption[];
-  locationOptions: LocationOption[];
   tasks: TaskItem[];
   audienceBand: MemberAudience;
   initialRoomId: string;
   initialAssigneeId: string;
-  initialLocationId: string;
   initialState: "all" | "open" | "done";
   initialLuckyId: string | null;
   initialQuery?: string;
-  initialPersonalFilter?: PersonalFilterState;
   canEditTasks: boolean;
   canManageProjects: boolean;
   canDeleteTasks: boolean;
@@ -137,21 +32,16 @@ type Props = {
   emptyMessage?: string;
 };
 
-type PersonalFilterState = "all" | "logged" | "assigned" | "private";
-
 export function TasksPanelClient({
   roomOptions,
   peopleOptions,
-  locationOptions,
   tasks,
   audienceBand,
   initialRoomId,
   initialAssigneeId,
-  initialLocationId,
   initialState,
   initialLuckyId,
   initialQuery = "",
-  initialPersonalFilter = "all",
   canEditTasks,
   canManageProjects,
   canDeleteTasks,
@@ -166,9 +56,7 @@ export function TasksPanelClient({
 }: Props) {
   const [selectedRoomId, setSelectedRoomId] = useState(initialRoomId);
   const [selectedAssigneeId, setSelectedAssigneeId] = useState(initialAssigneeId);
-  const [selectedLocationId, setSelectedLocationId] = useState(initialLocationId);
   const [selectedState, setSelectedState] = useState<"all" | "open" | "done">(initialState);
-  const [selectedPersonalFilter, setSelectedPersonalFilter] = useState<PersonalFilterState>(initialPersonalFilter);
   const [searchQuery, setSearchQuery] = useState(initialQuery);
 
   const groupedRoomOptions = groupRoomsByLocation(roomOptions);
@@ -179,70 +67,40 @@ export function TasksPanelClient({
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const normalizedSearchQuery = normalizeSearchText(deferredSearchQuery);
   const hasSearchQuery = showSearch && normalizedSearchQuery.length > 0;
-  const hasActiveFilters =
-    !!selectedRoomId ||
-    !!selectedAssigneeId ||
-    !!selectedLocationId ||
-    selectedState !== "all" ||
-    selectedPersonalFilter !== "all";
+  const hasActiveFilters = !!selectedRoomId || !!selectedAssigneeId || selectedState !== "all";
   const hasActiveView = hasActiveFilters || hasSearchQuery;
 
   const visibleTasks = useMemo(() => {
     return tasks.filter((task) => {
       const matchesRoom = selectedRoomId ? task.roomId === selectedRoomId : true;
       const matchesAssignee = selectedAssigneeId ? task.assignmentUserId === selectedAssigneeId : true;
-      const matchesLocation = selectedLocationId ? task.locationId === selectedLocationId : true;
-      const matchesPersonalFilter =
-        !memberMode || selectedPersonalFilter === "all"
-          ? true
-          : selectedPersonalFilter === "logged"
-            ? task.createdByUserId === currentUserId
-            : selectedPersonalFilter === "assigned"
-              ? task.assignmentUserId === currentUserId
-              : task.isPrivate;
-      const taskState = getTaskState(task);
-      const matchesState = selectedState === "all" ? true : taskState === selectedState;
+      const matchesState = selectedState === "all" ? true : getTaskState(task) === selectedState;
       const matchesQuery = !hasSearchQuery || getTaskSearchText(task).includes(normalizedSearchQuery);
-      return matchesRoom && matchesAssignee && matchesLocation && matchesPersonalFilter && matchesState && matchesQuery;
+      return matchesRoom && matchesAssignee && matchesState && matchesQuery;
     });
-  }, [currentUserId, hasSearchQuery, memberMode, normalizedSearchQuery, selectedAssigneeId, selectedPersonalFilter, selectedRoomId, selectedLocationId, selectedState, tasks]);
+  }, [hasSearchQuery, normalizedSearchQuery, selectedAssigneeId, selectedRoomId, selectedState, tasks]);
 
   useEffect(() => {
     const search = new URLSearchParams(window.location.search);
-    if (selectedRoomId) {
-      search.set("room", selectedRoomId);
-    } else {
-      search.delete("room");
-    }
-    if (selectedAssigneeId) {
-      search.set("assignee", selectedAssigneeId);
-    } else {
-      search.delete("assignee");
-    }
-    if (selectedLocationId) {
-      search.set("location", selectedLocationId);
-    } else {
-      search.delete("location");
-    }
-    if (selectedState !== "all") {
-      search.set("state", selectedState);
-    } else {
-      search.delete("state");
-    }
-    if (memberMode && selectedPersonalFilter !== "all") {
-      search.set("view", selectedPersonalFilter);
-    } else {
-      search.delete("view");
-    }
-    if (hasSearchQuery) {
-      search.set("q", searchQuery.trim());
-    } else {
-      search.delete("q");
-    }
+
+    if (selectedRoomId) search.set("room", selectedRoomId);
+    else search.delete("room");
+
+    if (selectedAssigneeId) search.set("assignee", selectedAssigneeId);
+    else search.delete("assignee");
+
+    if (selectedState !== "all") search.set("state", selectedState);
+    else search.delete("state");
+
+    search.delete("location");
+    search.delete("view");
+
+    if (hasSearchQuery) search.set("q", searchQuery.trim());
+    else search.delete("q");
+
     const query = search.toString();
-    const nextUrl = query ? `${basePath}?${query}` : basePath;
-    window.history.replaceState(null, "", nextUrl);
-  }, [basePath, hasSearchQuery, memberMode, searchQuery, selectedAssigneeId, selectedPersonalFilter, selectedRoomId, selectedLocationId, selectedState]);
+    window.history.replaceState(null, "", query ? `${basePath}?${query}` : basePath);
+  }, [basePath, hasSearchQuery, searchQuery, selectedAssigneeId, selectedRoomId, selectedState]);
 
   return (
     <section id="recorded" className={`recorded-panel ${easyMode ? "recorded-panel-easy" : ""}`.trim()}>
@@ -254,143 +112,41 @@ export function TasksPanelClient({
         <span className="recorded-count">{visibleTasks.length}</span>
       </div>
 
-      <div className="recorded-toolbar">
-        {showSearch ? (
-          <div className="recorded-search-wrap">
-            <input
-              type="search"
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder={`Search ${tasks.length} ${projectMode ? "parent jobs" : "jobs"}...`}
-              className="recorded-search-input"
-            />
-            <span className="recorded-search-count">
-              {hasSearchQuery ? `${visibleTasks.length} match${visibleTasks.length === 1 ? "" : "es"}` : tasks.length}
-            </span>
-          </div>
-        ) : null}
-
-        <details className="recorded-toolbar-details" open={hasActiveFilters}>
-          <summary className="recorded-toolbar-summary">
-            <span>Filters</span>
-            <span className="recorded-row-chevron">▾</span>
-          </summary>
-          <div className="recorded-filter-bar">
-            {memberMode ? (
-              <label className="recorded-filter-field">
-                <span>Show</span>
-                <select
-                  value={selectedPersonalFilter}
-                  onChange={(event) => setSelectedPersonalFilter(event.target.value as PersonalFilterState)}
-                  className={`recorded-filter-select${selectedPersonalFilter !== "all" ? " filter-active" : ""}`}
-                >
-                  <option value="all">My jobs</option>
-                  <option value="assigned">Assigned to me</option>
-                  <option value="logged">Added by me</option>
-                  <option value="private">Private</option>
-                </select>
-              </label>
-            ) : null}
-            {!childMode && locationOptions.length > 1 ? (
-              <label className="recorded-filter-field">
-                <span>Location</span>
-                <select
-                  value={selectedLocationId}
-                  onChange={(event) => { setSelectedLocationId(event.target.value); setSelectedAssigneeId(""); }}
-                  className={`recorded-filter-select${selectedLocationId ? " filter-active" : ""}`}
-                >
-                  <option value="">All locations</option>
-                  {locationOptions.map((loc) => (
-                    <option key={loc.id} value={loc.id}>{loc.name}</option>
-                  ))}
-                </select>
-              </label>
-            ) : null}
-            {!childMode ? (
-              <label className="recorded-filter-field">
-                <span>Room</span>
-                <select
-                  value={selectedRoomId}
-                  onChange={(event) => setSelectedRoomId(event.target.value)}
-                  className={`recorded-filter-select${selectedRoomId ? " filter-active" : ""}`}
-                >
-                  <option value="">All rooms</option>
-                  {groupedRoomOptions.map(([group, groupedRooms]) => (
-                    <optgroup key={group} label={group}>
-                      {groupedRooms.map((room) => (
-                        <option key={room.id} value={room.id}>
-                          {room.name}
-                        </option>
-                      ))}
-                    </optgroup>
-                  ))}
-                </select>
-              </label>
-            ) : null}
-            <label className="recorded-filter-field">
-              <span>{childMode ? "Show" : "State"}</span>
-              <select
-                value={selectedState}
-                onChange={(event) => setSelectedState(event.target.value as "all" | "open" | "done")}
-                className={`recorded-filter-select${selectedState !== "all" ? " filter-active" : ""}`}
-              >
-                <option value="all">{childMode ? "Everything" : "All states"}</option>
-                <option value="open">{childMode ? "Ready to do" : "Open"}</option>
-                <option value="done">{childMode ? "Finished" : "Done"}</option>
-              </select>
-            </label>
-            {!childMode && !memberMode ? (
-              <label className="recorded-filter-field">
-                <span>Assigned</span>
-                <select
-                  value={selectedAssigneeId}
-                  onChange={(event) => setSelectedAssigneeId(event.target.value)}
-                  className={`recorded-filter-select${selectedAssigneeId ? " filter-active" : ""}`}
-                >
-                  <option value="">Anyone</option>
-                  {peopleOptions.map((person) => (
-                    <option key={person.id} value={person.id}>
-                      {person.displayName}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ) : null}
-          </div>
-        </details>
-
-        <div className="recorded-toolbar-actions">
-          {hasActiveView ? (
-            <button
-              type="button"
-              className="action-btn subtle quiet"
-              onClick={() => {
-                setSearchQuery("");
-                setSelectedRoomId("");
-                setSelectedAssigneeId("");
-                setSelectedLocationId("");
-                setSelectedState("all");
-                setSelectedPersonalFilter("all");
-              }}
-            >
-              {childMode ? "Reset view" : hasSearchQuery ? "Clear search + filters" : "Clear filters"}
-            </button>
-          ) : (
-            <span className="recorded-toolbar-hint">
-              {childMode ? "Your jobs update right away." : memberMode ? "Only your jobs show here." : showSearch ? "Search and filters update instantly." : "Filters update instantly."}
-            </span>
-          )}
-
-          {!projectMode && !childMode && canEditTasks ? (
+      <TaskFilters
+        childMode={childMode}
+        memberMode={memberMode}
+        showSearch={showSearch}
+        tasksCount={tasks.length}
+        visibleCount={visibleTasks.length}
+        searchQuery={searchQuery}
+        hasSearchQuery={hasSearchQuery}
+        hasActiveFilters={hasActiveFilters}
+        groupedRoomOptions={groupedRoomOptions}
+        peopleOptions={peopleOptions}
+        selectedRoomId={selectedRoomId}
+        selectedAssigneeId={selectedAssigneeId}
+        selectedState={selectedState}
+        onSearchQueryChange={setSearchQuery}
+        onSelectedRoomIdChange={setSelectedRoomId}
+        onSelectedAssigneeIdChange={setSelectedAssigneeId}
+        onSelectedStateChange={setSelectedState}
+        onClearFilters={() => {
+          setSearchQuery("");
+          setSelectedRoomId("");
+          setSelectedAssigneeId("");
+          setSelectedState("all");
+        }}
+        extraAction={
+          !projectMode && !childMode && canEditTasks ? (
             <form action={luckyDipAction}>
               <input type="hidden" name="returnTo" value="/tasks" />
               <FormActionButton className="action-btn subtle quiet" pendingLabel="Choosing task">
                 {teenMode ? "Pick one" : "Lucky dip"}
               </FormActionButton>
             </form>
-          ) : null}
-        </div>
-      </div>
+          ) : null
+        }
+      />
 
       <div className="recorded-list">
         {visibleTasks.length === 0 ? (
@@ -404,1095 +160,24 @@ export function TasksPanelClient({
               : emptyMessage}
           </p>
         ) : (
-          visibleTasks.map((task) => {
-            const latestCompleted = getLatestCompletedOccurrence(task.occurrences);
-            const isProject = isProjectTask(task);
-            const projectSummary = summarizeProject(task);
-            const subtaskProgressLabel = getSubtaskProgressLabel(projectSummary);
-            const hasLegacyProjectPlanning = hasLegacyProjectPlanningData(task);
-            const canDemoteProject =
-              task.projectChildren.length === 0 &&
-              task.projectCosts.length === 0 &&
-              task.projectMaterials.length === 0 &&
-              task.projectMilestones.length === 0;
-            const hasReward = task.rewardCents !== null;
-            const canAcceptReward =
-              hasReward &&
-              task.assignmentUserId === currentUserId &&
-              !task.rewardConfirmed &&
-              !task.rewardPaidAt;
-            const canMarkRewardPaid =
-              hasReward &&
-              task.createdByUserId === currentUserId &&
-              task.rewardConfirmed &&
-              !task.rewardPaidAt &&
-              getTaskState(task) === "done";
-            const rewardLabel = hasReward ? getRewardStatusLabel(task.rewardCents!, task.rewardConfirmed, task.rewardPaidAt) : null;
-            const rewardChipClassName = hasReward ? getRewardChipClassName(task.rewardConfirmed, task.rewardPaidAt) : null;
-
-            return (
-              <details
-                key={task.id}
-                id={`task-${task.id}`}
-                className={`recorded-row ${rowStateClass(task)}`}
-                open={task.id === initialLuckyId}
-              >
-                <summary className="recorded-row-summary">
-                  <div className="recorded-row-top">
-                    <span className={`recorded-row-icon recorded-row-icon-${getTaskIconTone(task, isProject)}`} aria-hidden="true">
-                      {renderTaskIcon(task, isProject)}
-                    </span>
-                    <p className="recorded-row-title">{task.title}</p>
-                    <span className="recorded-row-chevron">▾</span>
-                  </div>
-                  <div className="recorded-row-sub">
-                    {isProject ? (
-                      <>
-                        {task.locationName ? (
-                          <span className="recorded-row-location">{task.locationName}</span>
-                        ) : null}
-                        <span className="recorded-row-room">{displayRoomName(task.roomName)}</span>
-                        {task.assignmentUserName ? (
-                          <span className="recorded-row-assignee">
-                            <span className="assignee-avatar" style={nameToAvatarStyle(task.assignmentUserName)}>
-                              {nameInitials(task.assignmentUserName)}
-                            </span>
-                            {task.assignmentUserName}
-                          </span>
-                        ) : null}
-                        <span className="task-chip task-chip-streak">{subtaskProgressLabel}</span>
-                        {projectSummary.overdueChildren > 0 ? (
-                          <span className="task-chip task-chip-lapsed">{projectSummary.overdueChildren} overdue</span>
-                        ) : null}
-                      </>
-                    ) : (
-                      <>
-                        {task.locationName ? (
-                          <span className="recorded-row-location">{task.locationName}</span>
-                        ) : null}
-                        <span className="recorded-row-room">{displayRoomName(task.roomName)}</span>
-                        {task.assignmentUserName && !childMode ? (
-                          <span className="recorded-row-assignee">
-                            <span className="assignee-avatar" style={nameToAvatarStyle(task.assignmentUserName)}>
-                              {nameInitials(task.assignmentUserName)}
-                            </span>
-                            {task.assignmentUserName}
-                          </span>
-                        ) : (
-                          !childMode ? <span className="assignee-unset">Unassigned</span> : null
-                        )}
-                        {!childMode ? <span className="task-chip task-chip-kind">{formatJobKind(task.jobKind)}</span> : null}
-                        {getTaskState(task) === "done" ? <span className="task-chip task-chip-done">{childMode ? "Finished" : "Done"}</span> : null}
-                        {recurrenceStateClassName(task) === "task-chip-lapsed" ? <span className="task-chip task-chip-lapsed">{childMode ? "Needs attention" : "Lapsed"}</span> : null}
-                        {recurrenceStateClassName(task) === "task-chip-due" ? <span className="task-chip task-chip-due">{childMode ? "Due today" : "Due today"}</span> : null}
-                        {rewardLabel && rewardChipClassName ? <span className={`task-chip ${rewardChipClassName}`}>{rewardLabel}</span> : null}
-                        {task.isPrivate && !childMode ? <span className="task-chip task-chip-private">Private</span> : null}
-                        {task.projectParentTitle ? <span className="task-chip">↳ {task.projectParentTitle}</span> : null}
-                        {isProject ? <span className="task-chip task-chip-streak">{subtaskProgressLabel}</span> : null}
-                        {isProject && projectSummary.overdueChildren > 0 ? (
-                          <span className="task-chip task-chip-lapsed">
-                            {projectSummary.overdueChildren} overdue
-                          </span>
-                        ) : null}
-                        {isProject && hasLegacyProjectPlanning ? <span className="task-chip">Legacy extras</span> : null}
-                        {task.schedule && computeStreak(task.occurrences) >= 2 ? (
-                          <span className="task-chip task-chip-streak">{computeStreak(task.occurrences)} in a row</span>
-                        ) : null}
-                      </>
-                    )}
-                  </div>
-                </summary>
-
-                <div className="recorded-row-detail">
-                  {!childMode && canEditTasks ? (
-                    <form action={renameRecordedTaskTitleAction} className="task-title-quick-edit">
-                      <input type="hidden" name="taskId" value={task.id} />
-                      <input type="hidden" name="returnTo" value={`${basePath}#task-${task.id}`} />
-                      <input
-                        name="title"
-                        type="text"
-                        defaultValue={task.title}
-                        aria-label="Quick edit task title"
-                        className="task-title-quick-edit-input"
-                      />
-                      <FormActionButton className="action-btn subtle quiet task-title-quick-edit-button" pendingLabel="Saving">
-                        Rename
-                      </FormActionButton>
-                    </form>
-                  ) : null}
-
-                  {childMode ? (
-                    <section className="kid-task-panel">
-                      {task.detailNotes ? (
-                        <p className="kid-task-copy">{task.detailNotes}</p>
-                      ) : (
-                        <p className="kid-task-copy">Pick this job up when you are ready.</p>
-                      )}
-                        <div className="kid-task-meta">
-                          <p><span>Where</span><strong>{displayRoomName(task.roomName)}</strong></p>
-                          <p><span>Status</span><strong>{getTaskState(task) === "done" ? "Finished" : task.captureStage === "active" ? "In progress" : "Ready to go"}</strong></p>
-                          {hasReward ? <p><span>Reward</span><strong>{rewardLabel}</strong></p> : null}
-                          {task.schedule?.nextDueAt ? <p><span>Due</span><strong>{formatRecordedAt(task.schedule.nextDueAt)}</strong></p> : null}
-                          {latestCompleted?.completedAt ? <p><span>Last finished</span><strong>{formatRecordedAt(latestCompleted.completedAt)}</strong></p> : null}
-                        </div>
-                      <div className="recorded-row-actions kid-task-actions">
-                        {getTaskState(task) === "done" ? (
-                          canEditTasks ? (
-                          <form action={reopenTaskAction}>
-                            <input type="hidden" name="taskId" value={task.id} />
-                            <FormActionButton className="action-btn subtle quiet" pendingLabel="Opening">
-                              Not done yet
-                            </FormActionButton>
-                          </form>
-                          ) : null
-                        ) : (
-                          canEditTasks ? (
-                          <>
-                            {canAcceptReward ? (
-                              <form action={acceptRewardAction}>
-                                <input type="hidden" name="taskId" value={task.id} />
-                                <input type="hidden" name="returnTo" value={`${basePath}#task-${task.id}`} />
-                                <FormActionButton className="action-btn subtle quiet" pendingLabel="Accepting">
-                                  Accept {formatMoney(task.rewardCents!)}
-                                </FormActionButton>
-                              </form>
-                            ) : null}
-                            {task.captureStage !== "active" ? (
-                              <form action={startTaskAction}>
-                                <input type="hidden" name="taskId" value={task.id} />
-                                <FormActionButton className="action-btn subtle quiet" pendingLabel="Starting">
-                                  Start job
-                                </FormActionButton>
-                              </form>
-                            ) : null}
-                            <form action={completeTaskAction}>
-                              <input type="hidden" name="taskId" value={task.id} />
-                              <input type="hidden" name="note" value="" />
-                              <input type="hidden" name="returnTo" value={`${basePath}#task-${task.id}`} />
-                              <FormActionButton className="action-btn bright quiet" pendingLabel="Finishing">
-                                I finished this
-                              </FormActionButton>
-                            </form>
-                          </>
-                          ) : null
-                        )}
-                      </div>
-                    </section>
-                  ) : isProject ? null : (
-                    <>
-                      <section className="task-overview-panel">
-                        {task.detailNotes ? (
-                          <p className="task-overview-copy">{task.detailNotes}</p>
-                        ) : (
-                          <p className="task-overview-copy">{teenMode ? "Use the quick actions below or open details if this needs tidying." : "Use the quick actions below, then open details only if the job needs updating."}</p>
-                        )}
-
-                        <div className="task-overview-grid">
-                          <p><span>Where</span><strong>{task.locationName ? `${task.locationName} · ${displayRoomName(task.roomName)}` : displayRoomName(task.roomName)}</strong></p>
-                          <p><span>Assigned</span><strong>{task.assignmentUserName ?? "No one yet"}</strong></p>
-                          <p><span>Status</span><strong>{getTaskStatusLabel(task)}</strong></p>
-                          <p><span>Estimate</span><strong>{formatMinutes(task.estimatedMinutes)}</strong></p>
-                          {hasReward ? <p><span>Reward</span><strong>{rewardLabel}</strong></p> : null}
-                          {task.schedule ? (
-                            <>
-                              <p><span>Repeats</span><strong>{formatRecurrenceChip(task.schedule)}</strong></p>
-                              <p><span>Next due</span><strong>{task.schedule.nextDueAt ? formatRecordedAt(task.schedule.nextDueAt) : "Not set"}</strong></p>
-                            </>
-                          ) : null}
-                          {latestCompleted?.completedAt ? (
-                            <p><span>Last done</span><strong>{formatRecordedAt(latestCompleted.completedAt)}</strong></p>
-                          ) : null}
-                          {task.loggerName ? <p><span>Logged by</span><strong>{task.loggerName}</strong></p> : null}
-                          <p><span>Recorded</span><strong>{formatRecordedAt(task.createdAt)}</strong></p>
-                        </div>
-
-                        {canEditTasks ? (
-                        <div className="recorded-row-actions task-overview-actions">
-                          {getTaskState(task) === "done" ? (
-                            <form action={reopenTaskAction}>
-                              <input type="hidden" name="taskId" value={task.id} />
-                              <FormActionButton className="action-btn subtle quiet" pendingLabel="Opening">
-                                Reopen
-                              </FormActionButton>
-                            </form>
-                          ) : (
-                            <>
-                              {canAcceptReward ? (
-                                <form action={acceptRewardAction}>
-                                  <input type="hidden" name="taskId" value={task.id} />
-                                  <input type="hidden" name="returnTo" value={`${basePath}#task-${task.id}`} />
-                                  <FormActionButton className="action-btn subtle quiet" pendingLabel="Accepting">
-                                    Accept {formatMoney(task.rewardCents!)}
-                                  </FormActionButton>
-                                </form>
-                              ) : null}
-                              {task.captureStage !== "active" ? (
-                                <form action={startTaskAction}>
-                                  <input type="hidden" name="taskId" value={task.id} />
-                                  <FormActionButton className="action-btn subtle quiet" pendingLabel="Starting">
-                                    Start job
-                                  </FormActionButton>
-                                </form>
-                              ) : null}
-                              <form action={completeTaskAction}>
-                                <input type="hidden" name="taskId" value={task.id} />
-                                <input type="hidden" name="note" value="" />
-                                <input type="hidden" name="returnTo" value={`${basePath}#task-${task.id}`} />
-                                <FormActionButton className="action-btn bright quiet" pendingLabel="Finishing">
-                                  Finish job
-                                </FormActionButton>
-                              </form>
-                            </>
-                          )}
-                          {canMarkRewardPaid ? (
-                            <form action={markRewardPaidAction}>
-                              <input type="hidden" name="taskId" value={task.id} />
-                              <input type="hidden" name="returnTo" value={`${basePath}#task-${task.id}`} />
-                              <FormActionButton className="action-btn subtle quiet" pendingLabel="Paying">
-                                Mark paid
-                              </FormActionButton>
-                            </form>
-                          ) : null}
-                          {!isProject && canManageProjects ? (
-                            <form action={promoteTaskToProjectAction}>
-                              <input type="hidden" name="taskId" value={task.id} />
-                              <input type="hidden" name="returnTo" value={basePath} />
-                              <FormActionButton className="action-btn subtle quiet" pendingLabel="Promoting">
-                                Add subtasks
-                              </FormActionButton>
-                            </form>
-                          ) : null}
-                          {canDeleteTasks ? (
-                            <form action={deleteTaskAction}>
-                              <input type="hidden" name="taskId" value={task.id} />
-                              <FormActionButton className="action-btn warn quiet" pendingLabel="Archiving">
-                                Archive job
-                              </FormActionButton>
-                            </form>
-                          ) : null}
-                        </div>
-                        ) : (
-                          <p className="task-readonly-note">Read-only access. Open the job details to review more information.</p>
-                        )}
-                      </section>
-
-                      {canEditTasks ? (
-                      <details className="recorded-more-details task-manage-details">
-                        <summary className="recorded-more-summary">Manage job details</summary>
-                        <form action={updateRecordedTaskAction} className="recorded-edit-form">
-                          <input type="hidden" name="taskId" value={task.id} />
-                          <input type="hidden" name="returnTo" value={basePath} />
-
-                          <label className="recorded-field">
-                            <span>Job</span>
-                            <input name="title" type="text" defaultValue={task.title} className="recorded-edit-input" />
-                          </label>
-
-                          <label className="recorded-field">
-                            <span>Room</span>
-                            <select name="roomId" defaultValue={task.roomName.toLowerCase() === "unsorted" ? "" : task.roomId} className="recorded-edit-input">
-                              <option value="">No room</option>
-                              {groupedRoomOptions.map(([group, groupedRooms]) => (
-                                <optgroup key={group} label={group}>
-                                  {groupedRooms.map((room) => (
-                                    <option key={room.id} value={room.id}>
-                                      {room.name}
-                                    </option>
-                                  ))}
-                                </optgroup>
-                              ))}
-                            </select>
-                          </label>
-
-                          <label className="recorded-field">
-                            <span>Person</span>
-                            <select name="assigneeUserId" defaultValue={task.assignmentUserId ?? ""} className="recorded-edit-input">
-                              <option value="">No person</option>
-                              {peopleOptions.map((person) => (
-                                <option key={person.id} value={person.id}>
-                                  {person.displayName}
-                                </option>
-                              ))}
-                            </select>
-                          </label>
-
-                          <label className="recorded-field">
-                            <span>Notes</span>
-                            <textarea
-                              name="detailNotes"
-                              rows={3}
-                              defaultValue={task.detailNotes ?? ""}
-                              className="recorded-edit-input recorded-edit-textarea"
-                            />
-                          </label>
-
-                          <label className="recorded-field recorded-field-toggle">
-                            <span>Private</span>
-                            <span className="recorded-toggle-wrap">
-                              <input type="checkbox" name="isPrivate" value="true" defaultChecked={task.isPrivate} className="recorded-toggle-check" />
-                              <input type="hidden" name="isPrivate" value="false" />
-                              <span className="recorded-toggle-hint">Only visible to you and the assigned person</span>
-                            </span>
-                          </label>
-
-                          <label className="recorded-field">
-                            <span>Status</span>
-                            <select
-                              name="recordStatus"
-                              defaultValue={getTaskState(task) === "done" ? "done" : "open"}
-                              className="recorded-edit-input"
-                            >
-                              <option value="open">Open</option>
-                              <option value="done">Completed</option>
-                            </select>
-                          </label>
-
-                          <details className="recorded-more-details">
-                            <summary className="recorded-more-summary">More details</summary>
-                            <div className="capture-meta-grid">
-                              <label className="recorded-field">
-                                <span>Priority in room</span>
-                                <input
-                                  name="priority"
-                                  type="number"
-                                  min={1}
-                                  defaultValue={getTaskState(task) === "done" ? "" : task.priority}
-                                  className="recorded-edit-input"
-                                />
-                              </label>
-
-                              <label className="recorded-field">
-                                <span>Completed by</span>
-                                <select
-                                  name="completedByUserId"
-                                  defaultValue={latestCompleted?.completedBy ?? ""}
-                                  className="recorded-edit-input"
-                                >
-                                  <option value="">Not set</option>
-                                  {peopleOptions.map((person) => (
-                                    <option key={person.id} value={person.id}>
-                                      {person.displayName}
-                                    </option>
-                                  ))}
-                                </select>
-                              </label>
-                            </div>
-
-                            <label className="recorded-field">
-                              <span>Resolved date</span>
-                              <input
-                                name="resolvedAt"
-                                type="datetime-local"
-                                defaultValue={toDateTimeInputValue(latestCompleted?.completedAt ?? task.createdAt)}
-                                className="recorded-edit-input"
-                              />
-                            </label>
-
-                            <div className="capture-meta-grid">
-                              <label className="recorded-field">
-                                <span>Repeats</span>
-                                <select
-                                  name="recurrenceType"
-                                  defaultValue={task.schedule?.recurrenceType ?? "none"}
-                                  className="recorded-edit-input"
-                                >
-                                  <option value="none">Does not repeat</option>
-                                  <option value="daily">Daily</option>
-                                  <option value="weekly">Weekly</option>
-                                  <option value="monthly">Monthly</option>
-                                </select>
-                              </label>
-
-                              <label className="recorded-field">
-                                <span>Every</span>
-                                <input
-                                  name="recurrenceInterval"
-                                  type="number"
-                                  min={1}
-                                  defaultValue={task.schedule?.intervalCount ?? 1}
-                                  className="recorded-edit-input"
-                                />
-                              </label>
-                            </div>
-
-                            <label className="recorded-field">
-                              <span>Next due</span>
-                              <input
-                                name="nextDueAt"
-                                type="datetime-local"
-                                defaultValue={toDateTimeInputValue(task.schedule?.nextDueAt ?? addDays(new Date(), 7))}
-                                className="recorded-edit-input"
-                              />
-                            </label>
-                          </details>
-
-                          {latestCompleted?.completedAt && latestCompleted?.dueAt ? (
-                            <p><span>Completed</span><strong>{wasOccurrenceOnTime(latestCompleted) ? "On time" : "Late"}</strong></p>
-                          ) : null}
-                          {latestCompleted?.completerName ? (
-                            <p><span>Completed by</span><strong>{latestCompleted.completerName}</strong></p>
-                          ) : null}
-                          <div className="recorded-row-actions between">
-                            <FormActionButton className="action-btn bright quiet" pendingLabel="Saving">
-                              Save changes
-                            </FormActionButton>
-                          </div>
-                        </form>
-                      </details>
-                      ) : null}
-                    </>
-                  )}
-
-                  {!childMode && isProject ? (
-                    <section className="rounded-xl border border-border bg-surface p-3 project-panel">
-                      <div className="room-setup-header">
-                        <div>
-                          <p className="settings-kicker">Parent job</p>
-                          <h3 className="recorded-title">Subtasks</h3>
-                        </div>
-                      </div>
-
-                      <p className="task-readonly-note">
-                        Bigger jobs live here as a short list of steps.
-                      </p>
-
-                      {canManageProjects ? (
-                        <div className="project-manage-stack">
-                          <details className="recorded-more-details">
-                            <summary className="recorded-more-summary">Add subtask</summary>
-                            <form action={createProjectChildTaskAction} className="recorded-edit-form">
-                              <input type="hidden" name="projectId" value={task.id} />
-                              <input type="hidden" name="returnTo" value={basePath} />
-                              <label className="recorded-field">
-                                <span>Subtask title</span>
-                                <input name="title" type="text" required placeholder="Patch walls" className="recorded-edit-input" />
-                              </label>
-                              <label className="recorded-field">
-                                <span>Notes</span>
-                                <input name="detailNotes" type="text" placeholder="Optional detail" className="recorded-edit-input" />
-                              </label>
-                              <div className="capture-meta-grid">
-                                <label className="recorded-field">
-                                  <span>Assign</span>
-                                  <select name="assigneeUserId" defaultValue="" className="recorded-edit-input">
-                                    <option value="">No person</option>
-                                    {peopleOptions.map((person) => (
-                                      <option key={person.id} value={person.id}>
-                                        {person.displayName}
-                                      </option>
-                                    ))}
-                                  </select>
-                                </label>
-                                <label className="recorded-field">
-                                  <span>Estimate minutes</span>
-                                  <input name="estimatedMinutes" type="number" min={1} defaultValue={30} className="recorded-edit-input" />
-                                </label>
-                              </div>
-                              <label className="recorded-field">
-                                <span>Due date</span>
-                                <input name="dueAt" type="datetime-local" className="recorded-edit-input" />
-                              </label>
-                              <div className="recorded-row-actions between">
-                                <FormActionButton className="action-btn bright quiet" pendingLabel="Adding subtask">
-                                  Add subtask
-                                </FormActionButton>
-                              </div>
-                            </form>
-                          </details>
-
-                          <details className="recorded-more-details">
-                            <summary className="recorded-more-summary">More options</summary>
-                            <div className="recorded-edit-form">
-                              <p className="task-readonly-note">
-                                {canDemoteProject
-                                  ? "Turn this back into a normal job if it no longer needs subtasks."
-                                  : "Clear subtasks and any legacy planning extras before changing this back into a normal job."}
-                              </p>
-                              {canDemoteProject ? (
-                                <form action={demoteProjectToTaskAction}>
-                                  <input type="hidden" name="taskId" value={task.id} />
-                                  <input type="hidden" name="returnTo" value={basePath} />
-                                  <FormActionButton className="action-btn subtle quiet" pendingLabel="Changing">
-                                    Turn back into a job
-                                  </FormActionButton>
-                                </form>
-                              ) : null}
-                            </div>
-                          </details>
-                        </div>
-                      ) : null}
-
-                      <div className="project-collection-details">
-                        <div className="mb-2 flex items-center justify-between gap-3">
-                          <p className="settings-kicker">Subtasks</p>
-                          <span className="recorded-count">{task.projectChildren.length}</span>
-                        </div>
-                        {task.projectChildren.length === 0 ? (
-                          <p className="recorded-empty">No subtasks yet. Add the first step below.</p>
-                        ) : (
-                          task.projectChildren.map((child) => (
-                            <a key={child.id} href={`#task-${child.id}`} className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm text-foreground">
-                              <span>{child.title}</span>
-                              <span className="text-muted">
-                                {getTaskState(child) === "done"
-                                  ? "Done"
-                                  : isProjectChildOverdue(child)
-                                    ? "Overdue"
-                                  : child.assignmentUserName
-                                    ? child.assignmentUserName
-                                    : child.nextDueAt
-                                      ? formatRecordedAt(child.nextDueAt)
-                                      : "Open"}
-                              </span>
-                            </a>
-                          ))
-                        )}
-                      </div>
-
-                      {hasLegacyProjectPlanning ? (
-                        <details className="recorded-more-details project-collection-details">
-                          <summary className="recorded-more-summary">Legacy planning data</summary>
-                          <div className="recorded-edit-form">
-                            <p className="task-readonly-note">
-                              Older parent jobs may still have targets, budget, shopping, milestone, or spend data. New multi-step work should use subtasks instead.
-                            </p>
-                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                              <p><span>Target</span><strong>{task.projectTargetAt ? formatRecordedAt(task.projectTargetAt) : "Not set"}</strong></p>
-                              <p><span>Budget</span><strong>{task.projectBudgetCents !== null ? formatMoney(task.projectBudgetCents) : "Not set"}</strong></p>
-                              <p><span>Costs</span><strong>{task.projectCosts.length}</strong></p>
-                              <p><span>Materials</span><strong>{task.projectMaterials.length}</strong></p>
-                              <p><span>Milestones</span><strong>{task.projectMilestones.length}</strong></p>
-                              <p><span>Spend</span><strong>{formatMoney(projectSummary.spentCents)}</strong></p>
-                            </div>
-                          </div>
-
-                          {task.projectMaterials.length > 0 ? (
-                            <div className="space-y-2">
-                              {task.projectMaterials.map((material) => (
-                                <div key={material.id} className="rounded-lg border border-border px-3 py-3 text-sm">
-                                  <div className="flex items-start justify-between gap-3">
-                                    <div className="min-w-0">
-                                      <p className="font-semibold text-foreground">{material.title}</p>
-                                      <p className="text-muted">
-                                        {[
-                                          material.quantityLabel,
-                                          material.source,
-                                          material.purchasedAt ? `Bought ${formatRecordedAt(material.purchasedAt)}` : "Still to buy",
-                                        ]
-                                          .filter(Boolean)
-                                          .join(" · ")}
-                                      </p>
-                                    </div>
-                                    {canManageProjects ? (
-                                      <form action={deleteProjectMaterialAction}>
-                                        <input type="hidden" name="taskId" value={task.id} />
-                                        <input type="hidden" name="materialId" value={material.id} />
-                                        <input type="hidden" name="returnTo" value={basePath} />
-                                        <FormActionButton className="action-btn subtle quiet" pendingLabel="Removing">
-                                          Remove
-                                        </FormActionButton>
-                                      </form>
-                                    ) : null}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          ) : null}
-
-                          {task.projectMilestones.length > 0 ? (
-                            <div className="space-y-2">
-                              {task.projectMilestones.map((milestone) => {
-                                const overdue = isMilestoneOverdue(milestone);
-                                return (
-                                  <div key={milestone.id} className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2 text-sm">
-                                    <div className="min-w-0">
-                                      <p className="font-semibold text-foreground">{milestone.title}</p>
-                                      <p className="text-muted">
-                                        {milestone.completedAt
-                                          ? `Done ${formatRecordedAt(milestone.completedAt)}`
-                                          : milestone.targetAt
-                                            ? overdue
-                                              ? `Due ${formatRecordedAt(milestone.targetAt)}`
-                                              : `Target ${formatRecordedAt(milestone.targetAt)}`
-                                            : "No target date"}
-                                      </p>
-                                    </div>
-                                    {canManageProjects ? (
-                                      <form action={deleteProjectMilestoneAction}>
-                                        <input type="hidden" name="taskId" value={task.id} />
-                                        <input type="hidden" name="milestoneId" value={milestone.id} />
-                                        <input type="hidden" name="returnTo" value={basePath} />
-                                        <FormActionButton className="action-btn subtle quiet" pendingLabel="Removing">
-                                          Remove
-                                        </FormActionButton>
-                                      </form>
-                                    ) : null}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          ) : null}
-
-                          {task.projectCosts.length > 0 ? (
-                            <div className="space-y-2">
-                              {task.projectCosts.map((cost) => (
-                                <div key={cost.id} className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2 text-sm">
-                                  <div className="min-w-0">
-                                    <p className="font-semibold text-foreground">{cost.title}</p>
-                                    <p className="text-muted">{formatRecordedAt(cost.notedAt)}</p>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <strong className="text-foreground">{formatMoney(cost.amountCents)}</strong>
-                                    {canManageProjects ? (
-                                      <form action={deleteProjectCostAction}>
-                                        <input type="hidden" name="taskId" value={task.id} />
-                                        <input type="hidden" name="costId" value={cost.id} />
-                                        <input type="hidden" name="returnTo" value={basePath} />
-                                        <FormActionButton className="action-btn subtle quiet" pendingLabel="Removing">
-                                          Remove
-                                        </FormActionButton>
-                                      </form>
-                                    ) : null}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          ) : null}
-                        </details>
-                      ) : null}
-                    </section>
-                  ) : null}
-                </div>
-              </details>
-            );
-          })
+          visibleTasks.map((task) => (
+            <TaskCard
+              key={task.id}
+              task={task}
+              initialOpen={task.id === initialLuckyId}
+              groupedRoomOptions={groupedRoomOptions}
+              peopleOptions={peopleOptions}
+              childMode={childMode}
+              teenMode={teenMode}
+              canEditTasks={canEditTasks}
+              canManageProjects={canManageProjects}
+              canDeleteTasks={canDeleteTasks}
+              currentUserId={currentUserId}
+              basePath={basePath}
+            />
+          ))
         )}
       </div>
     </section>
   );
-}
-
-
-const AVATAR_PALETTE = [
-  { bg: "#dbeafe", fg: "#1e40af" }, // blue
-  { bg: "#ede9fe", fg: "#5b21b6" }, // violet
-  { bg: "#d1fae5", fg: "#065f46" }, // mint
-  { bg: "#fef3c7", fg: "#92400e" }, // amber
-  { bg: "#fee2e2", fg: "#991b1b" }, // red
-  { bg: "#e0f2fe", fg: "#075985" }, // sky
-  { bg: "#fce7f3", fg: "#9d174d" }, // rose
-  { bg: "#f1f5f9", fg: "#334155" }, // slate
-];
-
-function nameInitials(name: string) {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  return name.slice(0, 2).toUpperCase();
-}
-
-function nameToAvatarStyle(name: string): { background: string; color: string } {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = (hash * 31 + name.charCodeAt(i)) | 0;
-  }
-  const entry = AVATAR_PALETTE[Math.abs(hash) % AVATAR_PALETTE.length];
-  return { background: entry.bg, color: entry.fg };
-}
-
-function formatRecordedAt(value: string) {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(new Date(value));
-}
-
-function toDateTimeInputValue(value: string) {
-  const date = new Date(value);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-  return `${year}-${month}-${day}T${hours}:${minutes}`;
-}
-
-function addDays(value: Date, days: number) {
-  const next = new Date(value);
-  next.setDate(next.getDate() + days);
-  return next.toISOString();
-}
-
-function getTaskState(task: {
-  captureStage: string;
-  schedule?: { nextDueAt: string | null } | null;
-  occurrences: Array<{ status: string }>;
-}) {
-  if (task.occurrences.some((occurrence) => occurrence.status !== "done")) {
-    return "open";
-  }
-  if (task.schedule) {
-    return "open";
-  }
-  if (task.captureStage === "done" || task.occurrences[0]?.status === "done") {
-    return "done";
-  }
-  return "open";
-}
-
-function getTaskStatusLabel(task: {
-  captureStage: string;
-  schedule: { nextDueAt: string | null } | null;
-  occurrences: Array<{ status: string; dueAt: string }>;
-}) {
-  if (getTaskState(task) === "done") {
-    return "Done";
-  }
-  if (task.captureStage === "active") {
-    return "In progress";
-  }
-  if (task.schedule) {
-    return getRecurrenceStateLabel(task);
-  }
-  return "Open";
-}
-
-function getLatestCompletedOccurrence<T extends { status: string; completedAt?: string | null; completedBy?: string | null; completerName?: string | null; dueAt?: string }>(
-  occurrences: T[],
-) {
-  return occurrences.find((occurrence) => occurrence.status === "done") ?? null;
-}
-
-function getOpenOccurrence<T extends { status: string; dueAt: string }>(occurrences: T[]) {
-  return occurrences.find((occurrence) => occurrence.status !== "done") ?? null;
-}
-
-function formatRecurrenceChip(schedule: { recurrenceType: string; intervalCount: number }) {
-  const interval = schedule.intervalCount > 1 ? `${schedule.intervalCount} ` : "";
-  if (schedule.recurrenceType === "daily") {
-    return `Every ${interval}day${schedule.intervalCount > 1 ? "s" : ""}`;
-  }
-  if (schedule.recurrenceType === "monthly") {
-    return `Every ${interval}month${schedule.intervalCount > 1 ? "s" : ""}`;
-  }
-  return `Every ${interval}week${schedule.intervalCount > 1 ? "s" : ""}`;
-}
-
-function getRecurrenceStateLabel(task: {
-  schedule: { nextDueAt: string | null } | null;
-  occurrences: Array<{ status: string; dueAt: string }>;
-}) {
-  const openOccurrence = getOpenOccurrence(task.occurrences);
-  const dueAt = openOccurrence?.dueAt ?? task.schedule?.nextDueAt;
-  if (!dueAt) {
-    return "Scheduled";
-  }
-
-  const now = new Date();
-  const dueTime = new Date(dueAt).getTime();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  const tomorrow = today + (24 * 60 * 60 * 1000);
-
-  if (dueTime < now.getTime()) {
-    return "Lapsed";
-  }
-  if (dueTime >= today && dueTime < tomorrow) {
-    return "Due today";
-  }
-  return "On track";
-}
-
-function recurrenceStateClassName(task: {
-  schedule: { nextDueAt: string | null } | null;
-  occurrences: Array<{ status: string; dueAt: string }>;
-}) {
-  const label = getRecurrenceStateLabel(task);
-  if (label === "Lapsed") {
-    return "task-chip-lapsed";
-  }
-  if (label === "Due today") {
-    return "task-chip-due";
-  }
-  return "task-chip-recurring";
-}
-
-function wasOccurrenceOnTime(occurrence: { dueAt?: string; completedAt?: string | null }) {
-  if (!occurrence.dueAt || !occurrence.completedAt) {
-    return true;
-  }
-  return new Date(occurrence.completedAt).getTime() <= new Date(occurrence.dueAt).getTime();
-}
-
-function rowStateClass(task: {
-  captureStage: string;
-  occurrences: Array<{ status: string; dueAt: string }>;
-  schedule: { nextDueAt: string | null } | null;
-  assignmentUserId: string | null;
-  isPrivate: boolean;
-}): string {
-  const privateClass = task.isPrivate ? " row-state-private" : "";
-  if (getTaskState(task) === "done") return `row-state-done${privateClass}`;
-  const stateClass = recurrenceStateClassName(task);
-  if (stateClass === "task-chip-lapsed") return `row-state-overdue${privateClass}`;
-  if (stateClass === "task-chip-due") return `row-state-due${privateClass}`;
-  if (task.schedule) return `row-state-active${privateClass}`;
-  if (!task.assignmentUserId) return `row-state-unassigned${privateClass}`;
-  return `row-state-assigned${privateClass}`;
-}
-
-function computeStreak(occurrences: Array<{ status: string }>) {
-  let streak = 0;
-  for (const occ of occurrences) {
-    if (occ.status === "done") streak++;
-    else break;
-  }
-  return streak;
-}
-
-function displayRoomName(roomName: string) {
-  return roomName.toLowerCase() === "unsorted" ? "No room" : roomName;
-}
-
-function isProjectTask(task: TaskItem) {
-  return (
-    task.jobKind === "project" ||
-    task.projectChildren.length > 0 ||
-    task.projectCosts.length > 0 ||
-    task.projectMaterials.length > 0 ||
-    task.projectMilestones.length > 0 ||
-    task.projectBudgetCents !== null ||
-    task.projectTargetAt !== null
-  );
-}
-
-function summarizeProject(task: TaskItem) {
-  const now = Date.now();
-  const totalChildren = task.projectChildren.length;
-  const completedChildren = task.projectChildren.filter((child) => getTaskState(child) === "done").length;
-  const overdueChildren = task.projectChildren.filter((child) => isProjectChildOverdue(child)).length;
-  const spentCents = task.projectCosts.reduce((sum, cost) => sum + cost.amountCents, 0);
-  const totalMaterials = task.projectMaterials.length;
-  const purchasedMaterials = task.projectMaterials.filter((material) => material.purchasedAt).length;
-  const materialEstimateCents = task.projectMaterials.reduce((sum, material) => sum + (material.estimatedCostCents ?? 0), 0);
-  const materialSpentCents = task.projectMaterials.reduce((sum, material) => sum + (material.actualCostCents ?? 0), 0);
-  const totalMilestones = task.projectMilestones.length;
-  const completedMilestones = task.projectMilestones.filter((milestone) => milestone.completedAt).length;
-  const overdueMilestones = task.projectMilestones.filter((milestone) => isMilestoneOverdue(milestone)).length;
-  const totalEstimatedMinutes =
-    task.estimatedMinutes + task.projectChildren.reduce((sum, child) => sum + child.estimatedMinutes, 0);
-  const overBudget = task.projectBudgetCents !== null && spentCents > task.projectBudgetCents;
-  const complete = task.projectChildren.length > 0
-    ? completedChildren === totalChildren
-    : getTaskState(task) === "done";
-  const planning =
-    task.projectChildren.length === 0 &&
-    task.projectMilestones.length === 0 &&
-    task.projectMaterials.length === 0 &&
-    getTaskState(task) !== "done";
-  const targetMissed =
-    !complete && task.projectTargetAt !== null && new Date(task.projectTargetAt).getTime() < now;
-  const atRisk = !complete && (overBudget || overdueChildren > 0 || overdueMilestones > 0 || targetMissed);
-  const milestoneLabel = totalMilestones > 0 ? `${completedMilestones}/${totalMilestones} milestones` : null;
-  const materialsLabel = totalMaterials > 0 ? `${purchasedMaterials}/${totalMaterials} bought` : null;
-  const statusLabel = complete ? "Complete" : planning ? "Planning" : atRisk ? "At risk" : "Active";
-
-  return {
-    totalChildren,
-    completedChildren,
-    overdueChildren,
-    spentCents,
-    totalMaterials,
-    purchasedMaterials,
-    materialEstimateCents,
-    materialSpentCents,
-    totalEstimatedMinutes,
-    totalMilestones,
-    completedMilestones,
-    overdueMilestones,
-    overBudget,
-    atRisk,
-    statusLabel,
-    milestoneLabel,
-    materialsLabel,
-    materialSpendLabel:
-      totalMaterials > 0
-        ? materialSpentCents > 0
-          ? `${formatMoney(materialSpentCents)} across ${purchasedMaterials}`
-          : purchasedMaterials > 0
-            ? `${purchasedMaterials} bought`
-            : "None bought"
-        : "No materials",
-    progressLabel: totalChildren > 0 ? `${completedChildren}/${totalChildren} tasks done` : "Project shell",
-  };
-}
-
-function getSubtaskProgressLabel(summary: ReturnType<typeof summarizeProject>) {
-  return summary.totalChildren > 0 ? `${summary.completedChildren}/${summary.totalChildren} done` : "No subtasks";
-}
-
-function hasLegacyProjectPlanningData(task: TaskItem) {
-  return (
-    task.projectCosts.length > 0 ||
-    task.projectMaterials.length > 0 ||
-    task.projectMilestones.length > 0 ||
-    task.projectBudgetCents !== null ||
-    task.projectTargetAt !== null
-  );
-}
-
-function formatMinutes(value: number) {
-  if (value < 60) {
-    return `${value} min`;
-  }
-
-  const hours = Math.floor(value / 60);
-  const minutes = value % 60;
-  return minutes === 0 ? `${hours} hr` : `${hours} hr ${minutes} min`;
-}
-
-function formatMoney(cents: number) {
-  return new Intl.NumberFormat("en-IE", {
-    style: "currency",
-    currency: "EUR",
-  }).format(cents / 100);
-}
-
-function getRewardStatusLabel(cents: number, confirmed: boolean, paidAt: string | null) {
-  const amount = formatMoney(cents);
-  if (paidAt) {
-    return `${amount} paid`;
-  }
-  if (confirmed) {
-    return `${amount} accepted`;
-  }
-  return `${amount} offer`;
-}
-
-function getRewardChipClassName(confirmed: boolean, paidAt: string | null) {
-  if (paidAt) {
-    return "task-chip-reward-paid";
-  }
-  if (confirmed) {
-    return "task-chip-reward";
-  }
-  return "task-chip-reward-offer";
-}
-
-function formatJobKind(jobKind: string) {
-  const labels: Record<string, string> = {
-    upkeep: "Upkeep",
-    issue: "Issue",
-    project: "Parent job",
-    clear_out: "Clear out",
-    outdoor: "Outdoor",
-    planning: "Planning",
-  };
-  return labels[jobKind] ?? jobKind;
-}
-
-function getTaskIconTone(
-  task: Pick<TaskItem, "captureStage" | "schedule" | "occurrences">,
-  isProject: boolean,
-) {
-  if (isProject) return "project";
-  if (getTaskState(task) === "done") return "done";
-  if (task.schedule) return "recurring";
-  return "standard";
-}
-
-function renderTaskIcon(
-  task: Pick<TaskItem, "captureStage" | "schedule" | "occurrences">,
-  isProject: boolean,
-) {
-  if (isProject) {
-    return (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M9 6h11" />
-        <path d="M9 12h11" />
-        <path d="M9 18h11" />
-        <circle cx="4" cy="6" r="1.5" />
-        <circle cx="4" cy="12" r="1.5" />
-        <circle cx="4" cy="18" r="1.5" />
-      </svg>
-    );
-  }
-  if (getTaskState(task) === "done") {
-    return (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="8" />
-        <path d="m9 12 2 2 4-4" />
-      </svg>
-    );
-  }
-  if (task.schedule) {
-    return (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 11a8 8 0 0 1 13.66-5.66L19 7.5" />
-        <path d="M21 13a8 8 0 0 1-13.66 5.66L5 16.5" />
-        <path d="M19 3v4.5h-4.5" />
-        <path d="M5 21v-4.5h4.5" />
-      </svg>
-    );
-  }
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M9 6h11" />
-      <path d="M9 12h11" />
-      <path d="M9 18h11" />
-      <path d="m3 6 1.4 1.4L6.8 5" />
-      <path d="m3 12 1.4 1.4L6.8 11" />
-      <path d="m3 18 1.4 1.4L6.8 17" />
-    </svg>
-  );
-}
-
-function getTaskSearchText(task: TaskItem) {
-  return normalizeSearchText(
-    [
-      task.title,
-      task.detailNotes,
-      task.roomName,
-      task.locationName,
-      task.loggerName,
-      task.assignmentUserName,
-      task.projectParentTitle,
-      ...task.projectChildren.map((child) => child.title),
-      ...task.projectCosts.map((cost) => cost.title),
-      ...task.projectMaterials.flatMap((material) => [material.title, material.quantityLabel, material.source]),
-      ...task.projectMilestones.map((milestone) => milestone.title),
-    ]
-      .filter(Boolean)
-      .join(" "),
-  );
-}
-
-function normalizeSearchText(value: string) {
-  return value.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
-}
-
-function groupRoomsByLocation<T extends { location?: { name: string } | null; name: string }>(rooms: T[]) {
-  const grouped = new Map<string, T[]>();
-  for (const room of rooms) {
-    const key = room.location?.name ?? "Other";
-    const entries = grouped.get(key) ?? [];
-    entries.push(room);
-    grouped.set(key, entries);
-  }
-  return [...grouped.entries()];
-}
-
-function isProjectChildOverdue(child: { captureStage: string; nextDueAt: string | null; occurrences: Array<{ status: string; dueAt: string }> }) {
-  if (getTaskState(child) === "done") {
-    return false;
-  }
-  const dueAt = child.nextDueAt ?? getOpenOccurrence(child.occurrences)?.dueAt ?? null;
-  return dueAt ? new Date(dueAt).getTime() < Date.now() : false;
-}
-
-function isMilestoneOverdue(milestone: { targetAt: string | null; completedAt: string | null }) {
-  if (!milestone.targetAt || milestone.completedAt) {
-    return false;
-  }
-  return new Date(milestone.targetAt).getTime() < Date.now();
 }
