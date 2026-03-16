@@ -423,7 +423,7 @@ export function TasksPanelClient({
                     <span className="recorded-row-chevron">▾</span>
                   </div>
                   <div className="recorded-row-sub">
-                    {projectMode && isProject ? (
+                    {isProject ? (
                       <>
                         {task.locationName ? (
                           <span className="recorded-row-location">{task.locationName}</span>
@@ -527,7 +527,7 @@ export function TasksPanelClient({
                         )}
                       </div>
                     </section>
-                  ) : projectMode && isProject ? null : (
+                  ) : isProject ? null : (
                     <>
                       <section className="task-overview-panel">
                         {task.detailNotes ? (
