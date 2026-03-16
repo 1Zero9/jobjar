@@ -1,9 +1,8 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 export function ResetViewButton() {
-  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -18,16 +17,16 @@ export function ResetViewButton() {
         const hasSearch = searchParams.toString().length > 0;
         const hasHash = typeof window !== "undefined" && window.location.hash.length > 0;
 
-        if (hasSearch || hasHash) {
-          router.replace(cleanPath, { scroll: true });
+        if (typeof window === "undefined") {
           return;
         }
 
-        if (typeof window !== "undefined") {
-          window.scrollTo({ top: 0, behavior: "smooth" });
+        if (hasSearch || hasHash) {
+          window.location.assign(cleanPath);
+          return;
         }
 
-        router.refresh();
+        window.location.reload();
       }}
     >
       <span className="theme-toggle-icon" aria-hidden="true">
