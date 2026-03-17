@@ -58,8 +58,8 @@ export default async function MorePage() {
           <div className="landing-grid more-links-grid">
             <Link href="/tasks" className="landing-action-card">
               <span className="landing-action-kicker">Jobs</span>
-              <strong>Open the board</strong>
-              <span>See what is waiting, due, or done.</span>
+              <strong>Open jobs</strong>
+              <span>See what needs attention, is due today, or is already done.</span>
               <span className="more-link-icon"><TasksIcon width="20" height="20" /></span>
             </Link>
 

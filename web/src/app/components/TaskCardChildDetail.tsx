@@ -34,6 +34,7 @@ export function TaskCardChildDetail({
       <div className="kid-task-meta">
         <p><span>Where</span><strong>{displayRoomName(task.roomName)}</strong></p>
         <p><span>Status</span><strong>{getTaskState(task) === "done" ? "Finished" : task.captureStage === "active" ? "In progress" : "Ready to go"}</strong></p>
+        {task.projectParentTitle ? <p><span>Parent job</span><strong>{task.projectParentTitle}</strong></p> : null}
         {hasReward ? <p><span>Reward</span><strong>{rewardLabel}</strong></p> : null}
         {task.schedule?.nextDueAt ? <p><span>Due</span><strong>{formatRecordedAt(task.schedule.nextDueAt)}</strong></p> : null}
         {latestCompleted?.completedAt ? <p><span>Last finished</span><strong>{formatRecordedAt(latestCompleted.completedAt)}</strong></p> : null}

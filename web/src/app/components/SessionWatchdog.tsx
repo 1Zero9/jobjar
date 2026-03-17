@@ -14,10 +14,16 @@ export function SessionWatchdog() {
   const nextInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const pathname = usePathname();
-  const disabled = pathname === "/login" || pathname === "/offline";
+  const isLoginPage = pathname === "/login";
+  const disabled = isLoginPage || pathname === "/offline";
 
   const noteActivity = useEffectEvent(() => {
     window.localStorage.setItem(LAST_ACTIVITY_KEY, String(Date.now()));
+  });
+
+  const resetSessionTimers = useEffectEvent((now: number) => {
+    window.localStorage.setItem(LAST_ACTIVITY_KEY, String(now));
+    window.localStorage.setItem(LAST_REFRESH_KEY, String(now));
   });
 
   const refreshIfStale = useEffectEvent((now: number) => {
@@ -46,6 +52,7 @@ export function SessionWatchdog() {
     const lastActivity = readTimestamp(LAST_ACTIVITY_KEY);
 
     if (lastActivity && now - lastActivity >= IDLE_LOGOUT_AFTER_MS) {
+      resetSessionTimers(now);
       if (nextInputRef.current) {
         nextInputRef.current.value = getCurrentPath();
       }
@@ -64,6 +71,9 @@ export function SessionWatchdog() {
 
   useEffect(() => {
     if (disabled) {
+      if (isLoginPage) {
+        resetSessionTimers(Date.now());
+      }
       return;
     }
 
@@ -105,7 +115,7 @@ export function SessionWatchdog() {
       window.removeEventListener("online", handleOnline);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [disabled]);
+  }, [disabled, isLoginPage]);
 
   if (disabled) {
     return null;

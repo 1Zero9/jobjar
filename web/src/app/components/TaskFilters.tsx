@@ -51,11 +51,11 @@ export function TaskFilters({
             type="search"
             value={searchQuery}
             onChange={(event) => onSearchQueryChange(event.target.value)}
-            placeholder={`Search ${tasksCount} jobs...`}
+            placeholder="Search jobs"
             className="recorded-search-input"
           />
           <span className="recorded-search-count">
-            {hasSearchQuery ? `${visibleCount} match${visibleCount === 1 ? "" : "es"}` : tasksCount}
+            {hasSearchQuery ? `${visibleCount} shown` : `${tasksCount} total`}
           </span>
         </div>
       ) : null}
@@ -133,8 +133,8 @@ export function TaskFilters({
               : memberMode
                 ? "Your jobs stay focused and simple."
                 : showSearch
-                  ? "Search and filters update instantly."
-                  : "Filters update instantly."}
+                  ? "Search or filter to narrow the list."
+                  : "Filter to narrow the list."}
           </span>
         )}
       </div>

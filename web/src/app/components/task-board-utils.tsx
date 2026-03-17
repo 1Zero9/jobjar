@@ -181,6 +181,11 @@ export function displayRoomName(roomName: string) {
   return roomName.toLowerCase() === "unsorted" ? "No room" : roomName;
 }
 
+export function formatTaskPlace(locationName: string | null, roomName: string) {
+  const resolvedRoomName = displayRoomName(roomName);
+  return locationName ? `${locationName} · ${resolvedRoomName}` : resolvedRoomName;
+}
+
 export function isProjectTask(task: TaskItem) {
   return (
     task.jobKind === "project" ||

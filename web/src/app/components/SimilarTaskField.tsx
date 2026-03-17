@@ -70,7 +70,7 @@ export function SimilarTaskField({
 
       {parentTask ? (
         <div className="lookup-parent-banner">
-          <span>Adding as a subtask under</span>
+          <span>Adding under</span>
           <strong>{parentTask.title}</strong>
           <button type="button" className="action-btn subtle quiet" onClick={() => setParentTask(null)}>
             Clear
@@ -94,7 +94,7 @@ export function SimilarTaskField({
           <div className="similar-task-list">
             {similarTasks.map((task) => (
               <article key={task.id} className="similar-task-item">
-                <div className="similar-task-copy">
+              <div className="similar-task-copy">
                   <strong>{task.title}</strong>
                   <span>
                     {task.roomName} · {task.state === "done" ? "Completed" : "Open"}
@@ -109,7 +109,7 @@ export function SimilarTaskField({
                     className="recorded-row-edit recorded-row-edit-bright"
                     onClick={() => setParentTask(task)}
                   >
-                    Use as subtask
+                    Add as subtask
                   </button>
                 </div>
               </article>

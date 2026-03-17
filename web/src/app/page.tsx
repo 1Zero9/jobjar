@@ -353,7 +353,7 @@ export default async function HomePage({
             <div className="today-section-head">
               <h2 className="today-section-title">What needs doing?</h2>
               <Link href="/log" className="recorded-row-edit recorded-row-edit-bright">
-                Full log
+                Open full log
               </Link>
             </div>
             <p className="today-copy today-copy-section">
@@ -417,7 +417,7 @@ export default async function HomePage({
         </section>
 
         <section className="today-utility-links">
-          <Link href="/tasks" className="today-utility-link">See all jobs</Link>
+          <Link href="/tasks" className="today-utility-link">Open jobs</Link>
           {canSeeReports ? <Link href="/stats" className="today-utility-link">Stats</Link> : null}
           {role === "admin" ? (
             <Link href={setupReady ? "/settings" : "/setup/start"} className="today-utility-link">

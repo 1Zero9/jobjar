@@ -103,7 +103,7 @@ export function TaskCardProjectDetail({
           </details>
 
           <details className="recorded-more-details">
-            <summary className="recorded-more-summary">More options</summary>
+            <summary className="recorded-more-summary">Parent job settings</summary>
             <div className="recorded-edit-form">
               <p className="task-readonly-note">
                 {canDemoteProject

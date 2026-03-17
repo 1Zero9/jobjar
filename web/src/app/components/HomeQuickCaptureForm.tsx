@@ -40,14 +40,14 @@ export function HomeQuickCaptureForm({ rooms, requireRoom = false }: Props) {
           className="home-quick-capture-input glass-surface"
         />
         <FormActionButton className="home-quick-capture-submit" pendingLabel="Saving">
-          Add
+          Save job
         </FormActionButton>
       </div>
       <div className="home-quick-capture-meta">
         <span>
           Saving to <strong>{roomLabel}</strong>
         </span>
-        <Link href="/log">More options</Link>
+        <Link href="/log">Open full log</Link>
       </div>
     </form>
   );

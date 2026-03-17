@@ -9,8 +9,10 @@ import { FormActionButton } from "@/app/components/FormActionButton";
 import type { GroupedRoomOptions, PersonOption, TaskItem } from "@/app/components/task-board-types";
 import {
   addDays,
-  displayRoomName,
+  computeStreak,
   formatMinutes,
+  formatJobKind,
+  formatTaskPlace,
   formatRecordedAt,
   formatRecurrenceChip,
   getLatestCompletedOccurrence,
@@ -61,16 +63,22 @@ export function TaskCardStandardDetail({
         )}
 
         <div className="task-overview-grid">
-          <p><span>Where</span><strong>{task.locationName ? `${task.locationName} · ${displayRoomName(task.roomName)}` : displayRoomName(task.roomName)}</strong></p>
+          <p><span>Where</span><strong>{formatTaskPlace(task.locationName, task.roomName)}</strong></p>
           <p><span>Assigned</span><strong>{task.assignmentUserName ?? "No one yet"}</strong></p>
           <p><span>Status</span><strong>{getTaskStatusLabel(task)}</strong></p>
+          <p><span>Type</span><strong>{formatJobKind(task.jobKind)}</strong></p>
           <p><span>Estimate</span><strong>{formatMinutes(task.estimatedMinutes)}</strong></p>
           {hasReward ? <p><span>Reward</span><strong>{rewardLabel}</strong></p> : null}
+          {task.projectParentTitle ? <p><span>Parent job</span><strong>{task.projectParentTitle}</strong></p> : null}
+          {task.isPrivate ? <p><span>Privacy</span><strong>Private</strong></p> : null}
           {task.schedule ? (
             <>
               <p><span>Repeats</span><strong>{formatRecurrenceChip(task.schedule)}</strong></p>
               <p><span>Next due</span><strong>{task.schedule.nextDueAt ? formatRecordedAt(task.schedule.nextDueAt) : "Not set"}</strong></p>
             </>
+          ) : null}
+          {task.schedule && computeStreak(task.occurrences) >= 2 ? (
+            <p><span>Streak</span><strong>{computeStreak(task.occurrences)} in a row</strong></p>
           ) : null}
           {latestCompleted?.completedAt ? (
             <p><span>Last done</span><strong>{formatRecordedAt(latestCompleted.completedAt)}</strong></p>

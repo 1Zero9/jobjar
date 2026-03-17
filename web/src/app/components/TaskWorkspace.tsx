@@ -118,7 +118,7 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
             <input type="hidden" name="returnTo" value="/log" />
             <section className="quick-log-panel">
               <div className="quick-log-header">
-                <p className="settings-kicker">Quick log</p>
+                <p className="settings-kicker">Add a job</p>
                 <p className="quick-log-copy">{easyLog ? "Most jobs need three things: title, room, save." : "Most jobs need three things: title, room, save."}</p>
               </div>
 
@@ -148,15 +148,15 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
               </FormActionButton>
 
               <p className="task-readonly-note quick-log-save-note">
-                Need assignment, value, or notes? Open more options after picking the room.
+                Need assignment, value, notes, or repeating? Open add details after picking the room.
               </p>
             </section>
 
             <details className="recorded-row quick-log-more">
               <summary className="recorded-row-summary">
                 <div className="min-w-0">
-                  <p className="recorded-row-title">More options</p>
-                  <p className="recorded-row-placeholder">Optional. Assign it, add a value, notes, or make it repeat.</p>
+                  <p className="recorded-row-title">Add details</p>
+                  <p className="recorded-row-placeholder">Optional. Assign it now or add extra details only if you need them.</p>
                 </div>
                 <div className="recorded-row-meta">
                   <span className="recorded-row-edit">Optional</span>
@@ -192,27 +192,21 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
                   </label>
                 </div>
 
-                <div className="capture-step">
-                  <label className="capture-private-row">
-                    <input type="checkbox" name="isPrivate" value="true" className="capture-private-check" />
-                    <input type="hidden" name="isPrivate" value="false" />
-                    <span className="capture-step-label">Private</span>
-                    <span className="capture-private-hint">Only visible to you and the assigned person</span>
+                <details className="recorded-more-details">
+                  <summary className="recorded-more-summary">Add notes</summary>
+                  <label className="recorded-field">
+                    <span>Notes</span>
+                    <textarea
+                      name="detailNotes"
+                      rows={2}
+                      placeholder="Optional note"
+                      className="recorded-edit-input recorded-edit-textarea"
+                    />
                   </label>
-                </div>
-
-                <label className="recorded-field">
-                  <span>Notes</span>
-                  <textarea
-                    name="detailNotes"
-                    rows={2}
-                    placeholder="Optional note"
-                    className="recorded-edit-input recorded-edit-textarea"
-                  />
-                </label>
+                </details>
 
                 <details className="recorded-more-details">
-                  <summary className="recorded-more-summary">Repeating job</summary>
+                  <summary className="recorded-more-summary">Repeat later</summary>
                   <div className="capture-meta-grid">
                     <label className="recorded-field">
                       <span>Repeats</span>
@@ -249,6 +243,14 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
 
                 <details className="recorded-more-details">
                   <summary className="recorded-more-summary">Advanced</summary>
+                  <div className="capture-step">
+                    <label className="capture-private-row">
+                      <input type="checkbox" name="isPrivate" value="true" className="capture-private-check" />
+                      <input type="hidden" name="isPrivate" value="false" />
+                      <span className="capture-step-label">Private</span>
+                      <span className="capture-private-hint">Only visible to you and the assigned person</span>
+                    </label>
+                  </div>
                   <label className="recorded-field">
                     <span>Priority in room</span>
                     <input
@@ -546,17 +548,17 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
           basePath={mode === "projects" ? "/projects" : "/tasks"}
           viewMode={mode}
           panelKicker={
-            childMode ? "My jobs" : mode === "projects" ? "Parent jobs" : memberMode ? "My jobs" : teenMode ? "My board" : "View jobs"
+            childMode ? "Jobs" : mode === "projects" ? "Parent jobs" : "Jobs"
           }
           panelTitle={
-            childMode ? "Jobs picked for you" : mode === "projects" ? "Tasks with subtasks" : memberMode ? "Your jobs" : "Job board"
+            childMode ? "Your jobs" : mode === "projects" ? "Tasks with subtasks" : memberMode ? "Your jobs" : "Jobs"
           }
           emptyMessage={
             childMode
               ? "No jobs waiting right now. Nice work."
               : mode === "projects"
                 ? "No parent jobs yet. Add subtasks to a task when work needs breaking down."
-                : memberMode ? "No jobs for you right now." : "No jobs on the board yet."
+                : memberMode ? "No jobs for you right now." : "No jobs here yet."
           }
           tasks={recordedTasks.map((task) => ({
             id: task.id,

@@ -48,9 +48,9 @@ export function TasksPanelClient({
   currentUserId,
   basePath = "/tasks",
   viewMode = "tasks",
-  panelTitle = "Job board",
+  panelTitle = "Jobs",
   panelKicker = "Jobs",
-  emptyMessage = "No jobs on the board yet.",
+  emptyMessage = "No jobs here yet.",
 }: Props) {
   const [selectedRoomId, setSelectedRoomId] = useState(initialRoomId);
   const [selectedAssigneeId, setSelectedAssigneeId] = useState(initialAssigneeId);

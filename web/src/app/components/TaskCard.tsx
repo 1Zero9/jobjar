@@ -15,10 +15,8 @@ import { TaskCardSummaryAction } from "@/app/components/TaskCardSummaryAction";
 import { TaskCardStandardDetail } from "@/app/components/TaskCardStandardDetail";
 import type { GroupedRoomOptions, PersonOption, TaskItem } from "@/app/components/task-board-types";
 import {
-  computeStreak,
-  displayRoomName,
   formatMoney,
-  formatJobKind,
+  formatTaskPlace,
   getRewardChipClassName,
   getRewardStatusLabel,
   getSubtaskProgressLabel,
@@ -85,6 +83,7 @@ export function TaskCard({
   const rewardLabel = hasReward ? getRewardStatusLabel(task.rewardCents!, task.rewardConfirmed, task.rewardPaidAt) : null;
   const rewardChipClassName = hasReward ? getRewardChipClassName(task.rewardConfirmed, task.rewardPaidAt) : null;
   const showStandardSummaryActions = !childMode && !isProject && canEditTasks;
+  const summaryStateChip = getSummaryStateChip(task, childMode);
 
   return (
     <details
@@ -152,10 +151,7 @@ export function TaskCard({
         <div className="recorded-row-sub">
           {isProject ? (
             <>
-              {task.locationName ? (
-                <span className="recorded-row-location">{task.locationName}</span>
-              ) : null}
-              <span className="recorded-row-room">{displayRoomName(task.roomName)}</span>
+              <span className="recorded-row-room">{formatTaskPlace(task.locationName, task.roomName)}</span>
               {task.assignmentUserName ? (
                 <span className="recorded-row-assignee">
                   <span className="assignee-avatar" style={nameToAvatarStyle(task.assignmentUserName)}>
@@ -171,10 +167,7 @@ export function TaskCard({
             </>
           ) : (
             <>
-              {task.locationName ? (
-                <span className="recorded-row-location">{task.locationName}</span>
-              ) : null}
-              <span className="recorded-row-room">{displayRoomName(task.roomName)}</span>
+              <span className="recorded-row-room">{formatTaskPlace(task.locationName, task.roomName)}</span>
               {task.assignmentUserName && !childMode ? (
                 <span className="recorded-row-assignee">
                   <span className="assignee-avatar" style={nameToAvatarStyle(task.assignmentUserName)}>
@@ -182,20 +175,9 @@ export function TaskCard({
                   </span>
                   {task.assignmentUserName}
                 </span>
-              ) : !childMode ? (
-                <span className="assignee-unset">Unassigned</span>
               ) : null}
-              {!childMode ? <span className="task-chip task-chip-kind">{formatJobKind(task.jobKind)}</span> : null}
-              {getTaskState(task) === "done" ? <span className="task-chip task-chip-done">{childMode ? "Finished" : "Done"}</span> : null}
-              {recurrenceStateClassName(task) === "task-chip-lapsed" ? <span className="task-chip task-chip-lapsed">{childMode ? "Needs attention" : "Lapsed"}</span> : null}
-              {recurrenceStateClassName(task) === "task-chip-due" ? <span className="task-chip task-chip-due">Due today</span> : null}
+              {summaryStateChip}
               {rewardLabel && rewardChipClassName ? <span className={`task-chip ${rewardChipClassName}`}>{rewardLabel}</span> : null}
-              {task.isPrivate && !childMode ? <span className="task-chip task-chip-private">Private</span> : null}
-              {task.projectParentTitle ? <span className="task-chip">Part of: {task.projectParentTitle}</span> : null}
-              {hasLegacyProjectPlanning ? <span className="task-chip">Legacy extras</span> : null}
-              {task.schedule && computeStreak(task.occurrences) >= 2 ? (
-                <span className="task-chip task-chip-streak">{computeStreak(task.occurrences)} in a row</span>
-              ) : null}
             </>
           )}
         </div>
@@ -255,4 +237,20 @@ export function TaskCard({
       </div>
     </details>
   );
+}
+
+function getSummaryStateChip(task: TaskItem, childMode: boolean) {
+  if (getTaskState(task) === "done") {
+    return <span className="task-chip task-chip-done">{childMode ? "Finished" : "Done"}</span>;
+  }
+  if (task.captureStage === "active") {
+    return <span className="task-chip">In progress</span>;
+  }
+  if (recurrenceStateClassName(task) === "task-chip-lapsed") {
+    return <span className="task-chip task-chip-lapsed">Needs attention</span>;
+  }
+  if (recurrenceStateClassName(task) === "task-chip-due") {
+    return <span className="task-chip task-chip-due">Due today</span>;
+  }
+  return null;
 }
