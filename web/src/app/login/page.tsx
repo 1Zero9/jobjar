@@ -72,7 +72,7 @@ export default async function LoginPage({
           </h1>
           <p className="login-copy">
             {needsSetup
-              ? "Create the first admin account to open Jobjar for your household, organise spaces, and start logging work."
+              ? "Create the first admin account to open Jobjar for your household. After that, guided setup will walk you through rooms and the first job."
               : "Choose your name, enter your passcode, and pick up where you left off."}
           </p>
           {dbError ? (
@@ -125,7 +125,7 @@ export default async function LoginPage({
                   Passcode must be at least 8 characters.
                 </p>
               ) : null}
-              <button type="submit" className="login-primary-btn">Create Admin</button>
+              <button type="submit" className="login-primary-btn">Create admin and start setup</button>
             </form>
           ) : !dbUnavailable ? (
             <form action={loginAction} className="login-form">

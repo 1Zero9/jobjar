@@ -1610,6 +1610,11 @@ export async function createPersonAction(formData: FormData) {
     return;
   }
 
+  if (passcodeInput && passcodeInput.length < 4) {
+    redirectToReturnPath(returnTo, { error: "person-passcode-too-short" });
+    return;
+  }
+
   const role = parseMemberRole(requestedRole, "member");
   const audienceBand = parseMemberAudience(requestedAudienceBand, "adult");
   const profileTheme = parseMemberProfileTheme(requestedProfileTheme, "default_theme");
@@ -2336,7 +2341,7 @@ export async function bootstrapOwnerAction(formData: FormData) {
   await setUserPasswordHash(user.id, hashPassword(passcode));
   const householdId = await getOrCreateHouseholdForUser(user.id);
   await setSessionUserId(user.id, householdId);
-  redirect("/");
+  redirect("/setup/start");
 }
 
 export async function loginAction(formData: FormData) {
@@ -2373,7 +2378,7 @@ export async function loginAction(formData: FormData) {
 
   const householdId = await getOrCreateHouseholdForUser(user.id);
   await setSessionUserId(user.id, householdId);
-  redirect(nextPath.startsWith("/") ? nextPath : "/");
+  redirect(await resolvePostLoginPath(user.id, householdId, nextPath));
 }
 
 export async function logoutAction(formData?: FormData) {
@@ -2603,6 +2608,45 @@ async function resolveProjectParentId(
   });
 
   return parent?.id ?? null;
+}
+
+async function resolvePostLoginPath(userId: string, householdId: string, requestedPath: string) {
+  const safePath = requestedPath.startsWith("/") ? requestedPath : "/";
+  if (safePath !== "/") {
+    return safePath;
+  }
+
+  const membership = await prisma.householdMember.findUnique({
+    where: {
+      householdId_userId: {
+        householdId,
+        userId,
+      },
+    },
+    select: { role: true },
+  });
+
+  if (membership?.role !== "admin") {
+    return "/";
+  }
+
+  const [roomCount, taskCount] = await Promise.all([
+    prisma.room.count({
+      where: {
+        householdId,
+        active: true,
+        name: { not: "Unsorted" },
+      },
+    }),
+    prisma.task.count({
+      where: {
+        active: true,
+        room: { householdId },
+      },
+    }),
+  ]);
+
+  return roomCount > 0 && taskCount > 0 ? "/" : "/setup/start";
 }
 
 function refreshViews(paths = ["/", "/log", "/tasks", "/admin", "/settings", "/settings/rooms", "/settings/people", "/settings/locations", "/setup/start", "/login"]) {

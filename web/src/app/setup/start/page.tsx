@@ -12,6 +12,14 @@ import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
+const SETUP_ROOM_PRESETS = [
+  "Kitchen",
+  "Main bedroom",
+  "Bathroom",
+  "Hall",
+  "Garden",
+] as const;
+
 type SearchParams = {
   added?: string;
   duplicate?: string;
@@ -74,6 +82,25 @@ export default async function SetupStartPage({
   const roomsReady = rooms.length > 0;
   const firstJobReady = taskCount > 0;
   const setupReady = roomsReady && firstJobReady;
+  const nextRequiredStep = !roomsReady ? "rooms" : !firstJobReady ? "first-job" : "done";
+  const nextStepHref =
+    nextRequiredStep === "rooms"
+      ? "#step-rooms"
+      : nextRequiredStep === "first-job"
+        ? "#step-first-job"
+        : "/tasks";
+  const nextStepLabel =
+    nextRequiredStep === "rooms"
+      ? "Add the first room"
+      : nextRequiredStep === "first-job"
+        ? "Add the first job"
+        : "Open jobs";
+  const nextStepCopy =
+    nextRequiredStep === "rooms"
+      ? "Start with one real place where jobs happen. Kitchen, hall, bedroom, or garden is enough."
+      : nextRequiredStep === "first-job"
+        ? "You have a room now. Add one real job so home, jobs, and quick log all have something to show."
+        : "The basics are in place. You can start using the app normally and add more structure later.";
 
   return (
     <div className="settings-shell page-settings min-h-screen px-4 py-5">
@@ -115,6 +142,30 @@ export default async function SetupStartPage({
             </div>
           </div>
 
+          <div className="mt-4 rounded-2xl border border-border bg-surface px-4 py-4">
+            <p className="settings-kicker">Do this next</p>
+            <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h3 className="text-lg font-semibold text-foreground">{nextStepLabel}</h3>
+                <p className="mt-1 text-sm text-muted">{nextStepCopy}</p>
+                {!sharedBoardReady ? (
+                  <p className="mt-2 text-sm text-muted">
+                    Optional before that: add another person if the board will be shared.
+                  </p>
+                ) : null}
+              </div>
+              {setupReady ? (
+                <Link href="/tasks" className="recorded-row-edit recorded-row-edit-bright">
+                  Open jobs
+                </Link>
+              ) : (
+                <a href={nextStepHref} className="recorded-row-edit recorded-row-edit-bright">
+                  {nextStepLabel}
+                </a>
+              )}
+            </div>
+          </div>
+
           <div className="mt-4 grid grid-cols-3 gap-3 text-center">
             <StatusCount label="People" value={people.length} done={sharedBoardReady} optional />
             <StatusCount label="Rooms" value={rooms.length} done={roomsReady} />
@@ -146,14 +197,14 @@ export default async function SetupStartPage({
 
           {!sharedBoardReady ? (
             <form action={createPersonAction} className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <input type="hidden" name="returnTo" value="/setup/start#step-people" />
+              <input type="hidden" name="returnTo" value="/setup/start#step-rooms" />
               <label className="recorded-field sm:col-span-2">
                 <span>Name</span>
                 <input name="displayName" type="text" required placeholder="Sam" className="recorded-edit-input" />
               </label>
               <label className="recorded-field">
                 <span>Passcode</span>
-                <input name="passcode" type="password" minLength={4} placeholder="Optional" className="recorded-edit-input" />
+                <input name="passcode" type="password" minLength={4} required placeholder="Needed to sign in" className="recorded-edit-input" />
               </label>
               <label className="recorded-field">
                 <span>Role</span>
@@ -204,7 +255,7 @@ export default async function SetupStartPage({
               </p>
             </div>
             <span className={`task-chip ${roomsReady ? "task-chip-done" : "task-chip-due"}`}>
-              {roomsReady ? "Done" : "Next"}
+              {roomsReady ? "Done" : "Do this next"}
             </span>
           </div>
 
@@ -221,27 +272,10 @@ export default async function SetupStartPage({
 
           {!roomsReady ? (
             <form action={createRoomAction} className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <input type="hidden" name="returnTo" value="/setup/start#step-rooms" />
+              <input type="hidden" name="returnTo" value="/setup/start#step-first-job" />
               <label className="recorded-field sm:col-span-2">
                 <span>Room name</span>
                 <input name="name" type="text" required placeholder="Kitchen" className="recorded-edit-input" />
-              </label>
-              {locations.length > 0 ? (
-                <label className="recorded-field">
-                  <span>Location</span>
-                  <select name="locationId" defaultValue="" className="recorded-edit-input">
-                    <option value="">No location</option>
-                    {locations.map((location) => (
-                      <option key={location.id} value={location.id}>
-                        {location.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              ) : null}
-              <label className="recorded-field">
-                <span>Group label</span>
-                <input name="designation" type="text" placeholder="General" className="recorded-edit-input" />
               </label>
               <div className="sm:col-span-2 flex flex-wrap items-center gap-3">
                 <FormActionButton className="action-btn bright" pendingLabel="Adding">
@@ -249,6 +283,28 @@ export default async function SetupStartPage({
                 </FormActionButton>
                 <Link href="/settings/rooms" className="recorded-row-edit">Manage rooms</Link>
               </div>
+              <details className="recorded-more-details sm:col-span-2">
+                <summary className="recorded-more-summary">Add room details</summary>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {locations.length > 0 ? (
+                    <label className="recorded-field">
+                      <span>Location</span>
+                      <select name="locationId" defaultValue="" className="recorded-edit-input">
+                        <option value="">No location</option>
+                        {locations.map((location) => (
+                          <option key={location.id} value={location.id}>
+                            {location.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : null}
+                  <label className="recorded-field">
+                    <span>Group label</span>
+                    <input name="designation" type="text" placeholder="General" className="recorded-edit-input" />
+                  </label>
+                </div>
+              </details>
             </form>
           ) : (
             <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -256,6 +312,23 @@ export default async function SetupStartPage({
               <Link href="/settings/rooms" className="recorded-row-edit">Manage rooms</Link>
             </div>
           )}
+
+          {!roomsReady ? (
+            <div className="mt-4">
+              <p className="recorded-row-placeholder">Quick picks if you want to move faster:</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {SETUP_ROOM_PRESETS.map((preset) => (
+                  <form key={preset} action={createRoomAction}>
+                    <input type="hidden" name="returnTo" value="/setup/start#step-first-job" />
+                    <input type="hidden" name="name" value={preset} />
+                    <FormActionButton className="action-btn subtle quiet" pendingLabel="Adding">
+                      {preset}
+                    </FormActionButton>
+                  </form>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </section>
 
         <section id="step-first-job" className="settings-panel">
@@ -268,14 +341,14 @@ export default async function SetupStartPage({
               </p>
             </div>
             <span className={`task-chip ${firstJobReady ? "task-chip-done" : roomsReady ? "task-chip-due" : ""}`}>
-              {firstJobReady ? "Done" : roomsReady ? "Next" : "Waiting"}
+              {firstJobReady ? "Done" : roomsReady ? "Do this next" : "After rooms"}
             </span>
           </div>
 
           {roomsReady ? (
             !firstJobReady ? (
               <form action={createTaskAction} className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <input type="hidden" name="returnTo" value="/setup/start#step-first-job" />
+                <input type="hidden" name="returnTo" value="/tasks" />
                 <label className="recorded-field sm:col-span-2">
                   <span>Job title</span>
                   <input name="title" type="text" required placeholder="Take out the bins" className="recorded-edit-input" />
@@ -292,27 +365,32 @@ export default async function SetupStartPage({
                     ))}
                   </select>
                 </label>
-                <label className="recorded-field">
-                  <span>Assign to</span>
-                  <select name="assigneeUserId" defaultValue="" className="recorded-edit-input">
-                    <option value="">Leave unassigned</option>
-                    {people.map((person) => (
-                      <option key={person.user.id} value={person.user.id}>
-                        {person.user.displayName}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="recorded-field sm:col-span-2">
-                  <span>Notes</span>
-                  <input name="detailNotes" type="text" placeholder="Optional detail" className="recorded-edit-input" />
-                </label>
                 <div className="sm:col-span-2 flex flex-wrap items-center gap-3">
                   <FormActionButton className="action-btn bright" pendingLabel="Adding">
                     Add first job
                   </FormActionButton>
                   <Link href="/log" className="recorded-row-edit">Use full log instead</Link>
                 </div>
+                <details className="recorded-more-details sm:col-span-2">
+                  <summary className="recorded-more-summary">Add job details</summary>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <label className="recorded-field">
+                      <span>Assign to</span>
+                      <select name="assigneeUserId" defaultValue="" className="recorded-edit-input">
+                        <option value="">Leave unassigned</option>
+                        {people.map((person) => (
+                          <option key={person.user.id} value={person.user.id}>
+                            {person.user.displayName}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="recorded-field sm:col-span-2">
+                      <span>Notes</span>
+                      <input name="detailNotes" type="text" placeholder="Optional detail" className="recorded-edit-input" />
+                    </label>
+                  </div>
+                </details>
               </form>
             ) : (
               <div className="mt-4 flex flex-wrap items-center gap-3">
