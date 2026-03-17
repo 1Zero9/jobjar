@@ -205,48 +205,56 @@ export default async function HomePage({
       select: homeTaskSelect,
       take: 12,
     }),
-    prisma.task.findMany({
-      where: {
-        ...visibleOpenTaskWhere,
-        assignments: { some: { userId, assignedTo: null } },
-      },
-      select: homeTaskSelect,
-      take: 12,
-    }),
-    prisma.taskOccurrence.count({
-      where: {
-        status: "done",
-        completedBy: userId,
-        completedAt: { gte: weekStart },
-        task: {
-          room: { householdId, ...getRoomLocationAccessWhere(allowedLocationIds) },
-        },
-      },
-    }),
-    prisma.task.findMany({
-      where: {
-        rewardCents: { not: null },
-        rewardPaidAt: { gte: weekStart },
-        assignments: { some: { userId, assignedTo: null } },
-        room: { householdId, ...getRoomLocationAccessWhere(allowedLocationIds) },
-      },
-      select: {
-        rewardCents: true,
-      },
-    }),
-    prisma.taskOccurrence.findMany({
-      where: {
-        status: "done",
-        completedBy: userId,
-        completedAt: { gte: daysAgo(30) },
-        task: {
-          room: { householdId, ...getRoomLocationAccessWhere(allowedLocationIds) },
-        },
-      },
-      orderBy: { completedAt: "desc" },
-      take: 90,
-      select: { completedAt: true },
-    }),
+    viewerMode
+      ? Promise.resolve([])
+      : prisma.task.findMany({
+          where: {
+            ...visibleOpenTaskWhere,
+            assignments: { some: { userId, assignedTo: null } },
+          },
+          select: homeTaskSelect,
+          take: 12,
+        }),
+    viewerMode
+      ? Promise.resolve(0)
+      : prisma.taskOccurrence.count({
+          where: {
+            status: "done",
+            completedBy: userId,
+            completedAt: { gte: weekStart },
+            task: {
+              room: { householdId, ...getRoomLocationAccessWhere(allowedLocationIds) },
+            },
+          },
+        }),
+    viewerMode
+      ? Promise.resolve([])
+      : prisma.task.findMany({
+          where: {
+            rewardCents: { not: null },
+            rewardPaidAt: { gte: weekStart },
+            assignments: { some: { userId, assignedTo: null } },
+            room: { householdId, ...getRoomLocationAccessWhere(allowedLocationIds) },
+          },
+          select: {
+            rewardCents: true,
+          },
+        }),
+    viewerMode
+      ? Promise.resolve([])
+      : prisma.taskOccurrence.findMany({
+          where: {
+            status: "done",
+            completedBy: userId,
+            completedAt: { gte: daysAgo(30) },
+            task: {
+              room: { householdId, ...getRoomLocationAccessWhere(allowedLocationIds) },
+            },
+          },
+          orderBy: { completedAt: "desc" },
+          take: 90,
+          select: { completedAt: true },
+        }),
   ]);
 
   const locationScopeLabel = restrictedToLocations ? getLocationScopeLabel(locations, allowedLocationIds) : null;
@@ -262,12 +270,14 @@ export default async function HomePage({
       .sort((left, right) => compareDueDates(left.dueAt, right.dueAt)),
   ).slice(0, childMode ? 8 : 6);
   const urgentIds = new Set([...overdueTasks, ...dueTodayTasks].map((task) => task.id));
-  const assignedTasks = dedupeTasks(
-    assignedRaw
-      .map(mapHomeTask)
-      .filter((task) => !urgentIds.has(task.id))
-      .sort((left, right) => compareDueDates(left.dueAt, right.dueAt)),
-  ).slice(0, 6);
+  const assignedTasks = viewerMode
+    ? []
+    : dedupeTasks(
+        assignedRaw
+          .map(mapHomeTask)
+          .filter((task) => !urgentIds.has(task.id))
+          .sort((left, right) => compareDueDates(left.dueAt, right.dueAt)),
+      ).slice(0, 6);
   const viewerOpenTasks = viewerMode
     ? dedupeTasks(
         openPreviewRaw
@@ -279,8 +289,8 @@ export default async function HomePage({
   const childHomeTasks = childMode
     ? dedupeTasks([...overdueTasks, ...dueTodayTasks, ...assignedRaw.map(mapHomeTask)]).slice(0, 6)
     : [];
-  const paidThisWeekCents = paidThisWeek.reduce((sum, task) => sum + (task.rewardCents ?? 0), 0);
-  const completionStreak = computeCompletionDayStreak(recentCompletionDays.map((entry) => entry.completedAt));
+  const paidThisWeekCents = viewerMode ? 0 : paidThisWeek.reduce((sum, task) => sum + (task.rewardCents ?? 0), 0);
+  const completionStreak = viewerMode ? 0 : computeCompletionDayStreak(recentCompletionDays.map((entry) => entry.completedAt));
   const greeting = getGreeting(childMode ? "Hey" : "Good");
   const setupReady = setupRoomCount > 0 && setupTaskCount > 0;
   const showSetupGuide = role === "admin" && !setupReady;
@@ -389,6 +399,8 @@ export default async function HomePage({
             tasks={childHomeTasks}
             canAct={canAct}
             childMode
+            emptyActionHref="/more"
+            emptyActionLabel="Open more"
           />
         ) : (
           <>
@@ -397,6 +409,8 @@ export default async function HomePage({
               emptyMessage="Nothing overdue right now."
               tasks={overdueTasks}
               canAct={canAct}
+              emptyActionHref="/tasks"
+              emptyActionLabel="Open jobs"
             />
 
             <HomeTaskList
@@ -404,6 +418,8 @@ export default async function HomePage({
               emptyMessage="Nothing is due today."
               tasks={dueTodayTasks}
               canAct={canAct}
+              emptyActionHref="/tasks"
+              emptyActionLabel="Open jobs"
             />
 
             <HomeTaskList
@@ -411,27 +427,48 @@ export default async function HomePage({
               emptyMessage={viewerMode ? "No open jobs right now." : memberMode ? "Nothing extra is assigned to you right now." : "Nothing new is assigned to you right now."}
               tasks={viewerMode ? viewerOpenTasks : assignedTasks}
               canAct={canAct}
+              emptyActionHref={viewerMode ? "/help" : "/tasks"}
+              emptyActionLabel={viewerMode ? "Open help" : "Open jobs"}
             />
           </>
         )}
 
         <section className="today-section">
           <div className="today-section-head">
-            <h2 className="today-section-title">This week</h2>
+            <h2 className="today-section-title">{viewerMode ? "Board snapshot" : "This week"}</h2>
           </div>
           <div className="today-week-summary">
-            <p>
-              <strong>{completedThisWeek}</strong>
-              <span>done</span>
-            </p>
-            <p>
-              <strong>{paidThisWeekCents > 0 ? formatMoney(paidThisWeekCents) : "No rewards yet"}</strong>
-              <span>{paidThisWeekCents > 0 ? "paid out" : "paid rewards"}</span>
-            </p>
-            <p>
-              <strong>{completionStreak} day{completionStreak === 1 ? "" : "s"}</strong>
-              <span>streak</span>
-            </p>
+            {viewerMode ? (
+              <>
+                <p>
+                  <strong>{openTaskCount}</strong>
+                  <span>open jobs</span>
+                </p>
+                <p>
+                  <strong>{overdueTasks.length}</strong>
+                  <span>need attention</span>
+                </p>
+                <p>
+                  <strong>{dueTodayTasks.length}</strong>
+                  <span>due today</span>
+                </p>
+              </>
+            ) : (
+              <>
+                <p>
+                  <strong>{completedThisWeek}</strong>
+                  <span>done</span>
+                </p>
+                <p>
+                  <strong>{paidThisWeekCents > 0 ? formatMoney(paidThisWeekCents) : "No rewards yet"}</strong>
+                  <span>{paidThisWeekCents > 0 ? "paid out" : "paid rewards"}</span>
+                </p>
+                <p>
+                  <strong>{completionStreak} day{completionStreak === 1 ? "" : "s"}</strong>
+                  <span>streak</span>
+                </p>
+              </>
+            )}
           </div>
         </section>
 

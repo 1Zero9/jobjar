@@ -5,6 +5,7 @@ import { TaskCard } from "@/app/components/TaskCard";
 import { TaskFilters } from "@/app/components/TaskFilters";
 import type { PersonOption, RoomOption, TaskItem } from "@/app/components/task-board-types";
 import { getTaskSearchText, getTaskState, groupRoomsByLocation, normalizeSearchText } from "@/app/components/task-board-utils";
+import Link from "next/link";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 
 type Props = {
@@ -20,7 +21,6 @@ type Props = {
   canEditTasks: boolean;
   canManageProjects: boolean;
   canDeleteTasks: boolean;
-  memberMode: boolean;
   easyMode?: boolean;
   currentUserId: string;
   basePath?: string;
@@ -43,7 +43,6 @@ export function TasksPanelClient({
   canEditTasks,
   canManageProjects,
   canDeleteTasks,
-  memberMode,
   easyMode = false,
   currentUserId,
   basePath = "/tasks",
@@ -60,8 +59,8 @@ export function TasksPanelClient({
   const groupedRoomOptions = groupRoomsByLocation(roomOptions);
   const projectMode = viewMode === "projects";
   const childMode = audienceBand === "under_12";
-  const teenMode = audienceBand === "teen_12_18";
-  const showSearch = !childMode && !memberMode;
+  const showSearch = !childMode;
+  const showAssigneeFilter = !childMode && canEditTasks;
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const normalizedSearchQuery = normalizeSearchText(deferredSearchQuery);
   const hasSearchQuery = showSearch && normalizedSearchQuery.length > 0;
@@ -112,8 +111,8 @@ export function TasksPanelClient({
 
       <TaskFilters
         childMode={childMode}
-        memberMode={memberMode}
         showSearch={showSearch}
+        showAssigneeFilter={showAssigneeFilter}
         tasksCount={tasks.length}
         visibleCount={visibleTasks.length}
         searchQuery={searchQuery}
@@ -138,15 +137,34 @@ export function TasksPanelClient({
 
       <div className="recorded-list">
         {visibleTasks.length === 0 ? (
-          <p className="recorded-empty">
-            {hasActiveView
-              ? childMode
+          hasActiveView ? (
+            <p className="recorded-empty">
+              {childMode
                 ? "No jobs match this view."
                 : hasSearchQuery
                   ? `No ${projectMode ? "parent jobs" : "jobs"} match this search.`
-                  : "No jobs match these filters."
-              : emptyMessage}
-          </p>
+                  : "No jobs match these filters."}
+            </p>
+          ) : (
+            <div className="recorded-empty-card">
+              <p className="recorded-empty">{emptyMessage}</p>
+              <div className="recorded-row-actions">
+                {projectMode ? (
+                  <Link href="/tasks" className="action-btn subtle quiet">
+                    Open jobs
+                  </Link>
+                ) : canEditTasks && !childMode ? (
+                  <Link href="/log" className="action-btn bright quiet">
+                    Add a job
+                  </Link>
+                ) : (
+                  <Link href="/" className="action-btn subtle quiet">
+                    Go home
+                  </Link>
+                )}
+              </div>
+            </div>
+          )
         ) : (
           visibleTasks.map((task) => (
             <TaskCard
@@ -156,7 +174,6 @@ export function TasksPanelClient({
               groupedRoomOptions={groupedRoomOptions}
               peopleOptions={peopleOptions}
               childMode={childMode}
-              teenMode={teenMode}
               canEditTasks={canEditTasks}
               canManageProjects={canManageProjects}
               canDeleteTasks={canDeleteTasks}

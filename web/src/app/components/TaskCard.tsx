@@ -38,7 +38,6 @@ type Props = {
   groupedRoomOptions: GroupedRoomOptions;
   peopleOptions: PersonOption[];
   childMode: boolean;
-  teenMode: boolean;
   canEditTasks: boolean;
   canManageProjects: boolean;
   canDeleteTasks: boolean;
@@ -52,7 +51,6 @@ export function TaskCard({
   groupedRoomOptions,
   peopleOptions,
   childMode,
-  teenMode,
   canEditTasks,
   canManageProjects,
   canDeleteTasks,
@@ -225,7 +223,6 @@ export function TaskCard({
             task={task}
             groupedRoomOptions={groupedRoomOptions}
             peopleOptions={peopleOptions}
-            teenMode={teenMode}
             canEditTasks={canEditTasks}
             canManageProjects={canManageProjects}
             canDeleteTasks={canDeleteTasks}

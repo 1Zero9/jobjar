@@ -50,12 +50,6 @@ export default async function AdminPage({
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Admin</p>
               <h1 className="mt-1 text-2xl font-bold text-foreground sm:text-3xl">Admin Workspace</h1>
               <p className="mt-1 text-sm text-muted">Manage people, rooms, and tasks for the household.</p>
-              <div className="mt-2">
-                <span className="location-scope-chip">
-                  <span>Location</span>
-                  <strong>All locations</strong>
-                </span>
-              </div>
             </div>
           </div>
 

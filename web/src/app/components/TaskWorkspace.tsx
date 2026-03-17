@@ -8,7 +8,7 @@ import { ToastNotice } from "@/app/components/ToastNotice";
 import { getTaskFeedbackMessage } from "@/app/components/task-feedback";
 import { canAccessProjectViewsRole, canManageProjectsRole, canUseMemberActions, isAdminRole, isMemberRole, requireSessionContext } from "@/lib/auth";
 import { getLocationScopeLabel, getRoomLocationAccessWhere, hasLocationRestrictions } from "@/lib/location-access";
-import { canAccessExtendedViews, getAudienceAssignedTaskWhere, getMemberThemeClassName, isChildAudience, isTeenAudience } from "@/lib/member-audience";
+import { canAccessExtendedViews, getAudienceAssignedTaskWhere, getMemberThemeClassName, isChildAudience } from "@/lib/member-audience";
 import { prisma } from "@/lib/prisma";
 import { getMemberVisibleTaskWhere, getPrivateTaskAccessWhere, getProjectTaskWhere } from "@/lib/project-work";
 import Link from "next/link";
@@ -36,6 +36,7 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
   }
   const memberMode = isMemberRole(role);
   const easyLog = memberMode;
+  const showAssignField = !memberMode;
   const restrictedToLocations = hasLocationRestrictions(allowedLocationIds);
   const audienceThemeClass = getMemberThemeClassName(audienceBand, profileTheme);
 
@@ -45,30 +46,34 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
       select: { id: true, name: true, designation: true, location: { select: { id: true, name: true } } },
     }),
-    prisma.householdMember.findMany({
-      where: { householdId },
-      orderBy: { joinedAt: "asc" },
-      select: {
-        user: {
+    showAssignField
+      ? prisma.householdMember.findMany({
+          where: { householdId },
+          orderBy: { joinedAt: "asc" },
           select: {
-            id: true,
-            displayName: true,
+            user: {
+              select: {
+                id: true,
+                displayName: true,
+              },
+            },
           },
-        },
-      },
-    }),
-    prisma.location.findMany({
-      where: { householdId, active: true, ...(restrictedToLocations ? { id: { in: allowedLocationIds! } } : {}) },
-      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-      select: { id: true, name: true },
-    }),
+        })
+      : Promise.resolve([]),
+    restrictedToLocations
+      ? prisma.location.findMany({
+          where: { householdId, active: true, id: { in: allowedLocationIds! } },
+          orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+          select: { id: true, name: true },
+        })
+      : Promise.resolve([]),
     prisma.task.findMany({
       where: {
         active: true,
         room: { householdId, ...getRoomLocationAccessWhere(allowedLocationIds) },
       },
       orderBy: { createdAt: "desc" },
-      take: 40,
+      take: 24,
       select: {
         id: true,
         title: true,
@@ -84,15 +89,15 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
   ]);
 
   const roomOptions = uniqueRoomsByName(rooms).filter((room) => room.name.toLowerCase() !== "unsorted");
-  const peopleOptions = people.map((member) => member.user);
-  const locationScopeLabel = getLocationScopeLabel(locations, allowedLocationIds);
+  const peopleOptions = showAssignField ? people.map((member) => member.user) : [];
+  const locationScopeLabel = restrictedToLocations ? getLocationScopeLabel(locations, allowedLocationIds) : null;
 
   return (
     <div className={`capture-shell page-log ${audienceThemeClass} min-h-screen px-4 py-5`}>
       <main className={`capture-app-shell ${easyLog ? "capture-app-shell-easy" : ""} mx-auto flex w-full max-w-[28rem] flex-col gap-6`.trim()}>
         <AppPageHeader
           title="Log a Job"
-          subtitle={memberMode ? "Type it, tap the room, and save." : "Type it, tap the room, and save."}
+          subtitle="Type it, tap the room, and save."
           className={easyLog ? "page-hero-easy" : ""}
           iconClassName="log"
           icon={
@@ -166,19 +171,21 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
 
               <div className="recorded-row-detail">
                 <div className="capture-meta-grid quick-log-optional-grid">
-                  <div className="capture-step">
-                    <label className="capture-step-inner">
-                      <span className="capture-step-label">Assign to</span>
-                      <select name="assignedToUserId" defaultValue="" className="capture-room-select">
-                        <option value="">No one yet</option>
-                        {peopleOptions.map((person) => (
-                          <option key={person.id} value={person.id}>
-                            {person.displayName}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  </div>
+                  {showAssignField ? (
+                    <div className="capture-step">
+                      <label className="capture-step-inner">
+                        <span className="capture-step-label">Assign to</span>
+                        <select name="assignedToUserId" defaultValue="" className="capture-room-select">
+                          <option value="">No one yet</option>
+                          {peopleOptions.map((person) => (
+                            <option key={person.id} value={person.id}>
+                              {person.displayName}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+                  ) : null}
 
                   <label className="recorded-field">
                     <span>Value</span>
@@ -292,24 +299,129 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
   const taskAudienceWhere = getAudienceAssignedTaskWhere(userId, audienceBand);
   const audienceThemeClass = getMemberThemeClassName(audienceBand, profileTheme);
   const childMode = isChildAudience(audienceBand);
-  const teenMode = isTeenAudience(audienceBand);
   const memberMode = isMemberRole(role);
   const canEditTasks = canUseMemberActions(role);
+  const viewerMode = role === "viewer";
   const easyWorkspace = !childMode && (memberMode || !canEditTasks);
   const taskTake = mode === "projects" ? 28 : 48;
   const parentOccurrenceTake = mode === "projects" ? 8 : 6;
   const childOccurrenceTake = 2;
-
-  const [rooms, people, locations, recordedTasks] = await Promise.all([
-    prisma.room.findMany({
-      where: { householdId, active: true, ...getRoomLocationAccessWhere(allowedLocationIds) },
-      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-      select: { id: true, name: true, designation: true, locationId: true, location: { select: { id: true, name: true } } },
-    }),
-    prisma.householdMember.findMany({
-      where: { householdId },
-      orderBy: { joinedAt: "asc" },
+  const includeLegacyProjectPlanning = mode === "projects";
+  const needsPeopleOptions = canEditTasks;
+  const recordedTaskSelect = {
+    id: true,
+    title: true,
+    createdByUserId: true,
+    roomId: true,
+    detailNotes: true,
+    priority: true,
+    isPrivate: true,
+    jobKind: true,
+    captureStage: true,
+    createdAt: true,
+    estimatedMinutes: true,
+    rewardCents: true,
+    rewardConfirmed: true,
+    rewardPaidAt: true,
+    projectParentId: true,
+    ...(includeLegacyProjectPlanning
+      ? {
+          projectTargetAt: true,
+          projectBudgetCents: true,
+        }
+      : {}),
+    room: {
+      select: { name: true, location: { select: { id: true, name: true } } },
+    },
+    logger: {
+      select: { displayName: true },
+    },
+    projectParent: {
       select: {
+        id: true,
+        title: true,
+      },
+    },
+    projectChildren: {
+      where: {
+        active: true,
+        ...(privateTaskAccess ? { OR: privateTaskAccess } : {}),
+      },
+      orderBy: [{ priority: "asc" as const }, { createdAt: "desc" as const }],
+      select: {
+        id: true,
+        title: true,
+        captureStage: true,
+        estimatedMinutes: true,
+        assignments: {
+          where: { assignedTo: null },
+          orderBy: { assignedFrom: "desc" as const },
+          take: 1,
+          select: {
+            user: {
+              select: {
+                id: true,
+                displayName: true,
+              },
+            },
+          },
+        },
+        schedule: {
+          select: {
+            nextDueAt: true,
+          },
+        },
+        occurrences: {
+          orderBy: { dueAt: "desc" as const },
+          take: childOccurrenceTake,
+          select: {
+            status: true,
+            dueAt: true,
+          },
+        },
+      },
+    },
+    ...(includeLegacyProjectPlanning
+      ? {
+          projectMilestones: {
+            orderBy: [{ sortOrder: "asc" as const }, { createdAt: "asc" as const }],
+            select: {
+              id: true,
+              title: true,
+              targetAt: true,
+              completedAt: true,
+              sortOrder: true,
+            },
+          },
+          projectCosts: {
+            orderBy: { notedAt: "desc" as const },
+            select: {
+              id: true,
+              title: true,
+              amountCents: true,
+              notedAt: true,
+            },
+          },
+          projectMaterials: {
+            orderBy: [{ purchasedAt: "asc" as const }, { sortOrder: "asc" as const }, { createdAt: "asc" as const }],
+            select: {
+              id: true,
+              title: true,
+              quantityLabel: true,
+              source: true,
+              estimatedCostCents: true,
+              actualCostCents: true,
+              purchasedAt: true,
+            },
+          },
+        }
+      : {}),
+    assignments: {
+      where: { assignedTo: null },
+      orderBy: { assignedFrom: "desc" as const },
+      take: 1,
+      select: {
+        userId: true,
         user: {
           select: {
             id: true,
@@ -317,12 +429,58 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
           },
         },
       },
-    }),
-    prisma.location.findMany({
-      where: { householdId, active: true, ...(restrictedToLocations ? { id: { in: allowedLocationIds! } } : {}) },
+    },
+    schedule: {
+      select: {
+        recurrenceType: true,
+        intervalCount: true,
+        nextDueAt: true,
+      },
+    },
+    occurrences: {
+      orderBy: { dueAt: "desc" as const },
+      take: parentOccurrenceTake,
+      select: {
+        status: true,
+        dueAt: true,
+        completedAt: true,
+        completedBy: true,
+        completer: {
+          select: {
+            displayName: true,
+          },
+        },
+      },
+    },
+  };
+
+  const [rooms, people, locations, recordedTasks] = await Promise.all([
+    prisma.room.findMany({
+      where: { householdId, active: true, ...getRoomLocationAccessWhere(allowedLocationIds) },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-      select: { id: true, name: true },
+      select: { id: true, name: true, designation: true, locationId: true, location: { select: { id: true, name: true } } },
     }),
+    needsPeopleOptions
+      ? prisma.householdMember.findMany({
+          where: { householdId },
+          orderBy: { joinedAt: "asc" },
+          select: {
+            user: {
+              select: {
+                id: true,
+                displayName: true,
+              },
+            },
+          },
+        })
+      : Promise.resolve([]),
+    restrictedToLocations
+      ? prisma.location.findMany({
+          where: { householdId, active: true, id: { in: allowedLocationIds! } },
+          orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+          select: { id: true, name: true },
+        })
+      : Promise.resolve([]),
     prisma.task.findMany({
       where: {
         active: true,
@@ -336,129 +494,19 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
       },
       orderBy: [{ room: { sortOrder: "asc" } }, { priority: "asc" }, { createdAt: "desc" }],
       take: taskTake,
-      include: {
-        room: {
-          select: { name: true, location: { select: { id: true, name: true } } },
-        },
-        logger: {
-          select: { displayName: true },
-        },
-        projectParent: {
-          select: {
-            id: true,
-            title: true,
-          },
-        },
-        projectChildren: {
-          where: {
-            active: true,
-            ...(privateTaskAccess ? { OR: privateTaskAccess } : {}),
-          },
-          orderBy: [{ priority: "asc" }, { createdAt: "desc" }],
-          include: {
-            assignments: {
-              where: { assignedTo: null },
-              orderBy: { assignedFrom: "desc" },
-              take: 1,
-              include: {
-                user: {
-                  select: {
-                    id: true,
-                    displayName: true,
-                  },
-                },
-              },
-            },
-            schedule: {
-              select: {
-                nextDueAt: true,
-              },
-            },
-            occurrences: {
-              orderBy: { dueAt: "desc" },
-              take: childOccurrenceTake,
-              select: {
-                status: true,
-                dueAt: true,
-              },
-            },
-          },
-        },
-        projectMilestones: {
-          orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-          select: {
-            id: true,
-            title: true,
-            targetAt: true,
-            completedAt: true,
-            sortOrder: true,
-          },
-        },
-        projectCosts: {
-          orderBy: { notedAt: "desc" },
-          select: {
-            id: true,
-            title: true,
-            amountCents: true,
-            notedAt: true,
-          },
-        },
-        projectMaterials: {
-          orderBy: [{ purchasedAt: "asc" }, { sortOrder: "asc" }, { createdAt: "asc" }],
-          select: {
-            id: true,
-            title: true,
-            quantityLabel: true,
-            source: true,
-            estimatedCostCents: true,
-            actualCostCents: true,
-            purchasedAt: true,
-          },
-        },
-        assignments: {
-          where: { assignedTo: null },
-          orderBy: { assignedFrom: "desc" },
-          take: 1,
-          include: {
-            user: {
-              select: {
-                id: true,
-                displayName: true,
-              },
-            },
-          },
-        },
-        schedule: {
-          select: {
-            recurrenceType: true,
-            intervalCount: true,
-            nextDueAt: true,
-          },
-        },
-        occurrences: {
-          orderBy: { dueAt: "desc" },
-          take: parentOccurrenceTake,
-          include: {
-            completer: {
-              select: {
-                displayName: true,
-              },
-            },
-          },
-        },
-      },
+      select: recordedTaskSelect,
     }),
   ]);
 
   const roomOptions = uniqueRoomsByName(rooms).filter((room) => room.name.toLowerCase() !== "unsorted");
-  const peopleOptions = people.map((member) => member.user);
+  const peopleOptions = needsPeopleOptions ? people.map((member) => member.user) : [];
   const selectedRoomId = roomOptions.some((room) => room.id === params.room) ? (params.room ?? "") : "";
-  const selectedAssigneeId = peopleOptions.some((person) => person.id === params.assignee) ? (params.assignee ?? "") : "";
+  const selectedAssigneeId = !viewerMode && peopleOptions.some((person) => person.id === params.assignee) ? (params.assignee ?? "") : "";
   const selectedState: "all" | "open" | "done" = params.state === "done" || params.state === "open" ? params.state : "all";
   const luckyTask = params.lucky && params.lucky !== "empty"
     ? recordedTasks.find((task) => task.id === params.lucky)
     : null;
-  const locationScopeLabel = getLocationScopeLabel(locations, allowedLocationIds);
+  const locationScopeLabel = restrictedToLocations ? getLocationScopeLabel(locations, allowedLocationIds) : null;
 
   return (
     <div className={`capture-shell ${mode === "projects" ? "page-projects" : "page-tasks"} ${audienceThemeClass} min-h-screen px-4 py-5`}>
@@ -469,24 +517,16 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
               ? "My jobs"
               : mode === "projects"
                 ? "Parent jobs"
-                : teenMode
-                  ? "View jobs"
-                  : memberMode
-                    ? "My jobs"
-                    : "View jobs"
+                : "Jobs"
           }
           subtitle={
             childMode
               ? "See your jobs, start one, and mark it finished."
               : mode === "projects"
-              ? "Use parent jobs to break bigger work into smaller subtasks."
-              : memberMode
-                ? "See your jobs and use filters only when you need them."
-              : teenMode
-                ? "See what is assigned, due, and ready to finish."
-                : "See what is logged, filter it, and move it forward."
+                ? "Older parent jobs still live here when work needs subtasks."
+                : "See what needs doing, search it fast, and move jobs forward."
           }
-          className={`${easyWorkspace ? "page-hero-easy" : ""} ${childMode ? "page-hero-kid" : teenMode ? "page-hero-teen" : ""}`.trim()}
+          className={`${easyWorkspace ? "page-hero-easy" : ""} ${childMode ? "page-hero-kid" : ""}`.trim()}
           iconClassName="tasks"
           icon={
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -542,7 +582,6 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
           canEditTasks={canEditTasks}
           canManageProjects={canManageProjectsRole(role)}
           canDeleteTasks={isAdminRole(role)}
-          memberMode={memberMode}
           easyMode={easyWorkspace}
           currentUserId={userId}
           basePath={mode === "projects" ? "/projects" : "/tasks"}
@@ -583,8 +622,8 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
             rewardCents: task.rewardCents,
             rewardConfirmed: task.rewardConfirmed,
             rewardPaidAt: task.rewardPaidAt?.toISOString() ?? null,
-            projectTargetAt: task.projectTargetAt?.toISOString() ?? null,
-            projectBudgetCents: task.projectBudgetCents,
+            projectTargetAt: includeLegacyProjectPlanning ? task.projectTargetAt?.toISOString() ?? null : null,
+            projectBudgetCents: includeLegacyProjectPlanning ? task.projectBudgetCents : null,
             projectChildren: task.projectChildren.map((child) => ({
               id: child.id,
               title: child.title,
@@ -597,28 +636,34 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
                 dueAt: occurrence.dueAt.toISOString(),
               })),
             })),
-            projectCosts: task.projectCosts.map((cost) => ({
-              id: cost.id,
-              title: cost.title,
-              amountCents: cost.amountCents,
-              notedAt: cost.notedAt.toISOString(),
-            })),
-            projectMaterials: task.projectMaterials.map((material) => ({
-              id: material.id,
-              title: material.title,
-              quantityLabel: material.quantityLabel ?? null,
-              source: material.source ?? null,
-              estimatedCostCents: material.estimatedCostCents ?? null,
-              actualCostCents: material.actualCostCents ?? null,
-              purchasedAt: material.purchasedAt?.toISOString() ?? null,
-            })),
-            projectMilestones: task.projectMilestones.map((milestone) => ({
-              id: milestone.id,
-              title: milestone.title,
-              targetAt: milestone.targetAt?.toISOString() ?? null,
-              completedAt: milestone.completedAt?.toISOString() ?? null,
-              sortOrder: milestone.sortOrder,
-            })),
+            projectCosts: includeLegacyProjectPlanning
+              ? task.projectCosts.map((cost) => ({
+                  id: cost.id,
+                  title: cost.title,
+                  amountCents: cost.amountCents,
+                  notedAt: cost.notedAt.toISOString(),
+                }))
+              : [],
+            projectMaterials: includeLegacyProjectPlanning
+              ? task.projectMaterials.map((material) => ({
+                  id: material.id,
+                  title: material.title,
+                  quantityLabel: material.quantityLabel ?? null,
+                  source: material.source ?? null,
+                  estimatedCostCents: material.estimatedCostCents ?? null,
+                  actualCostCents: material.actualCostCents ?? null,
+                  purchasedAt: material.purchasedAt?.toISOString() ?? null,
+                }))
+              : [],
+            projectMilestones: includeLegacyProjectPlanning
+              ? task.projectMilestones.map((milestone) => ({
+                  id: milestone.id,
+                  title: milestone.title,
+                  targetAt: milestone.targetAt?.toISOString() ?? null,
+                  completedAt: milestone.completedAt?.toISOString() ?? null,
+                  sortOrder: milestone.sortOrder,
+                }))
+              : [],
             schedule: task.schedule
               ? {
                   recurrenceType: task.schedule.recurrenceType,

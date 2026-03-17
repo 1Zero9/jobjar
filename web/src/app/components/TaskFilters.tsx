@@ -4,8 +4,8 @@ import type { GroupedRoomOptions, PersonOption } from "@/app/components/task-boa
 
 type Props = {
   childMode: boolean;
-  memberMode: boolean;
   showSearch: boolean;
+  showAssigneeFilter: boolean;
   tasksCount: number;
   visibleCount: number;
   searchQuery: string;
@@ -25,8 +25,8 @@ type Props = {
 
 export function TaskFilters({
   childMode,
-  memberMode,
   showSearch,
+  showAssigneeFilter,
   tasksCount,
   visibleCount,
   searchQuery,
@@ -101,7 +101,7 @@ export function TaskFilters({
             </select>
           </label>
 
-          {!childMode && !memberMode ? (
+          {showAssigneeFilter ? (
             <label className="recorded-filter-field">
               <span>Assigned</span>
               <select
@@ -130,11 +130,9 @@ export function TaskFilters({
           <span className="recorded-toolbar-hint">
             {childMode
               ? "Your jobs update right away."
-              : memberMode
-                ? "Your jobs stay focused and simple."
-                : showSearch
-                  ? "Search or filter to narrow the list."
-                  : "Filter to narrow the list."}
+              : showSearch
+                ? "Search or filter to narrow the list."
+                : "Filter to narrow the list."}
           </span>
         )}
       </div>

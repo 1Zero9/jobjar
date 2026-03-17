@@ -37,7 +37,7 @@ export default async function LocationsPage({
       <main className="mx-auto flex w-full max-w-[32rem] flex-col gap-6">
         <AppPageHeader
           title="Locations"
-          subtitle="Locations are the properties or places where you do work. Each location groups its own rooms."
+          subtitle="Locations are optional. Only use them when rooms need grouping across different properties or places."
           iconClassName="locations"
           icon={
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -45,7 +45,6 @@ export default async function LocationsPage({
               <circle cx="12" cy="11" r="2.5" />
             </svg>
           }
-          scopeLabel="All locations"
         />
 
         {params.added === "location" ? <ToastNotice message="Location added." tone="success" /> : null}

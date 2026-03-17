@@ -26,7 +26,6 @@ type Props = {
   task: TaskItem;
   groupedRoomOptions: GroupedRoomOptions;
   peopleOptions: PersonOption[];
-  teenMode: boolean;
   canEditTasks: boolean;
   canManageProjects: boolean;
   canDeleteTasks: boolean;
@@ -39,7 +38,6 @@ export function TaskCardStandardDetail({
   task,
   groupedRoomOptions,
   peopleOptions,
-  teenMode,
   canEditTasks,
   canManageProjects,
   canDeleteTasks,
@@ -56,9 +54,7 @@ export function TaskCardStandardDetail({
           <p className="task-overview-copy">{task.detailNotes}</p>
         ) : (
           <p className="task-overview-copy">
-            {teenMode
-              ? "Use the quick actions below or open details if this needs tidying."
-              : "Use the quick actions below, then open details only if the job needs updating."}
+            Use the quick actions below, then open details only if the job needs updating.
           </p>
         )}
 
@@ -66,26 +62,34 @@ export function TaskCardStandardDetail({
           <p><span>Where</span><strong>{formatTaskPlace(task.locationName, task.roomName)}</strong></p>
           <p><span>Assigned</span><strong>{task.assignmentUserName ?? "No one yet"}</strong></p>
           <p><span>Status</span><strong>{getTaskStatusLabel(task)}</strong></p>
-          <p><span>Type</span><strong>{formatJobKind(task.jobKind)}</strong></p>
           <p><span>Estimate</span><strong>{formatMinutes(task.estimatedMinutes)}</strong></p>
           {hasReward ? <p><span>Reward</span><strong>{rewardLabel}</strong></p> : null}
           {task.projectParentTitle ? <p><span>Parent job</span><strong>{task.projectParentTitle}</strong></p> : null}
-          {task.isPrivate ? <p><span>Privacy</span><strong>Private</strong></p> : null}
-          {task.schedule ? (
-            <>
-              <p><span>Repeats</span><strong>{formatRecurrenceChip(task.schedule)}</strong></p>
-              <p><span>Next due</span><strong>{task.schedule.nextDueAt ? formatRecordedAt(task.schedule.nextDueAt) : "Not set"}</strong></p>
-            </>
-          ) : null}
-          {task.schedule && computeStreak(task.occurrences) >= 2 ? (
-            <p><span>Streak</span><strong>{computeStreak(task.occurrences)} in a row</strong></p>
-          ) : null}
-          {latestCompleted?.completedAt ? (
-            <p><span>Last done</span><strong>{formatRecordedAt(latestCompleted.completedAt)}</strong></p>
-          ) : null}
-          {task.loggerName ? <p><span>Logged by</span><strong>{task.loggerName}</strong></p> : null}
-          <p><span>Recorded</span><strong>{formatRecordedAt(task.createdAt)}</strong></p>
         </div>
+
+        {(task.schedule || task.isPrivate || latestCompleted?.completedAt || task.loggerName || computeStreak(task.occurrences) >= 2) ? (
+          <details className="recorded-more-details">
+            <summary className="recorded-more-summary">More job info</summary>
+            <div className="task-overview-grid">
+              <p><span>Type</span><strong>{formatJobKind(task.jobKind)}</strong></p>
+              {task.isPrivate ? <p><span>Privacy</span><strong>Private</strong></p> : null}
+              {task.schedule ? (
+                <>
+                  <p><span>Repeats</span><strong>{formatRecurrenceChip(task.schedule)}</strong></p>
+                  <p><span>Next due</span><strong>{task.schedule.nextDueAt ? formatRecordedAt(task.schedule.nextDueAt) : "Not set"}</strong></p>
+                </>
+              ) : null}
+              {task.schedule && computeStreak(task.occurrences) >= 2 ? (
+                <p><span>Streak</span><strong>{computeStreak(task.occurrences)} in a row</strong></p>
+              ) : null}
+              {latestCompleted?.completedAt ? (
+                <p><span>Last done</span><strong>{formatRecordedAt(latestCompleted.completedAt)}</strong></p>
+              ) : null}
+              {task.loggerName ? <p><span>Logged by</span><strong>{task.loggerName}</strong></p> : null}
+              <p><span>Recorded</span><strong>{formatRecordedAt(task.createdAt)}</strong></p>
+            </div>
+          </details>
+        ) : null}
 
         {canEditTasks ? (
           <div className="recorded-row-actions task-overview-actions">

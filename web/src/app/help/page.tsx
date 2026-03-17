@@ -13,25 +13,14 @@ export const dynamic = "force-dynamic";
 
 const GUIDE_SECTIONS = [
   {
-    id: "adults",
-    title: "Adults",
-    subtitle: "For admins, power users, and members who help run the household board.",
+    id: "standard",
+    title: "Standard users",
+    subtitle: "For adults, teens, admins, power users, and members who work from the main household flow.",
     points: [
       "Use /log to capture work quickly.",
-      "Use /tasks to assign, tidy, and finish work.",
+      "Use /tasks to search, tidy, and finish work.",
       "Turn a job into a parent job when bigger work needs subtasks.",
-      "Use /stats for review and progress.",
-    ],
-  },
-  {
-    id: "teens",
-    title: "Teens",
-    subtitle: "For 12 to 18 users who work from the jobs board with simpler wording.",
-    points: [
-      "Open Jobs from home.",
-      "Start one job, then finish it before moving on.",
-      "Use notes when something needs explaining.",
-      "Bigger work may be broken into subtasks under a parent job.",
+      "Use /stats for a quick weekly check, not a deep dashboard.",
     ],
   },
   {
@@ -46,19 +35,43 @@ const GUIDE_SECTIONS = [
     ],
   },
   {
-    id: "grandparents",
-    title: "Grandparents",
+    id: "viewers",
+    title: "Viewers",
     subtitle: "For read-only family members who mainly want to see what is happening.",
     points: [
       "Viewer is the best role for read-only access.",
       "Open home, jobs, and stats to keep up.",
       "This setup avoids edit controls completely.",
-      "Location access can limit what part of the household is visible.",
+      "Use recent completions and open jobs as the main check-in points.",
     ],
   },
 ] as const;
 
 const UPDATE_TIMELINE = [
+  {
+    date: "17 Mar 2026",
+    title: "v2 simplification pass",
+    points: [
+      "Stats now shows a quick weekly check instead of a long dashboard.",
+      "Standard users now share one cleaner jobs flow, location setup is pushed further into optional advanced screens, and the old planning timeline has dropped out of the everyday app flow.",
+    ],
+  },
+  {
+    date: "17 Mar 2026",
+    title: "Faster routes and lighter views",
+    points: [
+      "Home, jobs, log, setup, stats, and admin now show loading states instead of blank waits during route changes.",
+      "Viewer and simpler role paths now load less data and show fewer unnecessary controls.",
+    ],
+  },
+  {
+    date: "17 Mar 2026",
+    title: "Home, jobs, and log simplified further",
+    points: [
+      "The home screen now behaves more like a today view, and the jobs board carries less metadata noise.",
+      "The main jobs flow no longer pulls legacy planning extras by default, and quick logging is slimmer for ordinary members.",
+    ],
+  },
   {
     date: "16 Mar 2026",
     title: "Parent jobs simplified",
@@ -80,15 +93,15 @@ const UPDATE_TIMELINE = [
     title: "Help and role guidance added",
     points: [
       "In-app help was added so the household can learn the app without leaving it.",
-      "Audience-specific guides now cover adults, teens, kids, and grandparents.",
+      "Role guides now cover standard users, kids, and viewers.",
     ],
   },
   {
     date: "13 Mar 2026",
     title: "Audience and access controls improved",
     points: [
-      "Audience bands now tailor the app for adults, teens, and under-12 users.",
-      "Location access can limit what each person sees across properties or areas.",
+      "Audience bands now mainly split the app into standard and under-12 experiences.",
+      "Location access is still available, but it now sits as an optional advanced control.",
     ],
   },
 ] as const;
@@ -108,12 +121,10 @@ export default async function HelpPage({
   const memberMode = isMemberRole(role);
   const recommendedGuideId =
     role === "viewer"
-      ? "grandparents"
+      ? "viewers"
       : audienceBand === "under_12"
         ? "kids"
-        : audienceBand === "teen_12_18"
-          ? "teens"
-          : "adults";
+        : "standard";
   const recommendedGuide = GUIDE_SECTIONS.find((section) => section.id === recommendedGuideId) ?? GUIDE_SECTIONS[0];
   const currentUser = canManageOwnNotifications
     ? await prisma.user.findUnique({
@@ -312,7 +323,7 @@ export default async function HelpPage({
             <div className="help-checklist">
               <p className="help-checklist-item">Use `viewer` when someone should only look, not change.</p>
               <p className="help-checklist-item">Use `under 12` when someone should only see jobs picked for them.</p>
-              <p className="help-checklist-item">Use location access when a person should only see one property or area.</p>
+              <p className="help-checklist-item">Only use location access when the household really needs separate properties or areas.</p>
               {canManagePeopleRole(role) ? (
                 <p className="help-checklist-item">
                   Open <Link href="/settings/people" className="recorded-row-edit">People</Link> to manage role, age group, theme, and location access.

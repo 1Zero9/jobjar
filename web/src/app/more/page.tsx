@@ -29,7 +29,7 @@ export default async function MorePage() {
       <main className="mx-auto flex w-full max-w-[32rem] flex-col gap-6">
         <AppPageHeader
           title="More"
-          subtitle={childMode ? "A short list of the extra things you might need." : viewerMode ? "A simple list of the extra places you can look." : "Extra screens, settings, and account controls."}
+          subtitle={childMode ? "A short list of the extra things you might need." : viewerMode ? "A simple list of the extra places you can look." : "The smaller set of extra places in the app."}
           iconClassName="help"
           icon={<SettingsIcon width="36" height="36" />}
         />
@@ -75,7 +75,7 @@ export default async function MorePage() {
               <Link href="/stats" className="landing-action-card">
                 <span className="landing-action-kicker">Stats</span>
                 <strong>Check progress</strong>
-                <span>See completions, streaks, and household momentum.</span>
+                <span>See a quick weekly check and recent completions.</span>
                 <span className="more-link-icon"><StatsIcon width="20" height="20" /></span>
               </Link>
             ) : null}

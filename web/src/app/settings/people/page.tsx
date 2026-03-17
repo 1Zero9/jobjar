@@ -70,7 +70,6 @@ export default async function PeoplePage({
               <path d="M16 3.13a4 4 0 0 1 0 7.75" />
             </svg>
           }
-          scopeLabel="All locations"
         />
 
         {params.added === "person" ? <ToastNotice message="Person added." tone="success" /> : null}
@@ -94,45 +93,56 @@ export default async function PeoplePage({
             <form action={createPersonAction} className="capture-form-simple">
               <input type="hidden" name="returnTo" value="/settings/people" />
               <input name="displayName" type="text" required placeholder="Name" className="capture-main-input" />
-              <input name="email" type="email" placeholder="Email (optional)" className="capture-room-select" />
+              <input name="passcode" type="password" minLength={4} placeholder="Passcode" className="capture-room-select" />
               <select name="role" defaultValue="member" className="capture-room-select">
                 <option value="member">Member</option>
                 <option value="power_user">Power user</option>
                 <option value="admin">Admin</option>
                 <option value="viewer">Viewer</option>
               </select>
-              <select name="audienceBand" defaultValue="adult" className="capture-room-select">
-                <option value="adult">Adult</option>
-                <option value="teen_12_18">12 to 18</option>
-                <option value="under_12">Under 12</option>
-              </select>
-              <select name="profileTheme" defaultValue="default_theme" className="capture-room-select">
-                <option value="default_theme">Default</option>
-                <option value="boy_blue">Boy / blue</option>
-                <option value="girl_pink">Girl / pink</option>
-              </select>
-              <input name="passcode" type="password" minLength={4} placeholder="Passcode" className="capture-room-select" />
-              {locations.length > 0 ? (
-                <fieldset className="location-access-fieldset">
-                  <legend className="capture-step-label">Location access</legend>
-                  <p className="recorded-row-placeholder">Leave blank for all locations. Admins always see everything.</p>
-                  <div className="location-access-grid">
-                    {locations.map((location) => (
-                      <label key={location.id} className="location-access-option">
-                        <input type="checkbox" name="locationIds" value={location.id} />
-                        <span>{location.name}</span>
-                      </label>
-                    ))}
-                  </div>
-                </fieldset>
-              ) : null}
+              <input name="email" type="email" placeholder="Email (optional)" className="capture-room-select" />
+              <details className="recorded-more-details">
+                <summary className="recorded-more-summary">Age, theme, and advanced access</summary>
+                <div className="capture-meta-grid">
+                  <label className="recorded-field">
+                    <span>Age group</span>
+                    <select name="audienceBand" defaultValue="adult" className="recorded-edit-input">
+                      <option value="adult">Adult</option>
+                      <option value="teen_12_18">12 to 18</option>
+                      <option value="under_12">Under 12</option>
+                    </select>
+                  </label>
+                  <label className="recorded-field">
+                    <span>Theme</span>
+                    <select name="profileTheme" defaultValue="default_theme" className="recorded-edit-input">
+                      <option value="default_theme">Default</option>
+                      <option value="boy_blue">Boy / blue</option>
+                      <option value="girl_pink">Girl / pink</option>
+                    </select>
+                  </label>
+                </div>
+                {locations.length > 0 ? (
+                  <fieldset className="location-access-fieldset">
+                    <legend className="capture-step-label">Location access</legend>
+                    <p className="recorded-row-placeholder">Leave blank for all locations. Only use this when a person should see one property or area.</p>
+                    <div className="location-access-grid">
+                      {locations.map((location) => (
+                        <label key={location.id} className="location-access-option">
+                          <input type="checkbox" name="locationIds" value={location.id} />
+                          <span>{location.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
+                ) : null}
+              </details>
               <FormActionButton className="capture-submit-btn" pendingLabel="Adding person">
                 Add person
               </FormActionButton>
             </form>
           ) : (
             <p className="recorded-row-placeholder">
-              Power users can keep age group and theme settings current here. Admin-only controls such as roles, passcodes, and location access stay with admins.
+              Power users can keep age group and theme settings current here. Admin-only controls such as roles, passcodes, and optional location access stay with admins.
             </p>
           )}
 

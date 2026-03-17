@@ -65,7 +65,6 @@ export default async function RoomsPage({
               <path d="M9 21v-6h6v6" />
             </svg>
           }
-          scopeLabel="All locations"
         />
 
         {params.added === "room" ? <ToastNotice message="Room added." tone="success" /> : null}

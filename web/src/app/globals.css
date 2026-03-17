@@ -739,31 +739,6 @@ html[data-theme="dark"] .session-chip {
   color: #c2410c;
 }
 
-.audience-teen-12-18 .landing-hero,
-.audience-teen-12-18 .landing-panel,
-.audience-teen-12-18 .page-hero-card,
-.page-hero-card.page-hero-teen {
-  border-color: color-mix(in srgb, #22d3ee 24%, var(--border));
-  background:
-    radial-gradient(circle at 12% 16%, rgba(34, 211, 238, 0.16), transparent 24%),
-    radial-gradient(circle at 90% 12%, rgba(249, 115, 22, 0.14), transparent 28%),
-    linear-gradient(180deg, #f8fdff 0%, #f5f7ff 100%);
-}
-
-.audience-teen-12-18 .landing-title,
-.audience-teen-12-18 .page-hero-brand,
-.page-hero-card.page-hero-teen .page-hero-brand {
-  background: linear-gradient(135deg, #0f172a 0%, #0891b2 55%, #f97316 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-}
-
-.audience-teen-12-18 .landing-action-card,
-.audience-teen-12-18 .page-hero-card,
-.page-hero-card.page-hero-teen {
-  box-shadow: 0 16px 30px rgba(8, 145, 178, 0.08), 0 10px 20px rgba(15, 23, 42, 0.06);
-}
-
 .profile-boy-blue .landing-title,
 .profile-boy-blue .page-hero-brand {
   background: linear-gradient(135deg, #0f172a 0%, #2563eb 48%, #38bdf8 100%);
@@ -875,24 +850,6 @@ html[data-theme="dark"] .audience-under-12 .landing-title,
 html[data-theme="dark"] .audience-under-12 .page-hero-brand,
 html[data-theme="dark"] .page-hero-card.page-hero-kid .page-hero-brand {
   background: linear-gradient(135deg, #fbcfe8 0%, #fdba74 45%, #7dd3fc 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-}
-
-html[data-theme="dark"] .audience-teen-12-18 .landing-hero,
-html[data-theme="dark"] .audience-teen-12-18 .landing-panel,
-html[data-theme="dark"] .audience-teen-12-18 .page-hero-card,
-html[data-theme="dark"] .page-hero-card.page-hero-teen {
-  background:
-    radial-gradient(circle at 12% 16%, rgba(34, 211, 238, 0.15), transparent 24%),
-    radial-gradient(circle at 90% 12%, rgba(249, 115, 22, 0.12), transparent 28%),
-    linear-gradient(180deg, rgba(7, 18, 34, 0.94) 0%, rgba(12, 17, 27, 0.94) 100%);
-}
-
-html[data-theme="dark"] .audience-teen-12-18 .landing-title,
-html[data-theme="dark"] .audience-teen-12-18 .page-hero-brand,
-html[data-theme="dark"] .page-hero-card.page-hero-teen .page-hero-brand {
-  background: linear-gradient(135deg, #e2e8f0 0%, #67e8f9 52%, #fdba74 100%);
   -webkit-background-clip: text;
   background-clip: text;
 }
@@ -2829,6 +2786,15 @@ html[data-theme="dark"] .recorded-row[open] {
 .recorded-empty {
   color: var(--muted);
   font-size: 0.95rem;
+}
+
+.recorded-empty-card {
+  display: grid;
+  gap: 0.8rem;
+  border: 1px dashed var(--border);
+  border-radius: 1.25rem;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  padding: 1rem;
 }
 
 .capture-footer {

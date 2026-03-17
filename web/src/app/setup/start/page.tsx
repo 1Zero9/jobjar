@@ -116,7 +116,6 @@ export default async function SetupStartPage({
               <circle cx="12" cy="12" r="9" />
             </svg>
           }
-          scopeLabel="All locations"
         />
 
         {params.added === "person" ? <ToastNotice message="Person added." tone="success" /> : null}
@@ -151,6 +150,11 @@ export default async function SetupStartPage({
                 {!sharedBoardReady ? (
                   <p className="mt-2 text-sm text-muted">
                     Optional before that: add another person if the board will be shared.
+                  </p>
+                ) : null}
+                {locations.length > 0 ? (
+                  <p className="mt-2 text-sm text-muted">
+                    Locations are optional and can wait until later.
                   </p>
                 ) : null}
               </div>
@@ -214,22 +218,27 @@ export default async function SetupStartPage({
                   <option value="viewer">Viewer</option>
                 </select>
               </label>
-              <label className="recorded-field">
-                <span>Age group</span>
-                <select name="audienceBand" defaultValue="adult" className="recorded-edit-input">
-                  <option value="adult">Adult</option>
-                  <option value="teen_12_18">12 to 18</option>
-                  <option value="under_12">Under 12</option>
-                </select>
-              </label>
-              <label className="recorded-field">
-                <span>Theme</span>
-                <select name="profileTheme" defaultValue="default_theme" className="recorded-edit-input">
-                  <option value="default_theme">Default</option>
-                  <option value="boy_blue">Boy / blue</option>
-                  <option value="girl_pink">Girl / pink</option>
-                </select>
-              </label>
+              <details className="recorded-more-details sm:col-span-2">
+                <summary className="recorded-more-summary">Age group and theme</summary>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <label className="recorded-field">
+                    <span>Age group</span>
+                    <select name="audienceBand" defaultValue="adult" className="recorded-edit-input">
+                      <option value="adult">Adult</option>
+                      <option value="teen_12_18">12 to 18</option>
+                      <option value="under_12">Under 12</option>
+                    </select>
+                  </label>
+                  <label className="recorded-field">
+                    <span>Theme</span>
+                    <select name="profileTheme" defaultValue="default_theme" className="recorded-edit-input">
+                      <option value="default_theme">Default</option>
+                      <option value="boy_blue">Boy / blue</option>
+                      <option value="girl_pink">Girl / pink</option>
+                    </select>
+                  </label>
+                </div>
+              </details>
               <div className="sm:col-span-2 flex flex-wrap items-center gap-3">
                 <FormActionButton className="action-btn bright" pendingLabel="Adding">
                   Add person

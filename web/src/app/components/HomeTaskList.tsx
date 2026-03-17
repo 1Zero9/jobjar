@@ -20,9 +20,19 @@ type Props = {
   tasks: HomeTaskItem[];
   canAct: boolean;
   childMode?: boolean;
+  emptyActionHref?: string;
+  emptyActionLabel?: string;
 };
 
-export function HomeTaskList({ title, emptyMessage, tasks, canAct, childMode = false }: Props) {
+export function HomeTaskList({
+  title,
+  emptyMessage,
+  tasks,
+  canAct,
+  childMode = false,
+  emptyActionHref,
+  emptyActionLabel,
+}: Props) {
   return (
     <section className="today-section">
       <div className="today-section-head">
@@ -31,7 +41,16 @@ export function HomeTaskList({ title, emptyMessage, tasks, canAct, childMode = f
       </div>
 
       {tasks.length === 0 ? (
-        <p className="today-empty">{emptyMessage}</p>
+        <div className="recorded-empty-card">
+          <p className="today-empty">{emptyMessage}</p>
+          {emptyActionHref && emptyActionLabel ? (
+            <div className="recorded-row-actions">
+              <Link href={emptyActionHref} className="action-btn subtle quiet">
+                {emptyActionLabel}
+              </Link>
+            </div>
+          ) : null}
+        </div>
       ) : (
         <div className="today-task-list">
           {tasks.map((task) => (
