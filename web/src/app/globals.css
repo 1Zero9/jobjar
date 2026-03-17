@@ -1475,7 +1475,14 @@ html[data-theme="dark"] .profile-girl-pink .page-hero-icon {
 
 .quick-log-submit {
   margin-top: 0.15rem;
-  animation: quick-log-pulse 1.35s ease-in-out infinite;
+}
+
+.quick-log-save-note {
+  margin-top: -0.1rem;
+}
+
+.quick-log-optional-grid {
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
 }
 
 .home-capture-panel {

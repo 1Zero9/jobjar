@@ -1,6 +1,5 @@
 import { AppPageHeader } from "@/app/components/AppPageHeader";
 import { AutoSubmitSelect } from "@/app/components/AutoSubmitSelect";
-import { LogoutIconButton } from "@/app/components/LogoutIconButton";
 import { canAccessReportingViewsRole, requireSessionContext } from "@/lib/auth";
 import { getLocationScopeLabel, hasLocationRestrictions } from "@/lib/location-access";
 import { canAccessExtendedViews, getMemberThemeClassName } from "@/lib/member-audience";
@@ -71,14 +70,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
               <line x1="2" y1="20" x2="22" y2="20" />
             </svg>
           }
-          cornerAction={<LogoutIconButton />}
           scopeLabel={locationScopeLabel}
-          actions={
-            <>
-              <Link href="/" className="action-btn subtle quiet home-action">Home</Link>
-              <Link href="/tasks" prefetch className="action-btn subtle quiet">View jobs</Link>
-            </>
-          }
         />
 
         {/* Filters */}

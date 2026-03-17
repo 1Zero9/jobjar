@@ -2,10 +2,9 @@ import { updateNotificationSettingsAction } from "@/app/actions";
 import { AppPageHeader } from "@/app/components/AppPageHeader";
 import { FormActionButton } from "@/app/components/FormActionButton";
 import { InstallPromptButton } from "@/app/components/InstallPromptButton";
-import { LogoutIconButton } from "@/app/components/LogoutIconButton";
 import { PushPermissionButton } from "@/app/components/PushPermissionButton";
 import { ToastNotice } from "@/app/components/ToastNotice";
-import { canAccessReportingViewsRole, canManagePeopleRole, canUseMemberActions, isMemberRole, requireSessionContext } from "@/lib/auth";
+import { canManagePeopleRole, canUseMemberActions, isMemberRole, requireSessionContext } from "@/lib/auth";
 import { canAccessExtendedViews, getMemberThemeClassName } from "@/lib/member-audience";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
@@ -107,7 +106,6 @@ export default async function HelpPage({
   const canSeeUpdatesTimeline = canManagePeopleRole(role);
   const canManageOwnNotifications = audienceBand !== "under_12";
   const memberMode = isMemberRole(role);
-  const canSeeReports = canAccessReportingViewsRole(role) && canSeeExtended;
   const recommendedGuideId =
     role === "viewer"
       ? "grandparents"
@@ -140,14 +138,6 @@ export default async function HelpPage({
               <path d="M9.09 9a3 3 0 1 1 5.82 1c0 2-3 2-3 4" />
               <path d="M12 17h.01" />
             </svg>
-          }
-          cornerAction={<LogoutIconButton />}
-          actions={
-            <>
-              <Link href="/" className="action-btn subtle quiet home-action">Home</Link>
-              <Link href="/tasks" className="action-btn subtle quiet">View jobs</Link>
-              {canSeeReports ? <Link href="/stats" className="action-btn subtle quiet">Stats</Link> : null}
-            </>
           }
         />
 

@@ -1,13 +1,12 @@
 import { createQuickTaskAction } from "@/app/actions";
 import { FormActionButton } from "@/app/components/FormActionButton";
 import { AppPageHeader } from "@/app/components/AppPageHeader";
-import { LogoutIconButton } from "@/app/components/LogoutIconButton";
 import { RoomPillSelect } from "@/app/components/RoomPillSelect";
 import { SimilarTaskField } from "@/app/components/SimilarTaskField";
 import { TasksPanelClient } from "@/app/components/TasksPanelClient";
 import { ToastNotice } from "@/app/components/ToastNotice";
 import { getTaskFeedbackMessage } from "@/app/components/task-feedback";
-import { canAccessProjectViewsRole, canManagePeopleRole, canManageProjectsRole, canUseMemberActions, isAdminRole, isMemberRole, requireSessionContext } from "@/lib/auth";
+import { canAccessProjectViewsRole, canManageProjectsRole, canUseMemberActions, isAdminRole, isMemberRole, requireSessionContext } from "@/lib/auth";
 import { getLocationScopeLabel, getRoomLocationAccessWhere, hasLocationRestrictions } from "@/lib/location-access";
 import { canAccessExtendedViews, getAudienceAssignedTaskWhere, getMemberThemeClassName, isChildAudience, isTeenAudience } from "@/lib/member-audience";
 import { prisma } from "@/lib/prisma";
@@ -31,21 +30,16 @@ type SearchParams = {
 };
 
 export async function LogWorkspace({ params }: { params: SearchParams }) {
-  const { householdId, userId, role, audienceBand, profileTheme, allowedLocationIds } = await requireSessionContext("/log");
+  const { householdId, role, audienceBand, profileTheme, allowedLocationIds } = await requireSessionContext("/log");
   if (!canAccessExtendedViews(audienceBand) || !canUseMemberActions(role)) {
     redirect("/tasks");
   }
-  const peopleManager = canManagePeopleRole(role);
   const memberMode = isMemberRole(role);
   const easyLog = memberMode;
   const restrictedToLocations = hasLocationRestrictions(allowedLocationIds);
   const audienceThemeClass = getMemberThemeClassName(audienceBand, profileTheme);
 
-  const [currentUser, rooms, people, locations, lookupTasks] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: userId },
-      select: { id: true, displayName: true },
-    }),
+  const [rooms, people, locations, lookupTasks] = await Promise.all([
     prisma.room.findMany({
       where: { householdId, active: true, ...getRoomLocationAccessWhere(allowedLocationIds) },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
@@ -98,7 +92,7 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
       <main className={`capture-app-shell ${easyLog ? "capture-app-shell-easy" : ""} mx-auto flex w-full max-w-[28rem] flex-col gap-6`.trim()}>
         <AppPageHeader
           title="Log a Job"
-          subtitle={memberMode ? "Add the job, pick the room, and save." : "Add the job, pick the room, and save."}
+          subtitle={memberMode ? "Type it, tap the room, and save." : "Type it, tap the room, and save."}
           className={easyLog ? "page-hero-easy" : ""}
           iconClassName="log"
           icon={
@@ -107,28 +101,7 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
             </svg>
           }
-          cornerAction={<LogoutIconButton />}
           scopeLabel={locationScopeLabel}
-          actions={
-            <>
-              <span className="session-chip">{currentUser?.displayName ?? "You"}</span>
-              <Link href="/" className="action-btn subtle quiet home-action">
-                Home
-              </Link>
-              <Link href="/tasks" prefetch className="action-btn subtle quiet">
-                View jobs
-              </Link>
-              {isAdminRole(role) ? (
-                <Link href="/settings" className="action-btn subtle quiet">
-                  Setup
-                </Link>
-              ) : peopleManager ? (
-                <Link href="/settings/people" className="action-btn subtle quiet">
-                  People
-                </Link>
-              ) : null}
-            </>
-          }
         />
 
         {params.added === "task" ? <ToastNotice message="Job recorded." tone="success" /> : null}
@@ -146,7 +119,7 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
             <section className="quick-log-panel">
               <div className="quick-log-header">
                 <p className="settings-kicker">Quick log</p>
-                <p className="quick-log-copy">{easyLog ? "Start with the job and room." : "Start with the job and room."}</p>
+                <p className="quick-log-copy">{easyLog ? "Most jobs need three things: title, room, save." : "Most jobs need three things: title, room, save."}</p>
               </div>
 
               <SimilarTaskField
@@ -167,18 +140,23 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
                 locations={locations}
                 rooms={roomOptions}
                 requireRoom={restrictedToLocations}
+                helperText="Your last room becomes the quick add default on home."
               />
 
               <FormActionButton className="capture-submit-btn quick-log-submit" pendingLabel="Saving job">
                 Save job
               </FormActionButton>
+
+              <p className="task-readonly-note quick-log-save-note">
+                Need assignment, value, or notes? Open more options after picking the room.
+              </p>
             </section>
 
             <details className="recorded-row quick-log-more">
               <summary className="recorded-row-summary">
                 <div className="min-w-0">
-                  <p className="recorded-row-title">Add person or details</p>
-                  <p className="recorded-row-placeholder">Optional. Add a person, note, or repeat.</p>
+                  <p className="recorded-row-title">More options</p>
+                  <p className="recorded-row-placeholder">Optional. Assign it, add a value, notes, or make it repeat.</p>
                 </div>
                 <div className="recorded-row-meta">
                   <span className="recorded-row-edit">Optional</span>
@@ -187,30 +165,32 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
               </summary>
 
               <div className="recorded-row-detail">
-                <div className="capture-step">
-                  <label className="capture-step-inner">
-                    <span className="capture-step-label">Assigned to (optional)</span>
-                    <select name="assignedToUserId" defaultValue="" className="capture-room-select">
-                      <option value="">No one yet</option>
-                      {peopleOptions.map((person) => (
-                        <option key={person.id} value={person.id}>
-                          {person.displayName}
-                        </option>
-                      ))}
-                    </select>
+                <div className="capture-meta-grid quick-log-optional-grid">
+                  <div className="capture-step">
+                    <label className="capture-step-inner">
+                      <span className="capture-step-label">Assign to</span>
+                      <select name="assignedToUserId" defaultValue="" className="capture-room-select">
+                        <option value="">No one yet</option>
+                        {peopleOptions.map((person) => (
+                          <option key={person.id} value={person.id}>
+                            {person.displayName}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+
+                  <label className="recorded-field">
+                    <span>Value</span>
+                    <input
+                      name="reward"
+                      type="text"
+                      inputMode="decimal"
+                      placeholder="5.00"
+                      className="recorded-edit-input"
+                    />
                   </label>
                 </div>
-
-                <label className="recorded-field">
-                  <span>Value (optional)</span>
-                  <input
-                    name="reward"
-                    type="text"
-                    inputMode="decimal"
-                    placeholder="5.00"
-                    className="recorded-edit-input"
-                  />
-                </label>
 
                 <div className="capture-step">
                   <label className="capture-private-row">
@@ -225,20 +205,9 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
                   <span>Notes</span>
                   <textarea
                     name="detailNotes"
-                    rows={3}
+                    rows={2}
                     placeholder="Optional note"
                     className="recorded-edit-input recorded-edit-textarea"
-                  />
-                </label>
-
-                <label className="recorded-field">
-                  <span>Priority in room</span>
-                  <input
-                    name="priority"
-                    type="number"
-                    min={1}
-                    placeholder="Auto"
-                    className="recorded-edit-input"
                   />
                 </label>
 
@@ -277,6 +246,20 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
                     />
                   </label>
                 </details>
+
+                <details className="recorded-more-details">
+                  <summary className="recorded-more-summary">Advanced</summary>
+                  <label className="recorded-field">
+                    <span>Priority in room</span>
+                    <input
+                      name="priority"
+                      type="number"
+                      min={1}
+                      placeholder="Auto"
+                      className="recorded-edit-input"
+                    />
+                  </label>
+                </details>
               </div>
             </details>
           </form>
@@ -309,18 +292,13 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
   const childMode = isChildAudience(audienceBand);
   const teenMode = isTeenAudience(audienceBand);
   const memberMode = isMemberRole(role);
-  const peopleManager = canManagePeopleRole(role);
   const canEditTasks = canUseMemberActions(role);
   const easyWorkspace = !childMode && (memberMode || !canEditTasks);
   const taskTake = mode === "projects" ? 28 : 48;
   const parentOccurrenceTake = mode === "projects" ? 8 : 6;
   const childOccurrenceTake = 2;
 
-  const [currentUser, rooms, people, locations, recordedTasks] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: userId },
-      select: { displayName: true },
-    }),
+  const [rooms, people, locations, recordedTasks] = await Promise.all([
     prisma.room.findMany({
       where: { householdId, active: true, ...getRoomLocationAccessWhere(allowedLocationIds) },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
@@ -518,34 +496,7 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
               <polyline points="3 18 4 19 6 16" />
             </svg>
           }
-          cornerAction={<LogoutIconButton />}
           scopeLabel={locationScopeLabel}
-          actions={
-            <>
-              <span className="session-chip">{currentUser?.displayName ?? "You"}</span>
-              <Link href="/" className="action-btn subtle quiet home-action">
-                Home
-              </Link>
-              {canAccessExtendedViews(audienceBand) ? (
-                <>
-                  {canEditTasks ? (
-                    <Link href="/log" className="action-btn subtle quiet">
-                      Log a Job
-                    </Link>
-                  ) : null}
-                  {isAdminRole(role) ? (
-                    <Link href="/settings" className="action-btn subtle quiet">
-                      Setup
-                    </Link>
-                  ) : peopleManager ? (
-                    <Link href="/settings/people" className="action-btn subtle quiet">
-                      People
-                    </Link>
-                  ) : null}
-                </>
-              ) : null}
-            </>
-          }
         />
 
         {params.added === "task" ? <ToastNotice message="Job recorded." tone="success" /> : null}

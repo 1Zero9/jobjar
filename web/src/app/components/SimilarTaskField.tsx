@@ -70,7 +70,7 @@ export function SimilarTaskField({
 
       {parentTask ? (
         <div className="lookup-parent-banner">
-          <span>Adding project step under</span>
+          <span>Adding as a subtask under</span>
           <strong>{parentTask.title}</strong>
           <button type="button" className="action-btn subtle quiet" onClick={() => setParentTask(null)}>
             Clear
@@ -82,8 +82,8 @@ export function SimilarTaskField({
         <details className="similar-task-warning">
           <summary className="recorded-row-summary">
             <div className="min-w-0">
-              <p className="recorded-row-title">Possible matches</p>
-              <p className="recorded-row-placeholder">Optional. Open an existing job or add this as a project step.</p>
+              <p className="recorded-row-title">Already on the board?</p>
+              <p className="recorded-row-placeholder">Optional. Open a match or add this under a bigger job.</p>
             </div>
             <div className="recorded-row-meta">
               <span className="recorded-row-edit">Optional</span>
@@ -109,7 +109,7 @@ export function SimilarTaskField({
                     className="recorded-row-edit recorded-row-edit-bright"
                     onClick={() => setParentTask(task)}
                   >
-                    Project step
+                    Use as subtask
                   </button>
                 </div>
               </article>

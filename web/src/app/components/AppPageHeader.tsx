@@ -6,8 +6,6 @@ type Props = {
   subtitle: string;
   icon?: ReactNode;
   iconClassName?: string;
-  actions?: ReactNode;
-  cornerAction?: ReactNode;
   className?: string;
   scopeLabel?: string | null;
 };

@@ -6,11 +6,9 @@ import {
 } from "@/app/actions";
 import { AppPageHeader } from "@/app/components/AppPageHeader";
 import { FormActionButton } from "@/app/components/FormActionButton";
-import { LogoutIconButton } from "@/app/components/LogoutIconButton";
 import { ToastNotice } from "@/app/components/ToastNotice";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -47,21 +45,7 @@ export default async function LocationsPage({
               <circle cx="12" cy="11" r="2.5" />
             </svg>
           }
-          cornerAction={<LogoutIconButton />}
           scopeLabel="All locations"
-          actions={
-            <>
-              <Link href="/settings" className="action-btn subtle quiet">
-                Setup home
-              </Link>
-              <Link href="/settings/rooms" className="action-btn subtle quiet">
-                Rooms
-              </Link>
-              <Link href="/tasks" className="action-btn subtle quiet">
-                View jobs
-              </Link>
-            </>
-          }
         />
 
         {params.added === "location" ? <ToastNotice message="Location added." tone="success" /> : null}

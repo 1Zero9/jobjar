@@ -9,12 +9,10 @@ import {
 } from "@/app/actions";
 import { AppPageHeader } from "@/app/components/AppPageHeader";
 import { FormActionButton } from "@/app/components/FormActionButton";
-import { LogoutIconButton } from "@/app/components/LogoutIconButton";
 import { ToastNotice } from "@/app/components/ToastNotice";
 import { isAdminRole, requirePeopleManager } from "@/lib/auth";
 import { formatAudienceBand, formatProfileTheme } from "@/lib/member-audience";
 import { prisma } from "@/lib/prisma";
-import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -72,18 +70,7 @@ export default async function PeoplePage({
               <path d="M16 3.13a4 4 0 0 1 0 7.75" />
             </svg>
           }
-          cornerAction={<LogoutIconButton />}
           scopeLabel="All locations"
-          actions={
-            <>
-              <Link href={adminMode ? "/settings" : "/"} className={`action-btn subtle quiet${adminMode ? "" : " home-action"}`}>
-                {adminMode ? "Setup home" : "Home"}
-              </Link>
-              <Link href="/tasks" className="action-btn subtle quiet">
-                View jobs
-              </Link>
-            </>
-          }
         />
 
         {params.added === "person" ? <ToastNotice message="Person added." tone="success" /> : null}

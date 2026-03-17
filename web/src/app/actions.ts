@@ -66,7 +66,7 @@ export async function createRoomAction(formData: FormData) {
     },
   });
 
-  refreshViews(["/", "/log", "/tasks", "/settings", "/settings/rooms", "/settings/locations"]);
+  refreshViews(["/", "/log", "/tasks", "/settings", "/settings/rooms", "/settings/locations", "/setup/start"]);
   if (returnTo) {
     redirectToReturnPath(returnTo, { added: "room" });
   }
@@ -380,7 +380,7 @@ export async function createTaskAction(formData: FormData) {
     data: { taskId: task.id, action: "task_created", actorUserId, note: title },
   });
 
-  refreshViews(["/", "/log", "/tasks"]);
+  refreshViews(["/", "/log", "/tasks", "/setup/start"]);
   if (returnTo) {
     redirectToReturnPath(returnTo, { added: "task" });
   }
@@ -1588,7 +1588,7 @@ export async function deleteTaskAction(formData: FormData) {
   });
 
   await compactOpenTaskPriorities(task.roomId);
-  refreshViews(["/", "/log", "/tasks", "/settings", "/settings/people"]);
+  refreshViews(["/", "/log", "/tasks", "/settings", "/settings/people", "/setup/start"]);
   if (returnTo) {
     redirectToReturnPath(returnTo, { archived: "task" });
   }
@@ -2605,7 +2605,7 @@ async function resolveProjectParentId(
   return parent?.id ?? null;
 }
 
-function refreshViews(paths = ["/", "/log", "/tasks", "/admin", "/settings", "/settings/rooms", "/settings/people", "/settings/locations", "/login"]) {
+function refreshViews(paths = ["/", "/log", "/tasks", "/admin", "/settings", "/settings/rooms", "/settings/people", "/settings/locations", "/setup/start", "/login"]) {
   for (const path of new Set(paths)) {
     revalidatePath(path);
   }

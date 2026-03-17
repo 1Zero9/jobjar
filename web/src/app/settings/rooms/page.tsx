@@ -1,11 +1,9 @@
 import { createRoomAction, deleteRoomAction, updateRoomAction, updateRoomLocationAction } from "@/app/actions";
 import { AppPageHeader } from "@/app/components/AppPageHeader";
 import { FormActionButton } from "@/app/components/FormActionButton";
-import { LogoutIconButton } from "@/app/components/LogoutIconButton";
 import { ToastNotice } from "@/app/components/ToastNotice";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -67,18 +65,7 @@ export default async function RoomsPage({
               <path d="M9 21v-6h6v6" />
             </svg>
           }
-          cornerAction={<LogoutIconButton />}
           scopeLabel="All locations"
-          actions={
-            <>
-              <Link href="/settings" className="action-btn subtle quiet">
-                Setup home
-              </Link>
-              <Link href="/tasks" className="action-btn subtle quiet">
-                View jobs
-              </Link>
-            </>
-          }
         />
 
         {params.added === "room" ? <ToastNotice message="Room added." tone="success" /> : null}

@@ -1,7 +1,6 @@
 import { AppPageHeader } from "@/app/components/AppPageHeader";
 import { AutoSubmitSelect } from "@/app/components/AutoSubmitSelect";
-import { LogoutIconButton } from "@/app/components/LogoutIconButton";
-import { canAccessProjectViewsRole, isAdminRole, requireSessionContext } from "@/lib/auth";
+import { canAccessProjectViewsRole, requireSessionContext } from "@/lib/auth";
 import { getLocationScopeLabel, hasLocationRestrictions } from "@/lib/location-access";
 import { canAccessExtendedViews, getMemberThemeClassName } from "@/lib/member-audience";
 import {
@@ -35,11 +34,7 @@ export default async function ProjectsTimelinePage({
   const restrictedToLocations = hasLocationRestrictions(allowedLocationIds);
   const audienceThemeClass = getMemberThemeClassName(audienceBand, profileTheme);
 
-  const [currentUser, locations] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: userId },
-      select: { displayName: true },
-    }),
+  const [locations] = await Promise.all([
     prisma.location.findMany({
       where: { householdId, active: true, ...(restrictedToLocations ? { id: { in: allowedLocationIds! } } : {}) },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
@@ -85,27 +80,7 @@ export default async function ProjectsTimelinePage({
               <path d="M12 7v5l3 3" />
             </svg>
           }
-          cornerAction={<LogoutIconButton />}
           scopeLabel={locationScopeLabel}
-          actions={
-            <>
-              <span className="session-chip">{currentUser?.displayName ?? "You"}</span>
-              <Link href="/" className="action-btn subtle quiet home-action">
-                Home
-              </Link>
-              <Link href="/tasks" className="action-btn subtle quiet">
-                Jobs
-              </Link>
-              <Link href="/stats" className="action-btn subtle quiet">
-                Stats
-              </Link>
-              {isAdminRole(role) ? (
-                <Link href="/settings" className="action-btn subtle quiet">
-                  Setup
-                </Link>
-              ) : null}
-            </>
-          }
         />
 
         <form method="GET" className="stats-filter-bar">

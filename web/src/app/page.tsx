@@ -107,6 +107,9 @@ export default async function HomePage({
     locations,
     quickCaptureRooms,
     openTaskCount,
+    setupPeopleCount,
+    setupRoomCount,
+    setupTaskCount,
     overdueRaw,
     dueTodayRaw,
     assignedRaw,
@@ -149,6 +152,28 @@ export default async function HomePage({
     prisma.task.count({
       where: visibleOpenTaskWhere,
     }),
+    role === "admin"
+      ? prisma.householdMember.count({
+          where: { householdId },
+        })
+      : Promise.resolve(0),
+    role === "admin"
+      ? prisma.room.count({
+          where: {
+            householdId,
+            active: true,
+            name: { not: "Unsorted" },
+          },
+        })
+      : Promise.resolve(0),
+    role === "admin"
+      ? prisma.task.count({
+          where: {
+            active: true,
+            room: { householdId },
+          },
+        })
+      : Promise.resolve(0),
     prisma.task.findMany({
       where: {
         ...visibleOpenTaskWhere,
@@ -240,6 +265,8 @@ export default async function HomePage({
   const paidThisWeekCents = paidThisWeek.reduce((sum, task) => sum + (task.rewardCents ?? 0), 0);
   const completionStreak = computeCompletionDayStreak(recentCompletionDays.map((entry) => entry.completedAt));
   const greeting = getGreeting(childMode ? "Hey" : "Good");
+  const setupReady = setupRoomCount > 0 && setupTaskCount > 0;
+  const showSetupGuide = role === "admin" && !setupReady;
 
   return (
     <div className={`capture-shell ${audienceThemeClass} min-h-screen px-4 py-5`}>
@@ -290,6 +317,36 @@ export default async function HomePage({
             </div>
           </div>
         </header>
+
+        {showSetupGuide ? (
+          <section className="today-section">
+            <div className="today-section-head">
+              <div>
+                <h2 className="today-section-title">Finish setup</h2>
+                <p className="today-copy today-copy-section">
+                  Start with one room and one job. Add more people now if the board is shared.
+                </p>
+              </div>
+              <Link href="/setup/start" className="recorded-row-edit recorded-row-edit-bright">
+                Start here
+              </Link>
+            </div>
+            <div className="today-week-summary">
+              <p>
+                <strong>{setupPeopleCount}</strong>
+                <span>{setupPeopleCount === 1 ? "person" : "people"}</span>
+              </p>
+              <p>
+                <strong>{setupRoomCount}</strong>
+                <span>{setupRoomCount === 1 ? "room" : "rooms"}</span>
+              </p>
+              <p>
+                <strong>{setupTaskCount}</strong>
+                <span>{setupTaskCount === 1 ? "job" : "jobs"}</span>
+              </p>
+            </div>
+          </section>
+        ) : null}
 
         {showQuickCapture ? (
           <section className="today-section today-capture-section">
@@ -363,7 +420,9 @@ export default async function HomePage({
           <Link href="/tasks" className="today-utility-link">See all jobs</Link>
           {canSeeReports ? <Link href="/stats" className="today-utility-link">Stats</Link> : null}
           {role === "admin" ? (
-            <Link href="/settings" className="today-utility-link">Setup</Link>
+            <Link href={setupReady ? "/settings" : "/setup/start"} className="today-utility-link">
+              {setupReady ? "Setup" : "Start here"}
+            </Link>
           ) : peopleManager ? (
             <Link href="/settings/people" className="today-utility-link">People</Link>
           ) : null}
