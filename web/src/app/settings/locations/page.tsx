@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 export default async function LocationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ added?: string; duplicate?: string; error?: string }>;
+  searchParams: Promise<{ added?: string; duplicate?: string; updated?: string; archived?: string; error?: string }>;
 }) {
   const params = await searchParams;
   const { householdId } = await requireAdmin("/settings/locations");
@@ -49,6 +49,9 @@ export default async function LocationsPage({
         />
 
         {params.added === "location" ? <ToastNotice message="Location added." tone="success" /> : null}
+        {params.updated === "location" ? <ToastNotice message="Location saved." tone="success" /> : null}
+        {params.updated === "room-location" ? <ToastNotice message="Room removed from location." tone="success" /> : null}
+        {params.archived === "location" ? <ToastNotice message="Location archived." tone="success" /> : null}
         {params.duplicate === "location" ? <ToastNotice message="That location name already exists." tone="info" /> : null}
         {params.error ? <ToastNotice message={getLocationsErrorMessage(params.error)} tone="error" /> : null}
 
@@ -120,6 +123,7 @@ export default async function LocationsPage({
                             <form action={updateRoomLocationAction}>
                               <input type="hidden" name="roomId" value={room.id} />
                               <input type="hidden" name="locationId" value="" />
+                              <input type="hidden" name="returnTo" value="/settings/locations" />
                               <FormActionButton className="action-btn subtle quiet small" pendingLabel="Moving">
                                 Remove
                               </FormActionButton>
@@ -132,6 +136,7 @@ export default async function LocationsPage({
 
                   <form action={deleteLocationAction} className="recorded-row-actions">
                     <input type="hidden" name="locationId" value={location.id} />
+                    <input type="hidden" name="returnTo" value="/settings/locations" />
                     <FormActionButton className="action-btn warn quiet" pendingLabel="Archiving">
                       Archive location
                     </FormActionButton>
@@ -156,6 +161,9 @@ function getLocationsErrorMessage(error?: string) {
   }
   if (error === "location-not-found") {
     return "That location could not be found.";
+  }
+  if (error === "room-not-found") {
+    return "That room could not be found.";
   }
   return "We could not save that location.";
 }

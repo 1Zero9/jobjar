@@ -31,6 +31,7 @@ export default async function HomePage({
   const { householdId, userId, role, audienceBand, profileTheme, allowedLocationIds } = await requireSessionContext("/");
   const audienceThemeClass = getMemberThemeClassName(audienceBand, profileTheme);
   const childMode = isChildAudience(audienceBand);
+  const viewerMode = role === "viewer";
   const peopleManager = canManagePeopleRole(role);
   const canAct = canUseMemberActions(role);
   const canSeeExtended = canAccessExtendedViews(audienceBand);
@@ -110,6 +111,7 @@ export default async function HomePage({
     setupPeopleCount,
     setupRoomCount,
     setupTaskCount,
+    openPreviewRaw,
     overdueRaw,
     dueTodayRaw,
     assignedRaw,
@@ -174,6 +176,13 @@ export default async function HomePage({
           },
         })
       : Promise.resolve(0),
+    viewerMode
+      ? prisma.task.findMany({
+          where: visibleOpenTaskWhere,
+          select: homeTaskSelect,
+          take: 12,
+        })
+      : Promise.resolve([]),
     prisma.task.findMany({
       where: {
         ...visibleOpenTaskWhere,
@@ -259,6 +268,14 @@ export default async function HomePage({
       .filter((task) => !urgentIds.has(task.id))
       .sort((left, right) => compareDueDates(left.dueAt, right.dueAt)),
   ).slice(0, 6);
+  const viewerOpenTasks = viewerMode
+    ? dedupeTasks(
+        openPreviewRaw
+          .map(mapHomeTask)
+          .filter((task) => !urgentIds.has(task.id))
+          .sort((left, right) => compareDueDates(left.dueAt, right.dueAt)),
+      ).slice(0, 6)
+    : [];
   const childHomeTasks = childMode
     ? dedupeTasks([...overdueTasks, ...dueTodayTasks, ...assignedRaw.map(mapHomeTask)]).slice(0, 6)
     : [];
@@ -290,7 +307,9 @@ export default async function HomePage({
                 ? childHomeTasks.length > 0
                   ? `You've got ${childHomeTasks.length} job${childHomeTasks.length === 1 ? "" : "s"} ready today.`
                   : "No jobs waiting right now. Nice work."
-                : `See what needs doing now, log something fast, and keep the board moving.`}
+                : viewerMode
+                  ? "See what needs attention and keep up with the household board."
+                  : `See what needs doing now, log something fast, and keep the board moving.`}
             </p>
             {locationScopeLabel ? (
               <p className="landing-scope-note" title={`Current location scope: ${locationScopeLabel}`}>
@@ -310,9 +329,9 @@ export default async function HomePage({
               <strong className="today-metric-value">{childMode ? completedThisWeek : dueTodayTasks.length}</strong>
             </div>
             <div className="today-metric">
-              <span className="today-metric-label">{paidThisWeekCents > 0 ? "Earned" : childMode ? "Streak" : "Done this week"}</span>
+              <span className="today-metric-label">{childMode ? "Streak" : "Open jobs"}</span>
               <strong className="today-metric-value">
-                {paidThisWeekCents > 0 ? formatMoney(paidThisWeekCents) : childMode ? `${completionStreak} day${completionStreak === 1 ? "" : "s"}` : openTaskCount}
+                {childMode ? `${completionStreak} day${completionStreak === 1 ? "" : "s"}` : openTaskCount}
               </strong>
             </div>
           </div>
@@ -388,9 +407,9 @@ export default async function HomePage({
             />
 
             <HomeTaskList
-              title={memberMode ? "Assigned to you" : "Recently assigned to you"}
-              emptyMessage={memberMode ? "Nothing extra is assigned to you right now." : "Nothing new is assigned to you right now."}
-              tasks={assignedTasks}
+              title={viewerMode ? "Open jobs" : memberMode ? "Assigned to you" : "Recently assigned to you"}
+              emptyMessage={viewerMode ? "No open jobs right now." : memberMode ? "Nothing extra is assigned to you right now." : "Nothing new is assigned to you right now."}
+              tasks={viewerMode ? viewerOpenTasks : assignedTasks}
               canAct={canAct}
             />
           </>

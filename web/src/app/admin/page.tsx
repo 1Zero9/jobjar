@@ -8,6 +8,7 @@ import {
   updateRoomAction,
 } from "@/app/actions";
 import { AdminTasksClient } from "@/app/components/AdminTasksClient";
+import { FormActionButton } from "@/app/components/FormActionButton";
 import { LogoutIconButton } from "@/app/components/LogoutIconButton";
 import { ResetViewButton } from "@/app/components/ResetViewButton";
 import { ThemeToggle } from "@/app/components/ThemeToggle";
@@ -106,7 +107,9 @@ export default async function AdminPage({
               <option value="viewer">Viewer</option>
             </select>
             <input name="passcode" type="password" minLength={4} placeholder="Passcode (min 4)" className="admin-input px-3 py-2 text-sm" />
-            <button className="action-btn bright">Add person</button>
+            <FormActionButton className="action-btn bright" pendingLabel="Adding person">
+              Add person
+            </FormActionButton>
           </form>
 
           <div className="mt-3 overflow-x-auto rounded-xl border border-accent-muted bg-accent-soft">
@@ -131,14 +134,18 @@ export default async function AdminPage({
                         <input type="hidden" name="userId" value={person.id} />
                         <input type="hidden" name="returnTo" value="/admin#section-people" />
                         <input name="passcode" type="password" minLength={4} placeholder="Reset" className="admin-input w-28 px-2 py-1.5 text-xs" />
-                        <button className="action-btn subtle">Set</button>
+                        <FormActionButton className="action-btn subtle" pendingLabel="Saving">
+                          Set
+                        </FormActionButton>
                       </form>
                     </td>
                     <td className="border-b border-border px-3 py-2">
                       <form action={removePersonAction}>
                         <input type="hidden" name="userId" value={person.id} />
                         <input type="hidden" name="returnTo" value="/admin#section-people" />
-                        <button className="rounded-lg border border-error px-2 py-1 text-xs font-semibold text-error">Remove</button>
+                        <FormActionButton className="rounded-lg border border-error px-2 py-1 text-xs font-semibold text-error" pendingLabel="Removing">
+                          Remove
+                        </FormActionButton>
                       </form>
                     </td>
                   </tr>
@@ -156,7 +163,9 @@ export default async function AdminPage({
             <input type="hidden" name="returnTo" value="/admin#section-rooms" />
             <input name="name" type="text" required placeholder="Room name" className="admin-input px-3 py-2 text-sm" />
             <input name="designation" type="text" placeholder="Group e.g. Upstairs / Outside" className="admin-input px-3 py-2 text-sm" />
-            <button className="action-btn bright">Add room</button>
+            <FormActionButton className="action-btn bright" pendingLabel="Adding room">
+              Add room
+            </FormActionButton>
           </form>
 
           <div className="mt-3 grid grid-cols-1 gap-2 lg:grid-cols-2">
@@ -167,13 +176,17 @@ export default async function AdminPage({
                   <input type="hidden" name="returnTo" value="/admin#section-rooms" />
                   <input name="name" type="text" defaultValue={room.name} className="admin-input px-3 py-2 text-sm" />
                   <input name="designation" type="text" defaultValue={room.designation} className="admin-input px-3 py-2 text-sm" />
-                  <button className="action-btn subtle">Save</button>
+                  <FormActionButton className="action-btn subtle" pendingLabel="Saving">
+                    Save
+                  </FormActionButton>
                   <span className="rounded-lg border border-border px-2 py-1 text-xs text-muted">{room.taskCount} tasks</span>
                 </form>
                 <form action={deleteRoomAction} className="mt-2">
                   <input type="hidden" name="roomId" value={room.id} />
                   <input type="hidden" name="returnTo" value="/admin#section-rooms" />
-                  <button className="rounded-lg border border-error px-2 py-1 text-xs font-semibold text-error">Archive room</button>
+                  <FormActionButton className="rounded-lg border border-error px-2 py-1 text-xs font-semibold text-error" pendingLabel="Archiving">
+                    Archive room
+                  </FormActionButton>
                 </form>
               </article>
             ))}
@@ -266,7 +279,9 @@ export default async function AdminPage({
                 <input type="checkbox" name="strictMode" /> Strict proof mode
               </label>
             </details>
-            <button className="action-btn bright md:col-span-4">Add task</button>
+            <FormActionButton className="action-btn bright md:col-span-4" pendingLabel="Adding task">
+              Add task
+            </FormActionButton>
           </form>
 
           <div className="mt-3">

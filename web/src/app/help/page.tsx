@@ -19,7 +19,7 @@ const GUIDE_SECTIONS = [
     points: [
       "Use /log to capture work quickly.",
       "Use /tasks to assign, tidy, and finish work.",
-      "Use /projects when a job needs subtasks.",
+      "Turn a job into a parent job when bigger work needs subtasks.",
       "Use /stats for review and progress.",
     ],
   },
@@ -31,7 +31,7 @@ const GUIDE_SECTIONS = [
       "Open Jobs from home.",
       "Start one job, then finish it before moving on.",
       "Use notes when something needs explaining.",
-      "Parent jobs are there when bigger work has several steps.",
+      "Bigger work may be broken into subtasks under a parent job.",
     ],
   },
   {
@@ -51,7 +51,7 @@ const GUIDE_SECTIONS = [
     subtitle: "For read-only family members who mainly want to see what is happening.",
     points: [
       "Viewer is the best role for read-only access.",
-      "Open home, jobs, parent jobs, and stats to keep up.",
+      "Open home, jobs, and stats to keep up.",
       "This setup avoids edit controls completely.",
       "Location access can limit what part of the household is visible.",
     ],
@@ -261,7 +261,7 @@ export default async function HelpPage({
               <h2 className="recorded-title">Keep it simple</h2>
               <div className="help-checklist">
                 <p className="help-checklist-item">Open <strong>Jobs</strong> to see work added by you, assigned to you, or private jobs involving you.</p>
-                <p className="help-checklist-item">Use the filter section if you want to narrow the list to assigned jobs, logged jobs, or private jobs.</p>
+                <p className="help-checklist-item">Use search, room, state, and assignee to narrow the jobs list when it feels busy.</p>
                 <p className="help-checklist-item">If a job looks wrong or needs extra setup, ask an admin or power user to shape it further.</p>
               </div>
             </section>

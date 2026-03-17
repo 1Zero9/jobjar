@@ -51,7 +51,7 @@ export function AppBottomNav({ childMode, canLog, canSeeReports }: Props) {
 function buildStandardItems(canLog: boolean, canSeeReports: boolean): NavItem[] {
   const items: NavItem[] = [
     { href: "/", label: "Home", icon: HomeIcon },
-    { href: "/tasks", label: "Tasks", icon: TasksIcon },
+    { href: "/tasks", label: "Jobs", icon: TasksIcon },
   ];
 
   if (canLog) {

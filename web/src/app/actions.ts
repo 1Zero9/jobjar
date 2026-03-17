@@ -119,6 +119,9 @@ export async function updateRoomAction(formData: FormData) {
   });
 
   refreshViews(["/", "/log", "/tasks", "/settings", "/settings/rooms"]);
+  if (returnTo) {
+    redirectToReturnPath(returnTo, { updated: "room" });
+  }
 }
 
 export async function deleteRoomAction(formData: FormData) {
@@ -221,18 +224,25 @@ export async function updateLocationAction(formData: FormData) {
   }
 
   refreshViews(["/", "/log", "/tasks", "/settings", "/settings/locations"]);
+  if (returnTo) {
+    redirectToReturnPath(returnTo, { updated: "location" });
+  }
 }
 
 export async function deleteLocationAction(formData: FormData) {
   const { householdId } = await requireAdminAction();
   const locationId = String(formData.get("locationId") ?? "").trim();
+  const returnTo = getReturnPath(formData.get("returnTo"), "");
   if (!locationId) return;
 
   const location = await prisma.location.findFirst({
     where: { id: locationId, householdId },
     select: { id: true },
   });
-  if (!location) return;
+  if (!location) {
+    redirectToReturnPath(returnTo, { error: "location-not-found" });
+    return;
+  }
 
   // Unlink rooms from this location (set locationId to null)
   await prisma.room.updateMany({
@@ -246,24 +256,44 @@ export async function deleteLocationAction(formData: FormData) {
   });
 
   refreshViews(["/", "/log", "/tasks", "/settings", "/settings/locations", "/settings/rooms"]);
+  if (returnTo) {
+    redirectToReturnPath(returnTo, { archived: "location" });
+  }
 }
 
 export async function updateRoomLocationAction(formData: FormData) {
   const { householdId } = await requireAdminAction();
   const roomId = String(formData.get("roomId") ?? "").trim();
   const locationId = String(formData.get("locationId") ?? "").trim() || null;
+  const returnTo = getReturnPath(formData.get("returnTo"), "");
   if (!roomId) return;
+
+  const room = await prisma.room.findFirst({
+    where: { id: roomId, householdId, active: true },
+    select: { id: true },
+  });
+  if (!room) {
+    redirectToReturnPath(returnTo, { error: "room-not-found" });
+    return;
+  }
 
   const validLocation = locationId
     ? await prisma.location.findFirst({ where: { id: locationId, householdId, active: true }, select: { id: true } })
     : null;
+  if (locationId && !validLocation) {
+    redirectToReturnPath(returnTo, { error: "location-not-found" });
+    return;
+  }
 
   await prisma.room.updateMany({
     where: { id: roomId, householdId, active: true },
     data: { locationId: locationId && validLocation ? locationId : null },
   });
 
-  refreshViews(["/", "/log", "/tasks", "/settings", "/settings/rooms"]);
+  refreshViews(["/", "/log", "/tasks", "/settings", "/settings/rooms", "/settings/locations"]);
+  if (returnTo) {
+    redirectToReturnPath(returnTo, { updated: "room-location" });
+  }
 }
 
 export async function createTaskAction(formData: FormData) {

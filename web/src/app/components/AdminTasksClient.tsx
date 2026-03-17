@@ -1,6 +1,7 @@
 "use client";
 
 import { deleteTaskAction, updateTaskAction } from "@/app/actions";
+import { FormActionButton } from "@/app/components/FormActionButton";
 import type { AdminTask, AdminRoom, AdminPerson } from "@/lib/admin-data";
 import { useState } from "react";
 
@@ -161,13 +162,17 @@ export function AdminTasksClient({ tasks, rooms, people }: Props) {
                   </label>
                 </details>
 
-                <button className="action-btn subtle">Save</button>
+                <FormActionButton className="action-btn subtle" pendingLabel="Saving">
+                  Save
+                </FormActionButton>
               </form>
 
               <form action={deleteTaskAction} className="mt-2">
                 <input type="hidden" name="taskId" value={task.id} />
                 <input type="hidden" name="returnTo" value="/admin#section-tasks" />
-                <button className="action-btn warn">Archive</button>
+                <FormActionButton className="action-btn warn" pendingLabel="Archiving">
+                  Archive
+                </FormActionButton>
               </form>
 
               {task.projectParentTitle ? (

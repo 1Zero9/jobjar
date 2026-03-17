@@ -19,6 +19,7 @@ export default async function MorePage() {
 
   const audienceThemeClass = getMemberThemeClassName(audienceBand, profileTheme);
   const childMode = isChildAudience(audienceBand);
+  const viewerMode = role === "viewer";
   const canSeeExtended = canAccessExtendedViews(audienceBand);
   const canSeeReports = canAccessReportingViewsRole(role) && canSeeExtended;
   const canManagePeople = canManagePeopleRole(role);
@@ -28,7 +29,7 @@ export default async function MorePage() {
       <main className="mx-auto flex w-full max-w-[32rem] flex-col gap-6">
         <AppPageHeader
           title="More"
-          subtitle={childMode ? "A short list of the extra things you might need." : "Extra screens, settings, and account controls."}
+          subtitle={childMode ? "A short list of the extra things you might need." : viewerMode ? "A simple list of the extra places you can look." : "Extra screens, settings, and account controls."}
           iconClassName="help"
           icon={<SettingsIcon width="36" height="36" />}
         />
@@ -38,7 +39,7 @@ export default async function MorePage() {
           <div className="more-profile-row">
             <div>
               <h2 className="recorded-title">{currentUser?.displayName ?? "You"}</h2>
-              <p className="recorded-empty">{childMode ? "Child mode stays small on purpose." : "Use this page for the rest of the app."}</p>
+              <p className="recorded-empty">{childMode ? "Child mode stays small on purpose." : viewerMode ? "Use this page for the extra places you can check in on." : "Use this page for the rest of the app."}</p>
             </div>
             <span className="version-chip">{APP_VERSION}</span>
           </div>

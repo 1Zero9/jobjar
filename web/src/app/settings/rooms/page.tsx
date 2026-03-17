@@ -19,7 +19,7 @@ const roomPresets = [
 export default async function RoomsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ added?: string; duplicate?: string; error?: string }>;
+  searchParams: Promise<{ added?: string; duplicate?: string; updated?: string; archived?: string; error?: string }>;
 }) {
   const params = await searchParams;
   const { householdId } = await requireAdmin("/settings/rooms");
@@ -69,6 +69,9 @@ export default async function RoomsPage({
         />
 
         {params.added === "room" ? <ToastNotice message="Room added." tone="success" /> : null}
+        {params.updated === "room" ? <ToastNotice message="Room saved." tone="success" /> : null}
+        {params.updated === "room-location" ? <ToastNotice message="Room location saved." tone="success" /> : null}
+        {params.archived === "room" ? <ToastNotice message="Room archived." tone="success" /> : null}
         {params.duplicate === "room" ? <ToastNotice message="That room name already exists." tone="info" /> : null}
         {params.error ? <ToastNotice message={getRoomsErrorMessage(params.error)} tone="error" /> : null}
 
@@ -154,6 +157,7 @@ export default async function RoomsPage({
                         {locations.length > 0 ? (
                           <form action={updateRoomLocationAction} className="recorded-edit-form">
                             <input type="hidden" name="roomId" value={room.id} />
+                            <input type="hidden" name="returnTo" value="/settings/rooms" />
                             <label className="recorded-field">
                               <span>Location</span>
                               <select name="locationId" defaultValue={room.locationId ?? ""} className="recorded-edit-input">
@@ -172,6 +176,7 @@ export default async function RoomsPage({
                         ) : null}
                         <form action={deleteRoomAction} className="recorded-row-actions">
                           <input type="hidden" name="roomId" value={room.id} />
+                          <input type="hidden" name="returnTo" value="/settings/rooms" />
                           <FormActionButton className="action-btn warn quiet" pendingLabel="Archiving">
                             Archive room
                           </FormActionButton>
@@ -208,6 +213,9 @@ function getRoomsErrorMessage(error?: string) {
   }
   if (error === "room-not-found") {
     return "That room could not be found.";
+  }
+  if (error === "location-not-found") {
+    return "That location could not be found.";
   }
   return "We could not save that room.";
 }
