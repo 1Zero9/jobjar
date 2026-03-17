@@ -48,14 +48,17 @@ export default async function AdminPage({
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Admin</p>
-              <h1 className="mt-1 text-2xl font-bold text-foreground sm:text-3xl">Admin Workspace</h1>
-              <p className="mt-1 text-sm text-muted">Manage people, rooms, and tasks for the household.</p>
+              <h1 className="mt-1 text-2xl font-bold text-foreground sm:text-3xl">Advanced tools</h1>
+              <p className="mt-1 text-sm text-muted">Use this for deeper setup and job shaping. Everyday work should stay on home, jobs, and log.</p>
             </div>
           </div>
 
           <div className="mt-3 grid grid-cols-2 gap-2 sm:w-[28rem]">
             <Link href="/" className="action-btn subtle text-center">
               Home
+            </Link>
+            <Link href="/tasks" className="action-btn subtle text-center">
+              Jobs
             </Link>
             <a href="#section-people" className="action-btn subtle text-center">
               People
@@ -88,22 +91,27 @@ export default async function AdminPage({
 
         <section id="section-people" className="board-shell admin-step people p-4">
           <h2 className="text-lg font-semibold">People</h2>
-          <p className="text-xs text-muted">Add the people who will notice, own, and complete tasks.</p>
+          <p className="text-xs text-muted">Add someone with the basics first. Use the main people screen for the rest.</p>
 
-          <form action={createPersonAction} className="mt-3 grid grid-cols-1 gap-2 rounded-xl border-accent-muted bg-accent-soft p-3 md:grid-cols-5">
+          <form action={createPersonAction} className="mt-3 grid grid-cols-1 gap-2 rounded-xl border-accent-muted bg-accent-soft p-3 md:grid-cols-4">
             <input type="hidden" name="returnTo" value="/admin#section-people" />
             <input name="displayName" type="text" required placeholder="Name" className="admin-input px-3 py-2 text-sm" />
-            <input name="email" type="email" placeholder="Email (optional)" className="admin-input px-3 py-2 text-sm" />
+            <input name="passcode" type="password" minLength={4} placeholder="Passcode (min 4)" className="admin-input px-3 py-2 text-sm" />
             <select name="role" defaultValue="member" className="admin-input px-3 py-2 text-sm">
               <option value="member">Member</option>
               <option value="power_user">Power user</option>
               <option value="admin">Admin</option>
               <option value="viewer">Viewer</option>
             </select>
-            <input name="passcode" type="password" minLength={4} placeholder="Passcode (min 4)" className="admin-input px-3 py-2 text-sm" />
             <FormActionButton className="action-btn bright" pendingLabel="Adding person">
               Add person
             </FormActionButton>
+            <details className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-muted md:col-span-4">
+              <summary className="cursor-pointer font-semibold">Add email</summary>
+              <div className="mt-2">
+                <input name="email" type="email" placeholder="Email (optional)" className="admin-input w-full px-3 py-2 text-sm" />
+              </div>
+            </details>
           </form>
 
           <div className="mt-3 overflow-x-auto rounded-xl border border-accent-muted bg-accent-soft">
@@ -151,15 +159,20 @@ export default async function AdminPage({
 
         <section id="section-rooms" className="board-shell admin-step rooms p-4">
           <h2 className="text-lg font-semibold">Rooms</h2>
-          <p className="text-xs text-muted">Define the real-world areas tasks belong to: rooms, garden, attic, car, outside.</p>
+          <p className="text-xs text-muted">Keep this simple. Most homes only need a room name.</p>
 
           <form action={createRoomAction} className="mt-3 grid grid-cols-1 gap-2 rounded-xl border-accent-muted bg-accent-soft p-3 md:grid-cols-3">
             <input type="hidden" name="returnTo" value="/admin#section-rooms" />
             <input name="name" type="text" required placeholder="Room name" className="admin-input px-3 py-2 text-sm" />
-            <input name="designation" type="text" placeholder="Group e.g. Upstairs / Outside" className="admin-input px-3 py-2 text-sm" />
             <FormActionButton className="action-btn bright" pendingLabel="Adding room">
               Add room
             </FormActionButton>
+            <details className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-muted md:col-span-3">
+              <summary className="cursor-pointer font-semibold">Add group label</summary>
+              <div className="mt-2">
+                <input name="designation" type="text" placeholder="Group e.g. Upstairs / Outside" className="admin-input w-full px-3 py-2 text-sm" />
+              </div>
+            </details>
           </form>
 
           <div className="mt-3 grid grid-cols-1 gap-2 lg:grid-cols-2">
@@ -189,7 +202,7 @@ export default async function AdminPage({
 
         <section id="section-tasks" className="board-shell admin-step tasks p-4">
           <h2 className="text-lg font-semibold">Tasks</h2>
-          <p className="text-xs text-muted">Give tasks structure: type, stage, location, schedule, and ownership.</p>
+          <p className="text-xs text-muted">Add the basics here. Open advanced details only when a job really needs them.</p>
 
           <form action={createTaskAction} className="mt-3 grid grid-cols-1 gap-2 rounded-xl border-accent-muted bg-accent-soft p-3 md:grid-cols-4">
             <input type="hidden" name="returnTo" value="/admin#section-tasks" />
@@ -210,33 +223,38 @@ export default async function AdminPage({
                 </option>
               ))}
             </select>
-            <input name="dueAt" type="datetime-local" className="admin-input px-3 py-2 text-sm" />
-            <select name="jobKind" defaultValue="upkeep" className="admin-input px-3 py-2 text-sm">
-              <option value="upkeep">Upkeep</option>
-              <option value="issue">Issue</option>
-              <option value="project">Project</option>
-              <option value="clear_out">Clear-out</option>
-              <option value="outdoor">Outdoor</option>
-              <option value="planning">Planning</option>
-            </select>
-            <select name="captureStage" defaultValue="shaped" className="admin-input px-3 py-2 text-sm">
-              <option value="captured">Captured</option>
-              <option value="shaped">Shaped</option>
-              <option value="active">Active</option>
-              <option value="done">Done</option>
-            </select>
-            <input name="locationDetails" type="text" placeholder="Specific location e.g. front garden" className="admin-input px-3 py-2 text-sm md:col-span-2" />
-            <input name="detailNotes" type="text" placeholder="Notes, next step, or materials" className="admin-input px-3 py-2 text-sm md:col-span-3" />
-            <select name="projectParentId" defaultValue="" className="admin-input px-3 py-2 text-sm">
-              <option value="">No parent project</option>
-              {projectOptions.map((task) => (
-                <option key={task.id} value={task.id}>
-                  {task.title}
-                </option>
-              ))}
-            </select>
+            <FormActionButton className="action-btn bright md:col-span-1" pendingLabel="Adding task">
+              Add task
+            </FormActionButton>
             <details className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-muted md:col-span-4">
-              <summary className="cursor-pointer font-semibold">Recurrence &amp; timing</summary>
+              <summary className="cursor-pointer font-semibold">Advanced task details</summary>
+              <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-4">
+                <input name="dueAt" type="datetime-local" className="admin-input px-3 py-2 text-sm" />
+                <select name="jobKind" defaultValue="upkeep" className="admin-input px-3 py-2 text-sm">
+                  <option value="upkeep">Upkeep</option>
+                  <option value="issue">Issue</option>
+                  <option value="project">Project</option>
+                  <option value="clear_out">Clear-out</option>
+                  <option value="outdoor">Outdoor</option>
+                  <option value="planning">Planning</option>
+                </select>
+                <select name="captureStage" defaultValue="shaped" className="admin-input px-3 py-2 text-sm">
+                  <option value="captured">Captured</option>
+                  <option value="shaped">Shaped</option>
+                  <option value="active">Active</option>
+                  <option value="done">Done</option>
+                </select>
+                <select name="projectParentId" defaultValue="" className="admin-input px-3 py-2 text-sm">
+                  <option value="">No parent job</option>
+                  {projectOptions.map((task) => (
+                    <option key={task.id} value={task.id}>
+                      {task.title}
+                    </option>
+                  ))}
+                </select>
+                <input name="locationDetails" type="text" placeholder="Specific location detail" className="admin-input px-3 py-2 text-sm md:col-span-2" />
+                <input name="detailNotes" type="text" placeholder="Notes, next step, or materials" className="admin-input px-3 py-2 text-sm md:col-span-2" />
+              </div>
               <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-3">
                 <label className="admin-field-label">
                   <span>Repeats</span>
@@ -273,9 +291,6 @@ export default async function AdminPage({
                 <input type="checkbox" name="strictMode" /> Strict proof mode
               </label>
             </details>
-            <FormActionButton className="action-btn bright md:col-span-4" pendingLabel="Adding task">
-              Add task
-            </FormActionButton>
           </form>
 
           <div className="mt-3">

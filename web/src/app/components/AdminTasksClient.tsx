@@ -80,8 +80,8 @@ export function AdminTasksClient({ tasks, rooms, people }: Props) {
                   </select>
                 </div>
 
-                {/* Assignee + Due + Type + Stage */}
-                <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+                {/* Assignee + Due */}
+                <div className="grid grid-cols-2 gap-2 md:grid-cols-2">
                   <select name="assigneeUserId" defaultValue={task.assigneeUserId} className="admin-input px-2 py-1.5 text-xs">
                     <option value="">Unassigned</option>
                     {people.map((person) => (
@@ -89,41 +89,36 @@ export function AdminTasksClient({ tasks, rooms, people }: Props) {
                     ))}
                   </select>
                   <input name="dueAt" type="datetime-local" defaultValue={toDateTimeLocal(task.dueAt)} className="admin-input px-2 py-1.5 text-xs" />
-                  <select name="jobKind" defaultValue={task.jobKind} className="admin-input px-2 py-1.5 text-xs">
-                    <option value="upkeep">Upkeep</option>
-                    <option value="issue">Issue</option>
-                    <option value="project">Project</option>
-                    <option value="clear_out">Clear-out</option>
-                    <option value="outdoor">Outdoor</option>
-                    <option value="planning">Planning</option>
-                  </select>
-                  <select name="captureStage" defaultValue={task.captureStage} className="admin-input px-2 py-1.5 text-xs">
-                    <option value="captured">Captured</option>
-                    <option value="shaped">Shaped</option>
-                    <option value="active">Active</option>
-                    <option value="done">Done</option>
-                  </select>
                 </div>
 
-                {/* Location + Notes */}
-                <div className="grid grid-cols-1 gap-2 md:grid-cols-[1fr_2fr]">
-                  <input name="locationDetails" type="text" defaultValue={task.locationDetails} placeholder="Location detail" className="admin-input px-2 py-1.5 text-xs" />
-                  <input name="detailNotes" type="text" defaultValue={task.detailNotes} placeholder="Notes / materials / next step" className="admin-input px-2 py-1.5 text-xs" />
-                </div>
-
-                {/* Parent project */}
-                <select name="projectParentId" defaultValue={task.projectParentId} className="admin-input w-full px-2 py-1.5 text-xs">
-                  <option value="">No parent project</option>
-                  {projectOptions
-                    .filter((option) => option.id !== task.id)
-                    .map((option) => (
-                      <option key={option.id} value={option.id}>{option.title}</option>
-                    ))}
-                </select>
-
-                {/* Recurrence & timing */}
                 <details className="rounded-lg border border-border px-2 py-1.5 text-xs text-muted">
-                  <summary className="cursor-pointer font-semibold">Recurrence &amp; timing</summary>
+                  <summary className="cursor-pointer font-semibold">Advanced task settings</summary>
+                  <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-2">
+                    <select name="jobKind" defaultValue={task.jobKind} className="admin-input px-2 py-1.5 text-xs">
+                      <option value="upkeep">Upkeep</option>
+                      <option value="issue">Issue</option>
+                      <option value="project">Project</option>
+                      <option value="clear_out">Clear-out</option>
+                      <option value="outdoor">Outdoor</option>
+                      <option value="planning">Planning</option>
+                    </select>
+                    <select name="captureStage" defaultValue={task.captureStage} className="admin-input px-2 py-1.5 text-xs">
+                      <option value="captured">Captured</option>
+                      <option value="shaped">Shaped</option>
+                      <option value="active">Active</option>
+                      <option value="done">Done</option>
+                    </select>
+                    <input name="locationDetails" type="text" defaultValue={task.locationDetails} placeholder="Location detail" className="admin-input px-2 py-1.5 text-xs" />
+                    <select name="projectParentId" defaultValue={task.projectParentId} className="admin-input w-full px-2 py-1.5 text-xs">
+                      <option value="">No parent job</option>
+                      {projectOptions
+                        .filter((option) => option.id !== task.id)
+                        .map((option) => (
+                          <option key={option.id} value={option.id}>{option.title}</option>
+                        ))}
+                    </select>
+                    <input name="detailNotes" type="text" defaultValue={task.detailNotes} placeholder="Notes / materials / next step" className="admin-input px-2 py-1.5 text-xs md:col-span-2" />
+                  </div>
                   <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-3">
                     <label className="admin-field-label">
                       <span>Repeats</span>

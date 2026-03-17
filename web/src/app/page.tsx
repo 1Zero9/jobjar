@@ -111,10 +111,7 @@ export default async function HomePage({
     setupPeopleCount,
     setupRoomCount,
     setupTaskCount,
-    openPreviewRaw,
-    overdueRaw,
-    dueTodayRaw,
-    assignedRaw,
+    homeFeedRaw,
     completedThisWeek,
     paidThisWeek,
     recentCompletionDays,
@@ -176,45 +173,12 @@ export default async function HomePage({
           },
         })
       : Promise.resolve(0),
-    viewerMode
-      ? prisma.task.findMany({
-          where: visibleOpenTaskWhere,
-          select: homeTaskSelect,
-          take: 12,
-        })
-      : Promise.resolve([]),
     prisma.task.findMany({
-      where: {
-        ...visibleOpenTaskWhere,
-        OR: [
-          { schedule: { is: { nextDueAt: { lt: todayStart } } } },
-          { occurrences: { some: { status: { not: "done" }, dueAt: { lt: todayStart } } } },
-        ],
-      },
+      where: visibleOpenTaskWhere,
       select: homeTaskSelect,
-      take: 12,
+      orderBy: [{ priority: "asc" }, { createdAt: "desc" }],
+      take: viewerMode ? 24 : childMode ? 30 : 36,
     }),
-    prisma.task.findMany({
-      where: {
-        ...visibleOpenTaskWhere,
-        OR: [
-          { schedule: { is: { nextDueAt: { gte: todayStart, lte: todayEnd } } } },
-          { occurrences: { some: { status: { not: "done" }, dueAt: { gte: todayStart, lte: todayEnd } } } },
-        ],
-      },
-      select: homeTaskSelect,
-      take: 12,
-    }),
-    viewerMode
-      ? Promise.resolve([])
-      : prisma.task.findMany({
-          where: {
-            ...visibleOpenTaskWhere,
-            assignments: { some: { userId, assignedTo: null } },
-          },
-          select: homeTaskSelect,
-          take: 12,
-        }),
     viewerMode
       ? Promise.resolve(0)
       : prisma.taskOccurrence.count({
@@ -259,35 +223,49 @@ export default async function HomePage({
 
   const locationScopeLabel = restrictedToLocations ? getLocationScopeLabel(locations, allowedLocationIds) : null;
   const showQuickCapture = canQuickCapture && (!restrictedToLocations || quickCaptureRooms.length > 0);
+  const homeFeed = homeFeedRaw.map((task) => ({
+    task,
+    dueAt: task.occurrences[0]?.dueAt ?? task.schedule?.nextDueAt ?? null,
+    assignedUserId: task.assignments[0]?.userId ?? null,
+  }));
   const overdueTasks = dedupeTasks(
-    overdueRaw
-      .map(mapHomeTask)
+    homeFeed
+      .filter((entry) => isHomeTaskOverdue(entry.dueAt, todayStart))
+      .map((entry) => mapHomeTask(entry.task))
       .sort((left, right) => compareDueDates(left.dueAt, right.dueAt)),
   ).slice(0, childMode ? 8 : 6);
   const dueTodayTasks = dedupeTasks(
-    dueTodayRaw
-      .map(mapHomeTask)
+    homeFeed
+      .filter((entry) => isHomeTaskDueToday(entry.dueAt, todayStart, todayEnd))
+      .map((entry) => mapHomeTask(entry.task))
       .sort((left, right) => compareDueDates(left.dueAt, right.dueAt)),
   ).slice(0, childMode ? 8 : 6);
   const urgentIds = new Set([...overdueTasks, ...dueTodayTasks].map((task) => task.id));
   const assignedTasks = viewerMode
     ? []
     : dedupeTasks(
-        assignedRaw
-          .map(mapHomeTask)
+        homeFeed
+          .filter((entry) => entry.assignedUserId === userId)
+          .map((entry) => mapHomeTask(entry.task))
           .filter((task) => !urgentIds.has(task.id))
           .sort((left, right) => compareDueDates(left.dueAt, right.dueAt)),
       ).slice(0, 6);
   const viewerOpenTasks = viewerMode
     ? dedupeTasks(
-        openPreviewRaw
-          .map(mapHomeTask)
+        homeFeed
+          .map((entry) => mapHomeTask(entry.task))
           .filter((task) => !urgentIds.has(task.id))
           .sort((left, right) => compareDueDates(left.dueAt, right.dueAt)),
       ).slice(0, 6)
     : [];
   const childHomeTasks = childMode
-    ? dedupeTasks([...overdueTasks, ...dueTodayTasks, ...assignedRaw.map(mapHomeTask)]).slice(0, 6)
+    ? dedupeTasks([
+        ...overdueTasks,
+        ...dueTodayTasks,
+        ...homeFeed
+          .filter((entry) => entry.assignedUserId === userId)
+          .map((entry) => mapHomeTask(entry.task)),
+      ]).slice(0, 6)
     : [];
   const paidThisWeekCents = viewerMode ? 0 : paidThisWeek.reduce((sum, task) => sum + (task.rewardCents ?? 0), 0);
   const completionStreak = viewerMode ? 0 : computeCompletionDayStreak(recentCompletionDays.map((entry) => entry.completedAt));
@@ -530,6 +508,14 @@ function compareDueDates(left: string | null, right: string | null) {
   if (!left) return 1;
   if (!right) return -1;
   return new Date(left).getTime() - new Date(right).getTime();
+}
+
+function isHomeTaskOverdue(dueAt: Date | null, todayStart: Date) {
+  return Boolean(dueAt && dueAt.getTime() < todayStart.getTime());
+}
+
+function isHomeTaskDueToday(dueAt: Date | null, todayStart: Date, todayEnd: Date) {
+  return Boolean(dueAt && dueAt.getTime() >= todayStart.getTime() && dueAt.getTime() <= todayEnd.getTime());
 }
 
 function startOfThisWeek() {
