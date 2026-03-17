@@ -1,8 +1,6 @@
 "use client";
 
 import type { MemberAudience } from "@prisma/client";
-import { luckyDipAction } from "@/app/actions";
-import { FormActionButton } from "@/app/components/FormActionButton";
 import { TaskCard } from "@/app/components/TaskCard";
 import { TaskFilters } from "@/app/components/TaskFilters";
 import type { PersonOption, RoomOption, TaskItem } from "@/app/components/task-board-types";
@@ -136,16 +134,6 @@ export function TasksPanelClient({
           setSelectedAssigneeId("");
           setSelectedState("all");
         }}
-        extraAction={
-          !projectMode && !childMode && canEditTasks ? (
-            <form action={luckyDipAction}>
-              <input type="hidden" name="returnTo" value="/tasks" />
-              <FormActionButton className="action-btn subtle quiet" pendingLabel="Choosing task">
-                {teenMode ? "Pick one" : "Lucky dip"}
-              </FormActionButton>
-            </form>
-          ) : null
-        }
       />
 
       <div className="recorded-list">

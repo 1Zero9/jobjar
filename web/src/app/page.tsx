@@ -1,16 +1,14 @@
-import { luckyDipAction } from "@/app/actions";
-import { FormActionButton } from "@/app/components/FormActionButton";
+import { HomeTaskList, type HomeTaskItem } from "@/app/components/HomeTaskList";
 import { HomeQuickCaptureForm } from "@/app/components/HomeQuickCaptureForm";
 import { ToastNotice } from "@/app/components/ToastNotice";
+import { getTaskFeedbackMessage } from "@/app/components/task-feedback";
 import { canAccessReportingViewsRole, canManagePeopleRole, canUseMemberActions, isMemberRole, requireSessionContext } from "@/lib/auth";
-import { APP_VERSION } from "@/lib/app-version";
 import { getLocationScopeLabel, getRoomLocationAccessWhere, hasLocationRestrictions } from "@/lib/location-access";
 import {
   canAccessExtendedViews,
   getAudienceAssignedTaskWhere,
   getMemberThemeClassName,
   isChildAudience,
-  isTeenAudience,
 } from "@/lib/member-audience";
 import { prisma } from "@/lib/prisma";
 import { getMemberVisibleTaskWhere } from "@/lib/project-work";
@@ -18,29 +16,104 @@ import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
+type HomeSearchParams = {
+  added?: string;
+  error?: string;
+  taskId?: string;
+};
+
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ added?: string; error?: string; taskId?: string }>;
+  searchParams: Promise<HomeSearchParams>;
 }) {
   const params = await searchParams;
   const { householdId, userId, role, audienceBand, profileTheme, allowedLocationIds } = await requireSessionContext("/");
   const audienceThemeClass = getMemberThemeClassName(audienceBand, profileTheme);
   const childMode = isChildAudience(audienceBand);
-  const teenMode = isTeenAudience(audienceBand);
   const peopleManager = canManagePeopleRole(role);
   const canAct = canUseMemberActions(role);
   const canSeeExtended = canAccessExtendedViews(audienceBand);
-  const memberMode = isMemberRole(role);
-  const easyHome = !childMode && (memberMode || !canAct);
   const canSeeReports = canAccessReportingViewsRole(role) && canSeeExtended;
   const canQuickCapture = canAct && canSeeExtended && !childMode;
+  const memberMode = isMemberRole(role);
   const taskAudienceWhere = getAudienceAssignedTaskWhere(userId, audienceBand);
   const memberVisibleTaskWhere = getMemberVisibleTaskWhere(role, userId);
   const weekStart = startOfThisWeek();
+  const todayStart = startOfToday();
+  const todayEnd = endOfToday();
   const restrictedToLocations = hasLocationRestrictions(allowedLocationIds);
 
-  const [currentUser, locations, quickCaptureRooms, taskCount, completedThisWeek] = await Promise.all([
+  const visibleOpenTaskWhere = {
+    active: true,
+    captureStage: { not: "done" as const },
+    room: { householdId, ...getRoomLocationAccessWhere(allowedLocationIds) },
+    ...taskAudienceWhere,
+    ...(Object.keys(memberVisibleTaskWhere).length > 0 ? memberVisibleTaskWhere : {}),
+  };
+
+  const homeTaskSelect = {
+    id: true,
+    title: true,
+    captureStage: true,
+    validationMode: true,
+    rewardCents: true,
+    room: {
+      select: {
+        name: true,
+        location: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    },
+    projectParent: {
+      select: {
+        title: true,
+      },
+    },
+    schedule: {
+      select: {
+        nextDueAt: true,
+      },
+    },
+    occurrences: {
+      where: { status: { not: "done" as const } },
+      orderBy: { dueAt: "asc" as const },
+      take: 1,
+      select: {
+        dueAt: true,
+      },
+    },
+    assignments: {
+      where: { assignedTo: null },
+      orderBy: { assignedFrom: "desc" as const },
+      take: 1,
+      select: {
+        userId: true,
+        assignedFrom: true,
+        user: {
+          select: {
+            displayName: true,
+          },
+        },
+      },
+    },
+  };
+
+  const [
+    currentUser,
+    locations,
+    quickCaptureRooms,
+    openTaskCount,
+    overdueRaw,
+    dueTodayRaw,
+    assignedRaw,
+    completedThisWeek,
+    paidThisWeek,
+    recentCompletionDays,
+  ] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       select: { displayName: true },
@@ -74,13 +147,37 @@ export default async function HomePage({
         })
       : Promise.resolve([]),
     prisma.task.count({
+      where: visibleOpenTaskWhere,
+    }),
+    prisma.task.findMany({
       where: {
-        active: true,
-        captureStage: { not: "done" },
-        room: { householdId, ...getRoomLocationAccessWhere(allowedLocationIds) },
-        ...taskAudienceWhere,
-        ...(Object.keys(memberVisibleTaskWhere).length > 0 ? memberVisibleTaskWhere : {}),
+        ...visibleOpenTaskWhere,
+        OR: [
+          { schedule: { is: { nextDueAt: { lt: todayStart } } } },
+          { occurrences: { some: { status: { not: "done" }, dueAt: { lt: todayStart } } } },
+        ],
       },
+      select: homeTaskSelect,
+      take: 12,
+    }),
+    prisma.task.findMany({
+      where: {
+        ...visibleOpenTaskWhere,
+        OR: [
+          { schedule: { is: { nextDueAt: { gte: todayStart, lte: todayEnd } } } },
+          { occurrences: { some: { status: { not: "done" }, dueAt: { gte: todayStart, lte: todayEnd } } } },
+        ],
+      },
+      select: homeTaskSelect,
+      take: 12,
+    }),
+    prisma.task.findMany({
+      where: {
+        ...visibleOpenTaskWhere,
+        assignments: { some: { userId, assignedTo: null } },
+      },
+      select: homeTaskSelect,
+      take: 12,
     }),
     prisma.taskOccurrence.count({
       where: {
@@ -92,208 +189,232 @@ export default async function HomePage({
         },
       },
     }),
+    prisma.task.findMany({
+      where: {
+        rewardCents: { not: null },
+        rewardPaidAt: { gte: weekStart },
+        assignments: { some: { userId, assignedTo: null } },
+        room: { householdId, ...getRoomLocationAccessWhere(allowedLocationIds) },
+      },
+      select: {
+        rewardCents: true,
+      },
+    }),
+    prisma.taskOccurrence.findMany({
+      where: {
+        status: "done",
+        completedBy: userId,
+        completedAt: { gte: daysAgo(30) },
+        task: {
+          room: { householdId, ...getRoomLocationAccessWhere(allowedLocationIds) },
+        },
+      },
+      orderBy: { completedAt: "desc" },
+      take: 90,
+      select: { completedAt: true },
+    }),
   ]);
+
   const locationScopeLabel = restrictedToLocations ? getLocationScopeLabel(locations, allowedLocationIds) : null;
   const showQuickCapture = canQuickCapture && (!restrictedToLocations || quickCaptureRooms.length > 0);
+  const overdueTasks = dedupeTasks(
+    overdueRaw
+      .map(mapHomeTask)
+      .sort((left, right) => compareDueDates(left.dueAt, right.dueAt)),
+  ).slice(0, childMode ? 8 : 6);
+  const dueTodayTasks = dedupeTasks(
+    dueTodayRaw
+      .map(mapHomeTask)
+      .sort((left, right) => compareDueDates(left.dueAt, right.dueAt)),
+  ).slice(0, childMode ? 8 : 6);
+  const urgentIds = new Set([...overdueTasks, ...dueTodayTasks].map((task) => task.id));
+  const assignedTasks = dedupeTasks(
+    assignedRaw
+      .map(mapHomeTask)
+      .filter((task) => !urgentIds.has(task.id))
+      .sort((left, right) => compareDueDates(left.dueAt, right.dueAt)),
+  ).slice(0, 6);
+  const childHomeTasks = childMode
+    ? dedupeTasks([...overdueTasks, ...dueTodayTasks, ...assignedRaw.map(mapHomeTask)]).slice(0, 6)
+    : [];
+  const paidThisWeekCents = paidThisWeek.reduce((sum, task) => sum + (task.rewardCents ?? 0), 0);
+  const completionStreak = computeCompletionDayStreak(recentCompletionDays.map((entry) => entry.completedAt));
+  const greeting = getGreeting(childMode ? "Hey" : "Good");
 
   return (
     <div className={`capture-shell ${audienceThemeClass} min-h-screen px-4 py-5`}>
-      <main className={`landing-shell ${easyHome ? "landing-shell-easy" : ""} mx-auto flex w-full flex-col gap-6`.trim()}>
+      <main className="today-shell mx-auto flex w-full max-w-[46rem] flex-col gap-5">
         {params.added === "task" ? <ToastNotice message="Job recorded." tone="success" /> : null}
-        {params.error === "task-title-required" ? <ToastNotice message="Enter a job title before saving." tone="error" /> : null}
-        {params.error === "task-room-required" ? <ToastNotice message="Choose a room first, then try again." tone="error" /> : null}
+        {params.error ? <ToastNotice message={getTaskFeedbackMessage(params.error)} tone="error" /> : null}
         {params.added === "task" && params.taskId ? (
           <Link href={`/tasks#task-${params.taskId}`} className="view-task-link">
             View the job you just logged
           </Link>
         ) : null}
 
-        <header className={`landing-hero ${easyHome ? "landing-hero-easy" : ""} ${childMode ? "landing-hero-kid" : teenMode ? "landing-hero-teen" : ""}`.trim()}>
-          <div className="landing-hero-topline">
-            <div className="landing-hero-topline-main">
-              <div className="landing-brand-row">
-                <div className="page-hero-icon home">
-                  <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
-                    <path d="m3.3 7 8.7 5 8.7-5"/>
-                    <path d="M12 22V12"/>
-                  </svg>
-                </div>
-                <h1 className="landing-title">Jobjar</h1>
-                <span className="version-chip">{APP_VERSION}</span>
-              </div>
-              <div className="landing-meta-row">
-                <span className="session-chip">{currentUser?.displayName ?? "You"}</span>
-              </div>
-              {locationScopeLabel ? (
-                <p className="landing-scope-note" title={`Current location scope: ${locationScopeLabel}`}>
-                  <span>Showing</span>
-                  <strong>{locationScopeLabel}</strong>
-                </p>
-              ) : null}
-              {easyHome ? (
-                <p className="landing-easy-copy">
-                  Keep this simple. Open your jobs, log a new one, or use help if you get stuck.
-                </p>
-              ) : null}
+        <header className={`today-hero ${childMode ? "today-hero-kid" : ""}`.trim()}>
+          <div className="today-hero-copy">
+            <span className="session-chip">{currentUser?.displayName ?? "You"}</span>
+            <h1 className="today-greeting">
+              {childMode ? `${greeting} ${currentUser?.displayName ?? "there"}` : `${greeting}, ${currentUser?.displayName ?? "there"}.`}
+            </h1>
+            <p className="today-copy">
+              {childMode
+                ? childHomeTasks.length > 0
+                  ? `You've got ${childHomeTasks.length} job${childHomeTasks.length === 1 ? "" : "s"} ready today.`
+                  : "No jobs waiting right now. Nice work."
+                : `See what needs doing now, log something fast, and keep the board moving.`}
+            </p>
+            {locationScopeLabel ? (
+              <p className="landing-scope-note" title={`Current location scope: ${locationScopeLabel}`}>
+                <span>Showing</span>
+                <strong>{locationScopeLabel}</strong>
+              </p>
+            ) : null}
+          </div>
+
+          <div className="today-metrics">
+            <div className="today-metric">
+              <span className="today-metric-label">{childMode ? "Today" : "Needs attention"}</span>
+              <strong className="today-metric-value">{childMode ? childHomeTasks.length : overdueTasks.length}</strong>
+            </div>
+            <div className="today-metric">
+              <span className="today-metric-label">{childMode ? "This week" : "Due today"}</span>
+              <strong className="today-metric-value">{childMode ? completedThisWeek : dueTodayTasks.length}</strong>
+            </div>
+            <div className="today-metric">
+              <span className="today-metric-label">{paidThisWeekCents > 0 ? "Earned" : childMode ? "Streak" : "Done this week"}</span>
+              <strong className="today-metric-value">
+                {paidThisWeekCents > 0 ? formatMoney(paidThisWeekCents) : childMode ? `${completionStreak} day${completionStreak === 1 ? "" : "s"}` : openTaskCount}
+              </strong>
             </div>
           </div>
         </header>
 
         {showQuickCapture ? (
-          <section className="landing-panel home-capture-panel">
-            <div className="landing-stat-row">
-              <span className="landing-stat-label">What needs doing?</span>
+          <section className="today-section today-capture-section">
+            <div className="today-section-head">
+              <h2 className="today-section-title">What needs doing?</h2>
               <Link href="/log" className="recorded-row-edit recorded-row-edit-bright">
                 Full log
               </Link>
             </div>
-            <p className="landing-panel-copy">
-              Type it, press add, and keep moving. The app remembers the room you used last on the full log page.
+            <p className="today-copy today-copy-section">
+              Type it, press add, and the app will save it to the room you used last time.
             </p>
             <HomeQuickCaptureForm rooms={quickCaptureRooms} requireRoom={restrictedToLocations} />
           </section>
         ) : null}
 
-        <section className={`landing-panel ${easyHome ? "landing-panel-easy" : ""} ${childMode ? "landing-panel-kid" : teenMode ? "landing-panel-teen" : ""}`.trim()}>
-          <div className="landing-stat-row">
-            <span className="landing-stat-label">{childMode ? "My jobs" : easyHome ? "Your jobs" : teenMode ? "Open jobs" : "Open tasks"}</span>
-            <span className="landing-stat-value">{taskCount}</span>
-          </div>
+        {childMode ? (
+          <HomeTaskList
+            title="Your jobs"
+            emptyMessage="No jobs waiting right now. Nice work."
+            tasks={childHomeTasks}
+            canAct={canAct}
+            childMode
+          />
+        ) : (
+          <>
+            <HomeTaskList
+              title="Needs attention"
+              emptyMessage="Nothing overdue right now."
+              tasks={overdueTasks}
+              canAct={canAct}
+            />
 
-          {childMode ? (
-            <p className="landing-panel-copy">
-              Jump into your jobs, tick them off, and keep your streak going.
+            <HomeTaskList
+              title="Due today"
+              emptyMessage="Nothing is due today."
+              tasks={dueTodayTasks}
+              canAct={canAct}
+            />
+
+            <HomeTaskList
+              title={memberMode ? "Assigned to you" : "Recently assigned to you"}
+              emptyMessage={memberMode ? "Nothing extra is assigned to you right now." : "Nothing new is assigned to you right now."}
+              tasks={assignedTasks}
+              canAct={canAct}
+            />
+          </>
+        )}
+
+        <section className="today-section">
+          <div className="today-section-head">
+            <h2 className="today-section-title">This week</h2>
+          </div>
+          <div className="today-week-summary">
+            <p>
+              <strong>{completedThisWeek}</strong>
+              <span>done</span>
             </p>
-          ) : !canAct ? (
-            <p className={`landing-panel-copy ${easyHome ? "landing-panel-copy-easy" : ""}`.trim()}>
-              This view is read-only, so you can keep up with what is happening without changing anything.
+            <p>
+              <strong>{paidThisWeekCents > 0 ? formatMoney(paidThisWeekCents) : "No rewards yet"}</strong>
+              <span>{paidThisWeekCents > 0 ? "paid out" : "paid rewards"}</span>
             </p>
-          ) : memberMode ? (
-            <p className={`landing-panel-copy ${easyHome ? "landing-panel-copy-easy" : ""}`.trim()}>
-              Your home stays focused on the jobs you added, the jobs assigned to you, and anything private involving you.
+            <p>
+              <strong>{completionStreak} day{completionStreak === 1 ? "" : "s"}</strong>
+              <span>streak</span>
             </p>
-          ) : teenMode ? (
-            <p className="landing-panel-copy">
-              Keep your board moving. Focus on what is assigned, due, or ready to finish.
-            </p>
+          </div>
+        </section>
+
+        <section className="today-utility-links">
+          <Link href="/tasks" className="today-utility-link">See all jobs</Link>
+          {canSeeReports ? <Link href="/stats" className="today-utility-link">Stats</Link> : null}
+          {role === "admin" ? (
+            <Link href="/settings" className="today-utility-link">Setup</Link>
+          ) : peopleManager ? (
+            <Link href="/settings/people" className="today-utility-link">People</Link>
           ) : null}
-
-          <div className={`landing-grid ${easyHome ? "landing-grid-easy" : ""}`.trim()}>
-            <Link href="/tasks" prefetch className={`landing-action-card ${easyHome ? "landing-action-card-easy landing-action-card-primary" : ""} ${childMode ? "lucky" : "view"}`.trim()}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <line x1="8" y1="6" x2="21" y2="6"/>
-                <line x1="8" y1="12" x2="21" y2="12"/>
-                <line x1="8" y1="18" x2="21" y2="18"/>
-                <polyline points="3 6 4 7 6 4"/>
-                <polyline points="3 12 4 13 6 10"/>
-                <polyline points="3 18 4 19 6 16"/>
-              </svg>
-              <strong>{childMode ? "My jobs" : "View jobs"}</strong>
-              {childMode ? <span>{taskCount > 0 ? `${taskCount} ready to do` : "Nothing waiting right now"}</span> : easyHome ? <span>{taskCount > 0 ? `${taskCount} open right now` : "Nothing is waiting right now"}</span> : null}
-            </Link>
-
-            {childMode ? (
-              <div className="landing-action-card stats landing-action-card-static">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M12 2v4" />
-                  <path d="m16.24 7.76 2.83-2.83" />
-                  <path d="M18 12h4" />
-                  <path d="m16.24 16.24 2.83 2.83" />
-                  <path d="M12 18v4" />
-                  <path d="m4.93 19.07 2.83-2.83" />
-                  <path d="M2 12h4" />
-                  <path d="m4.93 4.93 2.83 2.83" />
-                </svg>
-                <strong>Wins this week</strong>
-                <span>{completedThisWeek}</span>
-              </div>
-            ) : canAct ? (
-              <>
-                <Link href="/log" className={`landing-action-card log ${easyHome ? "landing-action-card-easy" : ""}`.trim()}>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                  </svg>
-                  <strong>Log a Job</strong>
-                  {easyHome ? <span>Add something new that needs doing</span> : null}
-                </Link>
-
-              </>
-            ) : (
-              null
-            )}
-
-            {canAccessExtendedViews(audienceBand) ? (
-              <>
-                {canAct && !memberMode ? (
-                  <form action={luckyDipAction} className="landing-action-form">
-                    <input type="hidden" name="returnTo" value="/tasks" />
-                    <FormActionButton className="landing-action-card lucky landing-action-button" pendingLabel="Picking…">
-                      <>
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                          <path d="M6 18h12" />
-                          <path d="M7 18c0-3 1.5-6 5-6s5 3 5 6" />
-                          <path d="M9 12V9h6v3" />
-                          <circle cx="8" cy="7" r="1.25" />
-                          <circle cx="12" cy="5.5" r="1.25" />
-                          <circle cx="16" cy="7" r="1.25" />
-                        </svg>
-                        <strong>{teenMode ? "Pick one" : "Lucky dip"}</strong>
-                      </>
-                    </FormActionButton>
-                  </form>
-                ) : null}
-
-                {canSeeReports ? (
-                <Link href="/stats" className="landing-action-card stats">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <line x1="18" y1="20" x2="18" y2="10"/>
-                    <line x1="12" y1="20" x2="12" y2="4"/>
-                    <line x1="6" y1="20" x2="6" y2="14"/>
-                    <line x1="2" y1="20" x2="22" y2="20"/>
-                  </svg>
-                  <strong>{teenMode ? "Progress" : "Stats"}</strong>
-                </Link>
-                ) : null}
-
-                {role === "admin" ? (
-                  <Link href="/settings" className="landing-action-card setup">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <circle cx="12" cy="12" r="3"/>
-                      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-                    </svg>
-                    <strong>Setup</strong>
-                  </Link>
-                ) : peopleManager ? (
-                  <Link href="/settings/people" className="landing-action-card setup">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" />
-                      <circle cx="9.5" cy="7" r="3" />
-                      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                    </svg>
-                    <strong>People</strong>
-                    <span>Profiles and access</span>
-                  </Link>
-                ) : null}
-              </>
-            ) : null}
-
-            <Link href="/help" className={`landing-action-card view ${easyHome ? "landing-action-card-easy" : ""}`.trim()}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M9.09 9a3 3 0 1 1 5.82 1c0 2-3 2-3 4" />
-                <path d="M12 17h.01" />
-              </svg>
-              <strong>Help</strong>
-              <span>{easyHome ? "Simple, easy steps" : memberMode ? "Simple help for your jobs" : canAct ? "Quick guides and tips" : "How this view works"}</span>
-            </Link>
-          </div>
+          <Link href="/more" className="today-utility-link">More</Link>
+          <Link href="/help" className="today-utility-link">Help</Link>
         </section>
       </main>
     </div>
   );
+}
+
+function mapHomeTask(task: {
+  id: string;
+  title: string;
+  captureStage: string;
+  validationMode: string;
+  rewardCents: number | null;
+  room: { name: string; location: { name: string } | null };
+  projectParent: { title: string } | null;
+  schedule: { nextDueAt: Date | null } | null;
+  occurrences: Array<{ dueAt: Date }>;
+}) {
+  return {
+    id: task.id,
+    title: task.title,
+    captureStage: task.captureStage,
+    validationMode: task.validationMode,
+    roomName: task.room.name,
+    locationName: task.room.location?.name ?? null,
+    dueAt: task.occurrences[0]?.dueAt?.toISOString() ?? task.schedule?.nextDueAt?.toISOString() ?? null,
+    rewardCents: task.rewardCents,
+    projectParentTitle: task.projectParent?.title ?? null,
+  } satisfies HomeTaskItem;
+}
+
+function dedupeTasks(tasks: HomeTaskItem[]) {
+  const seen = new Set<string>();
+  return tasks.filter((task) => {
+    if (seen.has(task.id)) {
+      return false;
+    }
+    seen.add(task.id);
+    return true;
+  });
+}
+
+function compareDueDates(left: string | null, right: string | null) {
+  if (!left && !right) return 0;
+  if (!left) return 1;
+  if (!right) return -1;
+  return new Date(left).getTime() - new Date(right).getTime();
 }
 
 function startOfThisWeek() {
@@ -301,4 +422,61 @@ function startOfThisWeek() {
   d.setDate(d.getDate() - d.getDay());
   d.setHours(0, 0, 0, 0);
   return d;
+}
+
+function startOfToday() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function endOfToday() {
+  const d = new Date();
+  d.setHours(23, 59, 59, 999);
+  return d;
+}
+
+function daysAgo(days: number) {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function computeCompletionDayStreak(values: Array<Date | null>) {
+  const uniqueDays = new Set(
+    values
+      .filter((value): value is Date => Boolean(value))
+      .map((value) => value.toISOString().slice(0, 10)),
+  );
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  let cursor = uniqueDays.has(today.toISOString().slice(0, 10)) ? today : yesterday;
+  let streak = 0;
+
+  while (uniqueDays.has(cursor.toISOString().slice(0, 10))) {
+    streak += 1;
+    cursor = new Date(cursor);
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
+  return streak;
+}
+
+function getGreeting(prefix: string) {
+  const hour = new Date().getHours();
+  if (hour < 12) return `${prefix} morning`;
+  if (hour < 18) return `${prefix} afternoon`;
+  return `${prefix} evening`;
+}
+
+function formatMoney(cents: number) {
+  return new Intl.NumberFormat("en-IE", {
+    style: "currency",
+    currency: "EUR",
+  }).format(cents / 100);
 }

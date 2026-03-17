@@ -7,6 +7,7 @@ type FormActionButtonProps = {
   pendingLabel?: string;
   className?: string;
   type?: "button" | "submit" | "reset";
+  onClick?: React.MouseEventHandler<HTMLButtonElement>;
 };
 
 export function FormActionButton({
@@ -14,6 +15,7 @@ export function FormActionButton({
   pendingLabel,
   className,
   type = "submit",
+  onClick,
 }: FormActionButtonProps) {
   const { pending } = useFormStatus();
 
@@ -24,6 +26,7 @@ export function FormActionButton({
       disabled={pending}
       aria-disabled={pending}
       data-pending={pending ? "true" : "false"}
+      onClick={onClick}
     >
       {pending ? (pendingLabel ?? `${children}...`) : children}
     </button>

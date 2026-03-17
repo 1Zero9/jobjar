@@ -1,11 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
-import type { PersonOption } from "@/app/components/task-board-types";
-
-type GroupedRoomOptions = Array<
-  [string, Array<{ id: string; name: string }>]
->;
+import type { GroupedRoomOptions, PersonOption } from "@/app/components/task-board-types";
 
 type Props = {
   childMode: boolean;
@@ -26,7 +21,6 @@ type Props = {
   onSelectedAssigneeIdChange: (value: string) => void;
   onSelectedStateChange: (value: "all" | "open" | "done") => void;
   onClearFilters: () => void;
-  extraAction?: ReactNode;
 };
 
 export function TaskFilters({
@@ -48,7 +42,6 @@ export function TaskFilters({
   onSelectedAssigneeIdChange,
   onSelectedStateChange,
   onClearFilters,
-  extraAction = null,
 }: Props) {
   return (
     <div className="recorded-toolbar">
@@ -144,7 +137,6 @@ export function TaskFilters({
                   : "Filters update instantly."}
           </span>
         )}
-        {extraAction}
       </div>
     </div>
   );

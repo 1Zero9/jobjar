@@ -409,7 +409,7 @@ export function groupRoomsByLocation<T extends { location?: { name: string } | n
   return [...grouped.entries()];
 }
 
-function isProjectChildOverdue(child: { captureStage: string; nextDueAt: string | null; occurrences: Array<{ status: string; dueAt: string }> }) {
+export function isProjectChildOverdue(child: { captureStage: string; nextDueAt: string | null; occurrences: Array<{ status: string; dueAt: string }> }) {
   if (getTaskState(child) === "done") {
     return false;
   }

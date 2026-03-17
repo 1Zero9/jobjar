@@ -6,6 +6,7 @@ import { RoomPillSelect } from "@/app/components/RoomPillSelect";
 import { SimilarTaskField } from "@/app/components/SimilarTaskField";
 import { TasksPanelClient } from "@/app/components/TasksPanelClient";
 import { ToastNotice } from "@/app/components/ToastNotice";
+import { getTaskFeedbackMessage } from "@/app/components/task-feedback";
 import { canAccessProjectViewsRole, canManagePeopleRole, canManageProjectsRole, canUseMemberActions, isAdminRole, isMemberRole, requireSessionContext } from "@/lib/auth";
 import { getLocationScopeLabel, getRoomLocationAccessWhere, hasLocationRestrictions } from "@/lib/location-access";
 import { canAccessExtendedViews, getAudienceAssignedTaskWhere, getMemberThemeClassName, isChildAudience, isTeenAudience } from "@/lib/member-audience";
@@ -132,7 +133,7 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
 
         {params.added === "task" ? <ToastNotice message="Job recorded." tone="success" /> : null}
         {params.added === "done" ? <ToastNotice message="Completed job recorded." tone="success" /> : null}
-        {params.error ? <ToastNotice message={getTaskWorkspaceErrorMessage(params.error)} tone="error" /> : null}
+        {params.error ? <ToastNotice message={getTaskFeedbackMessage(params.error)} tone="error" /> : null}
         {(params.added === "task" || params.added === "done") && params.taskId ? (
           <Link href={`/tasks#task-${params.taskId}`} className="view-task-link">
             View the job you just logged
@@ -567,7 +568,7 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
         {params.removed === "project-milestone" ? <ToastNotice message="Project milestone removed." tone="success" /> : null}
         {params.lucky === "empty" ? <ToastNotice message="No jobs available for lucky dip." tone="info" /> : null}
         {luckyTask ? <ToastNotice message={`Lucky dip: ${luckyTask.title}`} tone="info" /> : null}
-        {params.error ? <ToastNotice message={getTaskWorkspaceErrorMessage(params.error)} tone="error" /> : null}
+        {params.error ? <ToastNotice message={getTaskFeedbackMessage(params.error)} tone="error" /> : null}
 
         <TasksPanelClient
           key={[
@@ -712,68 +713,4 @@ function uniqueRoomsByName<T extends { id: string; name: string }>(rooms: T[]) {
     seen.add(key);
     return true;
   });
-}
-
-function getTaskWorkspaceErrorMessage(error?: string) {
-  if (error === "task-title-required") {
-    return "Add a job title before saving.";
-  }
-  if (error === "task-room-required") {
-    return "Pick a room before saving this job.";
-  }
-  if (error === "task-not-found") {
-    return "That job could not be found.";
-  }
-  if (error === "task-strict-note-required") {
-    return "Add a short note before finishing this strict job.";
-  }
-  if (error === "task-strict-start-required") {
-    return "Start this strict job before marking it finished.";
-  }
-  if (error === "task-strict-minutes-required") {
-    return "This strict job needs more tracked time before it can be finished.";
-  }
-  if (error === "project-demote-blocked") {
-    return "Remove subtasks and any legacy planning extras before turning this back into a normal job.";
-  }
-  if (error === "project-child-title-required") {
-    return "Enter a title before adding a subtask.";
-  }
-  if (error === "project-cost-title-required") {
-    return "Enter a title for the project cost.";
-  }
-  if (error === "reward-amount-invalid") {
-    return "Enter a valid value like 5 or 5.50.";
-  }
-  if (error === "reward-not-available") {
-    return "That reward is not available for this job.";
-  }
-  if (error === "reward-pay-not-allowed") {
-    return "Only the person who logged this reward can mark it paid.";
-  }
-  if (error === "reward-pay-before-accept") {
-    return "Wait until the reward has been accepted before marking it paid.";
-  }
-  if (error === "reward-pay-before-complete") {
-    return "Finish the job before marking the reward paid.";
-  }
-  if (error === "project-cost-amount-invalid") {
-    return "Enter a valid amount greater than zero for the project cost.";
-  }
-  if (error === "project-cost-not-found") {
-    return "That project cost could not be found.";
-  }
-  if (error === "project-material-title-required") {
-    return "Enter a title before adding a project material.";
-  }
-  if (error === "project-material-not-found") {
-    return "That project material could not be found.";
-  }
-  if (error === "project-milestone-title-required") {
-    return "Enter a title before adding a project milestone.";
-  }
-  if (error === "project-milestone-not-found") {
-    return "That project milestone could not be found.";
-  }
-  return "We could not save that job change.";
 }

@@ -10,6 +10,10 @@ export type RoomOption = {
   location?: { id: string; name: string } | null;
 };
 
+export type GroupedRoomOptions = Array<
+  [string, Array<{ id: string; name: string }>]
+>;
+
 export type TaskItem = {
   id: string;
   title: string;
