@@ -158,6 +158,14 @@ export function RoomSelectField({
     }
     return rooms.filter((room) => room.location?.id === selectedLocationId);
   }, [rooms, selectedLocationId]);
+  const duplicateRoomNames = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const room of rooms) {
+      const key = normalizeRoomName(room.name);
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    return counts;
+  }, [rooms]);
 
   return (
     <div className={`capture-step ${className}`.trim()}>
@@ -217,7 +225,7 @@ export function RoomSelectField({
           {!requireRoom ? <option value="">General</option> : <option value="">Choose room</option>}
           {visibleRooms.map((room) => (
             <option key={room.id} value={room.id}>
-              {formatRoomName(room.name)}
+              {formatRoomOptionLabel(room, duplicateRoomNames)}
             </option>
           ))}
         </select>
@@ -274,6 +282,14 @@ export function formatRoomName(roomName: string) {
     return "General";
   }
   return roomName;
+}
+
+function formatRoomOptionLabel(room: RoomOption, duplicateRoomNames: Map<string, number>) {
+  const roomName = formatRoomName(room.name);
+  if ((duplicateRoomNames.get(normalizeRoomName(room.name)) ?? 0) <= 1) {
+    return roomName;
+  }
+  return `${roomName} (${room.location?.name ?? "No location"})`;
 }
 
 function getInitialSelection(rooms: RoomOption[], locations: LocationOption[], requireRoom: boolean) {

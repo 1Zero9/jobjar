@@ -90,7 +90,7 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
     }),
   ]);
 
-  const roomOptions = uniqueRoomsByName(rooms).filter((room) => room.name.toLowerCase() !== "unsorted");
+  const roomOptions = rooms.filter((room) => room.name.toLowerCase() !== "unsorted");
   const peopleOptions = showAssignField ? people.map((member) => member.user) : [];
   const locationScopeLabel = restrictedToLocations ? getLocationScopeLabel(locations, allowedLocationIds) : null;
 
