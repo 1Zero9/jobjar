@@ -28,12 +28,33 @@ export function AppBottomNav({ childMode, canLog, canSeeReports }: Props) {
         {items.map((item) => {
           const active = isActive(pathname, item.href);
           const Icon = item.icon;
+          const className = `app-bottom-nav-link ${item.primary ? "app-bottom-nav-link-primary" : ""} ${active ? "is-active" : ""}`.trim();
+
+          if (item.href === "/") {
+            return (
+              <Link
+                key={item.href}
+                href="/"
+                className={className}
+                aria-current={active ? "page" : undefined}
+                onClick={(event) => {
+                  event.preventDefault();
+                  window.location.assign("/");
+                }}
+              >
+                <span className="app-bottom-nav-icon">
+                  <Icon width="22" height="22" />
+                </span>
+                <span className="app-bottom-nav-label">{item.label}</span>
+              </Link>
+            );
+          }
 
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`app-bottom-nav-link ${item.primary ? "app-bottom-nav-link-primary" : ""} ${active ? "is-active" : ""}`.trim()}
+              className={className}
               aria-current={active ? "page" : undefined}
             >
               <span className="app-bottom-nav-icon">

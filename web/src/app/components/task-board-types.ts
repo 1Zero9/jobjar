@@ -14,9 +14,29 @@ export type GroupedRoomOptions = Array<
   [string, Array<{ id: string; name: string }>]
 >;
 
+export type TaskStandardDetail = {
+  detailNotes: string | null;
+  loggerName: string | null;
+  priority: number;
+  isPrivate: boolean;
+  schedule: {
+    recurrenceType: string;
+    intervalCount: number;
+    nextDueAt: string | null;
+  } | null;
+  occurrences: Array<{
+    status: string;
+    dueAt: string;
+    completedAt: string | null;
+    completedBy: string | null;
+    completerName: string | null;
+  }>;
+};
+
 export type TaskItem = {
   id: string;
   title: string;
+  searchText: string;
   createdByUserId: string | null;
   roomId: string;
   roomName: string;
@@ -85,4 +105,5 @@ export type TaskItem = {
     completedBy: string | null;
     completerName: string | null;
   }>;
+  standardDetail: TaskStandardDetail | null;
 };

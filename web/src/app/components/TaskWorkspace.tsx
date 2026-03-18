@@ -6,6 +6,7 @@ import { SimilarTaskField } from "@/app/components/SimilarTaskField";
 import { TasksPanelClient } from "@/app/components/TasksPanelClient";
 import { ToastNotice } from "@/app/components/ToastNotice";
 import { getTaskFeedbackMessage } from "@/app/components/task-feedback";
+import { normalizeSearchText } from "@/app/components/task-board-utils";
 import { canAccessProjectViewsRole, canManageProjectsRole, canUseMemberActions, isAdminRole, isMemberRole, requireSessionContext } from "@/lib/auth";
 import { getLocationScopeLabel, getRoomLocationAccessWhere, hasLocationRestrictions } from "@/lib/location-access";
 import { canAccessExtendedViews, getAudienceAssignedTaskWhere, getMemberThemeClassName, isChildAudience } from "@/lib/member-audience";
@@ -304,7 +305,7 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
   const viewerMode = role === "viewer";
   const easyWorkspace = !childMode && (memberMode || !canEditTasks);
   const taskTake = mode === "projects" ? 28 : 48;
-  const parentOccurrenceTake = mode === "projects" ? 8 : 6;
+  const parentOccurrenceTake = mode === "projects" ? 3 : 2;
   const childOccurrenceTake = 2;
   const includeLegacyProjectPlanning = mode === "projects";
   const needsPeopleOptions = canEditTasks;
@@ -332,9 +333,6 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
       : {}),
     room: {
       select: { name: true, location: { select: { id: true, name: true } } },
-    },
-    logger: {
-      select: { displayName: true },
     },
     projectParent: {
       select: {
@@ -602,12 +600,28 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
           tasks={recordedTasks.map((task) => ({
             id: task.id,
             title: task.title,
+            searchText: normalizeSearchText(
+              [
+                task.title,
+                task.detailNotes,
+                task.room.name,
+                task.room.location?.name,
+                task.assignments[0]?.user?.displayName,
+                task.projectParent?.title,
+                ...task.projectChildren.map((child) => child.title),
+                ...task.projectCosts.map((cost) => cost.title),
+                ...task.projectMaterials.flatMap((material) => [material.title, material.quantityLabel, material.source]),
+                ...task.projectMilestones.map((milestone) => milestone.title),
+              ]
+                .filter(Boolean)
+                .join(" "),
+            ),
             createdByUserId: task.createdByUserId,
             roomId: task.roomId,
             roomName: task.room.name,
             locationId: task.room.location?.id ?? null,
             locationName: task.room.location?.name ?? null,
-            loggerName: task.logger?.displayName ?? null,
+            loggerName: null,
             projectParentId: task.projectParentId,
             projectParentTitle: task.projectParent?.title ?? null,
             assignmentUserId: task.assignments[0]?.userId ?? null,
@@ -678,6 +692,7 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
               completedBy: occurrence.completedBy ?? null,
               completerName: occurrence.completer?.displayName ?? null,
             })),
+            standardDetail: null,
           }))}
         />
 

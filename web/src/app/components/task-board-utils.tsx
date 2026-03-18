@@ -379,26 +379,6 @@ export function renderTaskIcon(
   );
 }
 
-export function getTaskSearchText(task: TaskItem) {
-  return normalizeSearchText(
-    [
-      task.title,
-      task.detailNotes,
-      task.roomName,
-      task.locationName,
-      task.loggerName,
-      task.assignmentUserName,
-      task.projectParentTitle,
-      ...task.projectChildren.map((child) => child.title),
-      ...task.projectCosts.map((cost) => cost.title),
-      ...task.projectMaterials.flatMap((material) => [material.title, material.quantityLabel, material.source]),
-      ...task.projectMilestones.map((milestone) => milestone.title),
-    ]
-      .filter(Boolean)
-      .join(" "),
-  );
-}
-
 export function normalizeSearchText(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
 }

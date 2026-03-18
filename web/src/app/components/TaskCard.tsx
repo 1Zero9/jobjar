@@ -31,6 +31,7 @@ import {
   rowStateClass,
   summarizeProject,
 } from "@/app/components/task-board-utils";
+import { useState } from "react";
 
 type Props = {
   task: TaskItem;
@@ -57,6 +58,7 @@ export function TaskCard({
   currentUserId,
   basePath,
 }: Props) {
+  const [open, setOpen] = useState(initialOpen);
   const isProject = isProjectTask(task);
   const projectSummary = summarizeProject(task);
   const subtaskProgressLabel = getSubtaskProgressLabel(projectSummary);
@@ -87,7 +89,10 @@ export function TaskCard({
     <details
       id={`task-${task.id}`}
       className={`recorded-row ${rowStateClass(task)}`}
-      open={initialOpen}
+      open={open}
+      onToggle={(event) => {
+        setOpen(event.currentTarget.open);
+      }}
     >
       <summary className="recorded-row-summary">
         <div className="recorded-row-top">
@@ -221,6 +226,7 @@ export function TaskCard({
         ) : (
           <TaskCardStandardDetail
             task={task}
+            isOpen={open}
             groupedRoomOptions={groupedRoomOptions}
             peopleOptions={peopleOptions}
             canEditTasks={canEditTasks}

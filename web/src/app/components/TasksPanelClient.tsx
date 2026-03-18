@@ -4,7 +4,7 @@ import type { MemberAudience } from "@prisma/client";
 import { TaskCard } from "@/app/components/TaskCard";
 import { TaskFilters } from "@/app/components/TaskFilters";
 import type { PersonOption, RoomOption, TaskItem } from "@/app/components/task-board-types";
-import { getTaskSearchText, getTaskState, groupRoomsByLocation, normalizeSearchText } from "@/app/components/task-board-utils";
+import { getTaskState, groupRoomsByLocation, normalizeSearchText } from "@/app/components/task-board-utils";
 import Link from "next/link";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 
@@ -55,27 +55,44 @@ export function TasksPanelClient({
   const [selectedAssigneeId, setSelectedAssigneeId] = useState(initialAssigneeId);
   const [selectedState, setSelectedState] = useState<"all" | "open" | "done">(initialState);
   const [searchQuery, setSearchQuery] = useState(initialQuery);
-
   const groupedRoomOptions = groupRoomsByLocation(roomOptions);
   const projectMode = viewMode === "projects";
   const childMode = audienceBand === "under_12";
+  const defaultVisibleLimit = childMode ? 18 : projectMode ? 16 : 24;
   const showSearch = !childMode;
   const showAssigneeFilter = !childMode && canEditTasks;
   const deferredSearchQuery = useDeferredValue(searchQuery);
+  const deferredTrimmedSearchQuery = deferredSearchQuery.trim();
   const normalizedSearchQuery = normalizeSearchText(deferredSearchQuery);
   const hasSearchQuery = showSearch && normalizedSearchQuery.length > 0;
   const hasActiveFilters = !!selectedRoomId || !!selectedAssigneeId || selectedState !== "all";
   const hasActiveView = hasActiveFilters || hasSearchQuery;
+  const visibleLimitKey = `${defaultVisibleLimit}:${selectedRoomId}:${selectedAssigneeId}:${selectedState}:${normalizedSearchQuery}`;
+  const [visibleLimitState, setVisibleLimitState] = useState({
+    key: visibleLimitKey,
+    limit: defaultVisibleLimit,
+  });
+  const activeVisibleLimit = visibleLimitState.key === visibleLimitKey
+    ? visibleLimitState.limit
+    : defaultVisibleLimit;
 
   const visibleTasks = useMemo(() => {
     return tasks.filter((task) => {
       const matchesRoom = selectedRoomId ? task.roomId === selectedRoomId : true;
       const matchesAssignee = selectedAssigneeId ? task.assignmentUserId === selectedAssigneeId : true;
       const matchesState = selectedState === "all" ? true : getTaskState(task) === selectedState;
-      const matchesQuery = !hasSearchQuery || getTaskSearchText(task).includes(normalizedSearchQuery);
+      const matchesQuery = !hasSearchQuery || task.searchText.includes(normalizedSearchQuery);
       return matchesRoom && matchesAssignee && matchesState && matchesQuery;
     });
   }, [hasSearchQuery, normalizedSearchQuery, selectedAssigneeId, selectedRoomId, selectedState, tasks]);
+
+  const luckyTaskIndex = useMemo(
+    () => (initialLuckyId ? visibleTasks.findIndex((task) => task.id === initialLuckyId) : -1),
+    [initialLuckyId, visibleTasks],
+  );
+  const renderLimit = luckyTaskIndex >= 0 ? Math.max(activeVisibleLimit, luckyTaskIndex + 1) : activeVisibleLimit;
+  const renderedTasks = useMemo(() => visibleTasks.slice(0, renderLimit), [renderLimit, visibleTasks]);
+  const remainingTasksCount = visibleTasks.length - renderedTasks.length;
 
   useEffect(() => {
     const search = new URLSearchParams(window.location.search);
@@ -92,12 +109,12 @@ export function TasksPanelClient({
     search.delete("location");
     search.delete("view");
 
-    if (hasSearchQuery) search.set("q", searchQuery.trim());
+    if (hasSearchQuery) search.set("q", deferredTrimmedSearchQuery);
     else search.delete("q");
 
     const query = search.toString();
     window.history.replaceState(null, "", query ? `${basePath}?${query}` : basePath);
-  }, [basePath, hasSearchQuery, searchQuery, selectedAssigneeId, selectedRoomId, selectedState]);
+  }, [basePath, deferredTrimmedSearchQuery, hasSearchQuery, selectedAssigneeId, selectedRoomId, selectedState]);
 
   return (
     <section id="recorded" className={`recorded-panel ${easyMode ? "recorded-panel-easy" : ""}`.trim()}>
@@ -166,21 +183,39 @@ export function TasksPanelClient({
             </div>
           )
         ) : (
-          visibleTasks.map((task) => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              initialOpen={task.id === initialLuckyId}
-              groupedRoomOptions={groupedRoomOptions}
-              peopleOptions={peopleOptions}
-              childMode={childMode}
-              canEditTasks={canEditTasks}
-              canManageProjects={canManageProjects}
-              canDeleteTasks={canDeleteTasks}
-              currentUserId={currentUserId}
-              basePath={basePath}
-            />
-          ))
+          <>
+            {renderedTasks.map((task) => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                initialOpen={task.id === initialLuckyId}
+                groupedRoomOptions={groupedRoomOptions}
+                peopleOptions={peopleOptions}
+                childMode={childMode}
+                canEditTasks={canEditTasks}
+                canManageProjects={canManageProjects}
+                canDeleteTasks={canDeleteTasks}
+                currentUserId={currentUserId}
+                basePath={basePath}
+              />
+            ))}
+            {remainingTasksCount > 0 ? (
+              <div className="recorded-row-actions">
+                <button
+                  type="button"
+                  className="action-btn subtle quiet"
+                  onClick={() =>
+                    setVisibleLimitState({
+                      key: visibleLimitKey,
+                      limit: activeVisibleLimit + defaultVisibleLimit,
+                    })
+                  }
+                >
+                  Show {Math.min(defaultVisibleLimit, remainingTasksCount)} more
+                </button>
+              </div>
+            ) : null}
+          </>
         )}
       </div>
     </section>
