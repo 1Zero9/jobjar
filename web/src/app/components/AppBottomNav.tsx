@@ -1,9 +1,10 @@
 "use client";
 
 import { HelpIcon, HomeIcon, LogIcon, MoreIcon, StatsIcon, TasksIcon } from "@/lib/icons";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import type { ComponentType, SVGProps } from "react";
+import { useEffect } from "react";
 
 type NavItem = {
   href: string;
@@ -20,7 +21,14 @@ type Props = {
 
 export function AppBottomNav({ childMode, canLog, canSeeReports }: Props) {
   const pathname = usePathname();
+  const router = useRouter();
   const items = childMode ? buildChildItems() : buildStandardItems(canLog, canSeeReports);
+
+  useEffect(() => {
+    for (const item of items) {
+      router.prefetch(item.href);
+    }
+  }, [items, router]);
 
   return (
     <nav className={`app-bottom-nav glass-surface ${childMode ? "app-bottom-nav-child" : ""}`.trim()} aria-label="Primary">
@@ -35,11 +43,16 @@ export function AppBottomNav({ childMode, canLog, canSeeReports }: Props) {
               <Link
                 key={item.href}
                 href="/"
+                prefetch
                 className={className}
                 aria-current={active ? "page" : undefined}
                 onClick={(event) => {
+                  if (!active) {
+                    return;
+                  }
+
                   event.preventDefault();
-                  window.location.assign("/");
+                  router.refresh();
                 }}
               >
                 <span className="app-bottom-nav-icon">
@@ -54,6 +67,7 @@ export function AppBottomNav({ childMode, canLog, canSeeReports }: Props) {
             <Link
               key={item.href}
               href={item.href}
+              prefetch
               className={className}
               aria-current={active ? "page" : undefined}
             >
