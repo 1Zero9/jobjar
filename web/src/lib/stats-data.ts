@@ -36,6 +36,9 @@ export type StatsFilters = {
   userId?: string;
   period?: "week" | "month" | "all";
   includeRewards?: boolean;
+  locationId?: string | null;
+  assignedUserId?: string | null;
+  focusUserId?: string | null;
 };
 
 export type RecentCompletion = {
@@ -52,10 +55,20 @@ export type StatsData = {
   openTasks: number;
   dueTodayTasks: number;
   attentionTasks: number;
+  boardMix: {
+    onTrack: number;
+    dueToday: number;
+    attention: number;
+  };
   rewardSummary: {
     earnedCents: number;
     paidOutCents: number;
   };
+  completionSeries: Array<{
+    label: string;
+    shortLabel: string;
+    count: number;
+  }>;
   recentCompletions: RecentCompletion[];
 };
 
@@ -69,22 +82,41 @@ export async function getStatsData(householdId: string, filters: StatsFilters = 
     userId,
     period = "month",
     includeRewards = true,
+    locationId,
+    assignedUserId,
+    focusUserId,
   } = filters;
 
-  const restrictedLocationFilter =
-    allowedLocationIds && allowedLocationIds.length > 0
+  const locationFilter = locationId
+    ? { locationId }
+    : allowedLocationIds && allowedLocationIds.length > 0
       ? { locationId: { in: allowedLocationIds } }
       : {};
+
+  const assignmentFilter = assignedUserId
+    ? {
+        assignments: {
+          some: {
+            userId: assignedUserId,
+            assignedTo: null,
+          },
+        },
+      }
+    : {};
+
+  const completionUserId = focusUserId ?? userId ?? null;
 
   const taskRoomWhere = {
     room: {
       householdId,
-      ...restrictedLocationFilter,
+      ...locationFilter,
     },
   };
 
   const periodStart = period === "week" ? weekStart : period === "month" ? monthStart : undefined;
   const periodCompletedAtWhere = periodStart ? { completedAt: { gte: periodStart } } : {};
+  const seriesRange = getCompletionSeriesRange(period);
+  const seriesCompletedAtWhere = { completedAt: { gte: seriesRange.start } };
 
   const [
     householdCompletionsPeriod,
@@ -95,6 +127,7 @@ export async function getStatsData(householdId: string, filters: StatsFilters = 
     recentDone,
     rewardTasks,
     personalCompletionDays,
+    seriesCompletions,
   ] = await Promise.all([
     prisma.taskOccurrence.count({
       where: {
@@ -103,11 +136,11 @@ export async function getStatsData(householdId: string, filters: StatsFilters = 
         task: taskRoomWhere,
       },
     }),
-    userId
+    completionUserId
       ? prisma.taskOccurrence.count({
           where: {
             status: "done",
-            completedBy: userId,
+            completedBy: completionUserId,
             ...periodCompletedAtWhere,
             task: taskRoomWhere,
           },
@@ -118,6 +151,7 @@ export async function getStatsData(householdId: string, filters: StatsFilters = 
         active: true,
         captureStage: { not: "done" },
         ...taskRoomWhere,
+        ...assignmentFilter,
       },
     }),
     prisma.task.count({
@@ -125,6 +159,7 @@ export async function getStatsData(householdId: string, filters: StatsFilters = 
         active: true,
         captureStage: { not: "done" },
         ...taskRoomWhere,
+        ...assignmentFilter,
         OR: [
           { schedule: { is: { nextDueAt: { gte: todayStart, lte: todayEnd } } } },
           { occurrences: { some: { status: { not: "done" }, dueAt: { gte: todayStart, lte: todayEnd } } } },
@@ -136,6 +171,7 @@ export async function getStatsData(householdId: string, filters: StatsFilters = 
         active: true,
         captureStage: { not: "done" },
         ...taskRoomWhere,
+        ...assignmentFilter,
         OR: [
           { schedule: { is: { nextDueAt: { lt: todayStart } } } },
           { occurrences: { some: { status: { not: "done" }, dueAt: { lt: todayStart } } } },
@@ -175,11 +211,11 @@ export async function getStatsData(householdId: string, filters: StatsFilters = 
           },
         })
       : Promise.resolve([]),
-    userId
+    completionUserId
       ? prisma.taskOccurrence.findMany({
           where: {
             status: "done",
-            completedBy: userId,
+            completedBy: completionUserId,
             completedAt: { gte: daysAgo(90) },
             task: taskRoomWhere,
           },
@@ -188,17 +224,27 @@ export async function getStatsData(householdId: string, filters: StatsFilters = 
           select: { completedAt: true },
         })
       : Promise.resolve([]),
+    prisma.taskOccurrence.findMany({
+      where: {
+        status: "done",
+        ...seriesCompletedAtWhere,
+        ...(completionUserId ? { completedBy: completionUserId } : {}),
+        task: taskRoomWhere,
+      },
+      orderBy: { completedAt: "asc" },
+      select: { completedAt: true },
+    }),
   ]);
 
-  const rewardSummary = includeRewards && userId
+  const rewardSummary = includeRewards && completionUserId
     ? rewardTasks.reduce(
         (summary, task) => {
           const rewardCents = task.rewardCents ?? 0;
           const earnerUserId = task.assignments[0]?.userId ?? null;
-          if (earnerUserId === userId) {
+          if (earnerUserId === completionUserId) {
             summary.earnedCents += rewardCents;
           }
-          if (task.createdByUserId === userId) {
+          if (task.createdByUserId === completionUserId) {
             summary.paidOutCents += rewardCents;
           }
           return summary;
@@ -221,9 +267,76 @@ export async function getStatsData(householdId: string, filters: StatsFilters = 
     openTasks,
     dueTodayTasks,
     attentionTasks,
+    boardMix: {
+      onTrack: Math.max(openTasks - dueTodayTasks - attentionTasks, 0),
+      dueToday: dueTodayTasks,
+      attention: attentionTasks,
+    },
     rewardSummary,
+    completionSeries: buildCompletionSeries(period, seriesCompletions.map((entry) => entry.completedAt)),
     recentCompletions,
   };
+}
+
+function getCompletionSeriesRange(period: "week" | "month" | "all") {
+  if (period === "week") {
+    return { start: daysAgo(6) };
+  }
+  if (period === "month") {
+    return { start: daysAgo(27) };
+  }
+  const now = new Date();
+  return { start: new Date(now.getFullYear(), now.getMonth() - 5, 1) };
+}
+
+function buildCompletionSeries(period: "week" | "month" | "all", values: Array<Date | null>) {
+  const validValues = values.filter((value): value is Date => Boolean(value));
+
+  if (period === "week") {
+    const days = Array.from({ length: 7 }, (_, offset) => daysAgo(6 - offset));
+    return days.map((day) => {
+      const key = day.toISOString().slice(0, 10);
+      const count = validValues.filter((value) => value.toISOString().slice(0, 10) === key).length;
+      return {
+        label: new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short" }).format(day),
+        shortLabel: new Intl.DateTimeFormat("en-GB", { weekday: "short" }).format(day),
+        count,
+      };
+    });
+  }
+
+  if (period === "month") {
+    const today = startOfToday();
+    return Array.from({ length: 4 }, (_, index) => {
+      const start = new Date(today);
+      start.setDate(start.getDate() - ((3 - index) * 7) - 6);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(start);
+      end.setDate(end.getDate() + 6);
+      end.setHours(23, 59, 59, 999);
+      const count = validValues.filter((value) => value >= start && value <= end).length;
+      return {
+        label: `${new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" }).format(start)} to ${new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" }).format(end)}`,
+        shortLabel: `W${index + 1}`,
+        count,
+      };
+    });
+  }
+
+  const now = new Date();
+  return Array.from({ length: 6 }, (_, index) => {
+    const month = new Date(now.getFullYear(), now.getMonth() - (5 - index), 1);
+    const monthKey = `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, "0")}`;
+    const count = validValues.filter((value) => {
+      const valueKey = `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}`;
+      return valueKey === monthKey;
+    }).length;
+    return {
+      label: new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric" }).format(month),
+      shortLabel: new Intl.DateTimeFormat("en-GB", { month: "short" }).format(month),
+      count,
+    };
+  });
 }
 
 function computeCompletionDayStreak(values: Array<Date | null>) {

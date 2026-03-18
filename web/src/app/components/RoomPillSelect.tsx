@@ -17,6 +17,8 @@ type Props = {
   locations: LocationOption[];
   rooms: RoomOption[];
   requireRoom?: boolean;
+  forceLocationChoice?: boolean;
+  rememberSelection?: boolean;
   className?: string;
   label?: string;
   helperText?: string;
@@ -130,15 +132,24 @@ export function RoomSelectField({
   locations,
   rooms,
   requireRoom = false,
+  forceLocationChoice = false,
+  rememberSelection = true,
   className = "",
   label = "Room",
   helperText = "Pick the location first if you need it, then choose the room.",
 }: Props) {
-  const initialSelection = getInitialSelection(rooms, locations, requireRoom);
+  const initialSelection = getInitialSelection(rooms, locations, requireRoom, {
+    forceLocationChoice,
+    rememberSelection,
+  });
   const [selectedRoomId, setSelectedRoomId] = useState(initialSelection.roomId);
   const [selectedLocationId, setSelectedLocationId] = useState(initialSelection.locationId);
 
   useEffect(() => {
+    if (!rememberSelection) {
+      return;
+    }
+
     const selectedRoom = rooms.find((room) => room.id === selectedRoomId) ?? null;
 
     if (selectedRoom) {
@@ -150,14 +161,17 @@ export function RoomSelectField({
       window.localStorage.removeItem(ROOM_PREFERENCE_ID_KEY);
       window.localStorage.removeItem(ROOM_PREFERENCE_NAME_KEY);
     }
-  }, [requireRoom, rooms, selectedRoomId]);
+  }, [rememberSelection, requireRoom, rooms, selectedRoomId]);
 
   const visibleRooms = useMemo(() => {
+    if (forceLocationChoice && locations.length > 1 && !selectedLocationId) {
+      return [];
+    }
     if (!selectedLocationId) {
       return rooms;
     }
     return rooms.filter((room) => room.location?.id === selectedLocationId);
-  }, [rooms, selectedLocationId]);
+  }, [forceLocationChoice, locations.length, rooms, selectedLocationId]);
   const duplicateRoomNames = useMemo(() => {
     const counts = new Map<string, number>();
     for (const room of rooms) {
@@ -180,21 +194,17 @@ export function RoomSelectField({
               setSelectedRoomId((currentRoomId) => {
                 const currentRoom = rooms.find((room) => room.id === currentRoomId) ?? null;
                 if (!currentRoom) {
-                  return requireRoom && nextLocationId
-                    ? (rooms.find((room) => room.location?.id === nextLocationId)?.id ?? "")
-                    : currentRoomId;
+                  return "";
                 }
                 if (!nextLocationId || currentRoom.location?.id === nextLocationId) {
                   return currentRoomId;
                 }
-                return requireRoom
-                  ? (rooms.find((room) => room.location?.id === nextLocationId)?.id ?? "")
-                  : "";
+                return "";
               });
             }}
             className="capture-room-select"
           >
-            <option value="">{requireRoom ? "Choose location" : "All locations"}</option>
+            <option value="">{forceLocationChoice || requireRoom ? "Choose location" : "All locations"}</option>
             {locations.map((location) => (
               <option key={location.id} value={location.id}>
                 {location.name}
@@ -292,8 +302,21 @@ function formatRoomOptionLabel(room: RoomOption, duplicateRoomNames: Map<string,
   return `${roomName} (${room.location?.name ?? "No location"})`;
 }
 
-function getInitialSelection(rooms: RoomOption[], locations: LocationOption[], requireRoom: boolean) {
-  const preferredRoom = readPreferredRoom(rooms);
+function getInitialSelection(
+  rooms: RoomOption[],
+  locations: LocationOption[],
+  requireRoom: boolean,
+  options: { forceLocationChoice?: boolean; rememberSelection?: boolean } = {},
+) {
+  const { forceLocationChoice = false, rememberSelection = true } = options;
+  if (forceLocationChoice && locations.length > 1) {
+    return {
+      roomId: "",
+      locationId: "",
+    };
+  }
+
+  const preferredRoom = rememberSelection ? readPreferredRoom(rooms) : null;
   const fallbackRoom = requireRoom ? getFallbackRoom(rooms) : preferredRoom;
   const nextRoom = preferredRoom ?? fallbackRoom;
 

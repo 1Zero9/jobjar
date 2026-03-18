@@ -39,6 +39,7 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
   const memberMode = isMemberRole(role);
   const easyLog = memberMode;
   const showAssignField = !memberMode;
+  const needsSeparatedAreaPicker = !memberMode;
   const restrictedToLocations = hasLocationRestrictions(allowedLocationIds);
   const audienceThemeClass = getMemberThemeClassName(audienceBand, profileTheme);
 
@@ -62,9 +63,13 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
           },
         })
       : Promise.resolve([]),
-    restrictedToLocations
+    restrictedToLocations || needsSeparatedAreaPicker
       ? prisma.location.findMany({
-          where: { householdId, active: true, id: { in: allowedLocationIds! } },
+          where: {
+            householdId,
+            active: true,
+            ...(restrictedToLocations ? { id: { in: allowedLocationIds! } } : {}),
+          },
           orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
           select: { id: true, name: true },
         })
@@ -147,7 +152,13 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
                 locations={locations}
                 rooms={roomOptions}
                 requireRoom={restrictedToLocations}
-                helperText="Pick the location and room for this job."
+                forceLocationChoice={needsSeparatedAreaPicker && locations.length > 1}
+                rememberSelection={!needsSeparatedAreaPicker}
+                helperText={
+                  needsSeparatedAreaPicker && locations.length > 1
+                    ? "Pick the area first, then choose the room."
+                    : "Pick the location and room for this job."
+                }
               />
 
               <FormActionButton className="capture-submit-btn quick-log-submit" pendingLabel="Saving job">
