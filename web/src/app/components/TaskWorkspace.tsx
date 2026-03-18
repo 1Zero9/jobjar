@@ -609,9 +609,11 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
                 task.assignments[0]?.user?.displayName,
                 task.projectParent?.title,
                 ...task.projectChildren.map((child) => child.title),
-                ...task.projectCosts.map((cost) => cost.title),
-                ...task.projectMaterials.flatMap((material) => [material.title, material.quantityLabel, material.source]),
-                ...task.projectMilestones.map((milestone) => milestone.title),
+                ...(includeLegacyProjectPlanning ? task.projectCosts.map((cost) => cost.title) : []),
+                ...(includeLegacyProjectPlanning
+                  ? task.projectMaterials.flatMap((material) => [material.title, material.quantityLabel, material.source])
+                  : []),
+                ...(includeLegacyProjectPlanning ? task.projectMilestones.map((milestone) => milestone.title) : []),
               ]
                 .filter(Boolean)
                 .join(" "),
