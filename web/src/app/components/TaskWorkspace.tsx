@@ -308,7 +308,7 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
   const parentOccurrenceTake = mode === "projects" ? 3 : 2;
   const childOccurrenceTake = 2;
   const includeLegacyProjectPlanning = mode === "projects";
-  const needsPeopleOptions = canEditTasks;
+  const needsPeopleOptions = canEditTasks && !childMode;
   const recordedTaskSelect = {
     id: true,
     title: true,
@@ -336,7 +336,6 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
     },
     projectParent: {
       select: {
-        id: true,
         title: true,
       },
     },
@@ -358,7 +357,6 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
           select: {
             user: {
               select: {
-                id: true,
                 displayName: true,
               },
             },
@@ -422,7 +420,6 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
         userId: true,
         user: {
           select: {
-            id: true,
             displayName: true,
           },
         },
@@ -456,7 +453,7 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
     prisma.room.findMany({
       where: { householdId, active: true, ...getRoomLocationAccessWhere(allowedLocationIds) },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-      select: { id: true, name: true, designation: true, locationId: true, location: { select: { id: true, name: true } } },
+      select: { id: true, name: true, location: { select: { id: true, name: true } } },
     }),
     needsPeopleOptions
       ? prisma.householdMember.findMany({

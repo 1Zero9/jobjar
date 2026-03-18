@@ -5,17 +5,12 @@ import { APP_VERSION } from "@/lib/app-version";
 import { canAccessReportingViewsRole, canManagePeopleRole, requireSessionContext } from "@/lib/auth";
 import { HelpIcon, PeopleIcon, SettingsIcon, StatsIcon, TasksIcon } from "@/lib/icons";
 import { canAccessExtendedViews, getMemberThemeClassName, isChildAudience } from "@/lib/member-audience";
-import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
 export default async function MorePage() {
-  const { userId, role, audienceBand, profileTheme } = await requireSessionContext("/more");
-  const currentUser = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { displayName: true },
-  });
+  const { displayName, role, audienceBand, profileTheme } = await requireSessionContext("/more");
 
   const audienceThemeClass = getMemberThemeClassName(audienceBand, profileTheme);
   const childMode = isChildAudience(audienceBand);
@@ -38,7 +33,7 @@ export default async function MorePage() {
           <p className="settings-kicker">Account</p>
           <div className="more-profile-row">
             <div>
-              <h2 className="recorded-title">{currentUser?.displayName ?? "You"}</h2>
+              <h2 className="recorded-title">{displayName ?? "You"}</h2>
               <p className="recorded-empty">{childMode ? "Child mode stays small on purpose." : viewerMode ? "Use this page for the extra places you can check in on." : "Use this page for the rest of the app."}</p>
             </div>
             <span className="version-chip">{APP_VERSION}</span>

@@ -2,6 +2,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { MemberAudience, MemberProfileTheme, MemberRole } from "@prisma/client";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 
 const SESSION_USER_COOKIE = "jobjar_session_user";
@@ -19,6 +20,7 @@ const SESSION_COOKIE_OPTIONS = {
 export type SessionContext = {
   userId: string;
   householdId: string;
+  displayName: string | null;
   role: MemberRole;
   audienceBand: MemberAudience;
   profileTheme: MemberProfileTheme;
@@ -82,7 +84,7 @@ export async function clearSession() {
   jar.delete(SESSION_HOUSEHOLD_COOKIE);
 }
 
-export async function getSessionContext(): Promise<SessionContext | null> {
+const readSessionContext = cache(async (): Promise<SessionContext | null> => {
   const userId = await getSessionUserId();
   if (!userId) {
     return null;
@@ -97,7 +99,7 @@ export async function getSessionContext(): Promise<SessionContext | null> {
             userId,
           },
         },
-        select: { householdId: true, role: true, audienceBand: true, profileTheme: true, locationAccess: { select: { locationId: true } } },
+        select: { householdId: true, role: true, audienceBand: true, profileTheme: true, locationAccess: { select: { locationId: true } }, user: { select: { displayName: true } } },
       })
     : null;
 
@@ -106,7 +108,7 @@ export async function getSessionContext(): Promise<SessionContext | null> {
     (await prisma.householdMember.findFirst({
       where: { userId },
       orderBy: { joinedAt: "asc" },
-      select: { householdId: true, role: true, audienceBand: true, profileTheme: true, locationAccess: { select: { locationId: true } } },
+      select: { householdId: true, role: true, audienceBand: true, profileTheme: true, locationAccess: { select: { locationId: true } }, user: { select: { displayName: true } } },
     }));
 
   if (!membership) {
@@ -116,6 +118,7 @@ export async function getSessionContext(): Promise<SessionContext | null> {
   return {
     userId,
     householdId: membership.householdId,
+    displayName: membership.user.displayName ?? null,
     role: membership.role,
     audienceBand: membership.audienceBand,
     profileTheme: membership.profileTheme,
@@ -124,6 +127,10 @@ export async function getSessionContext(): Promise<SessionContext | null> {
         ? null
         : membership.locationAccess.map((entry) => entry.locationId),
   };
+});
+
+export async function getSessionContext(): Promise<SessionContext | null> {
+  return readSessionContext();
 }
 
 export async function requireSessionContext(nextPath = "/"): Promise<SessionContext> {

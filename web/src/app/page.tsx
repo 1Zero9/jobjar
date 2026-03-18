@@ -29,7 +29,7 @@ export default async function HomePage({
   searchParams: Promise<HomeSearchParams>;
 }) {
   const params = await searchParams;
-  const { householdId, userId, role, audienceBand, profileTheme, allowedLocationIds } = await requireSessionContext("/");
+  const { householdId, userId, displayName, role, audienceBand, profileTheme, allowedLocationIds } = await requireSessionContext("/");
   const audienceThemeClass = getMemberThemeClassName(audienceBand, profileTheme);
   const childMode = isChildAudience(audienceBand);
   const viewerMode = role === "viewer";
@@ -105,7 +105,6 @@ export default async function HomePage({
   };
 
   const [
-    currentUser,
     locations,
     quickCaptureRooms,
     openTaskCount,
@@ -117,10 +116,6 @@ export default async function HomePage({
     paidThisWeek,
     recentCompletionDays,
   ] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: userId },
-      select: { displayName: true },
-    }),
     restrictedToLocations
       ? prisma.location.findMany({
           where: { householdId, active: true, id: { in: allowedLocationIds! } },
@@ -289,10 +284,10 @@ export default async function HomePage({
           <div className="today-hero-copy">
             <PageBrandStrip
               className="today-brand-strip"
-              trailing={<span className="session-chip">{currentUser?.displayName ?? "You"}</span>}
+              trailing={<span className="session-chip">{displayName ?? "You"}</span>}
             />
             <h1 className="today-greeting">
-              {childMode ? `${greeting} ${currentUser?.displayName ?? "there"}` : `${greeting}, ${currentUser?.displayName ?? "there"}.`}
+              {childMode ? `${greeting} ${displayName ?? "there"}` : `${greeting}, ${displayName ?? "there"}.`}
             </h1>
             <p className="today-copy">
               {childMode
