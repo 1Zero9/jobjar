@@ -32,12 +32,12 @@ export function TaskCardProjectDetail({
       <div className="room-setup-header">
         <div>
           <p className="settings-kicker">Parent job</p>
-          <h3 className="recorded-title">Subtasks</h3>
+          <h3 className="recorded-title">Steps</h3>
         </div>
       </div>
 
       <p className="task-readonly-note">
-        Break bigger work into a few simple steps. Those subtasks show in the main jobs list like normal jobs.
+        Break bigger work into a few simple steps. Those steps show in the jobs list like normal jobs.
       </p>
 
       <div className="task-overview-grid project-overview-grid">
@@ -55,20 +55,25 @@ export function TaskCardProjectDetail({
             : "Your subtasks appear below in the jobs list."}
         </p>
       ) : (
-        <p className="recorded-empty">No subtasks yet. Add the first step when you are ready.</p>
+        <p className="recorded-empty">No steps yet. Add the first one below.</p>
       )}
 
       {canManageProjects ? (
         <div className="project-manage-stack">
-          <details className="recorded-more-details">
-            <summary className="recorded-more-summary">Add subtask</summary>
-            <form action={createProjectChildTaskAction} className="recorded-edit-form">
-              <input type="hidden" name="projectId" value={task.id} />
-              <input type="hidden" name="returnTo" value={basePath} />
-              <label className="recorded-field">
-                <span>Subtask title</span>
-                <input name="title" type="text" required placeholder="Patch walls" className="recorded-edit-input" />
-              </label>
+          <form action={createProjectChildTaskAction} className="recorded-edit-form">
+            <input type="hidden" name="projectId" value={task.id} />
+            <input type="hidden" name="returnTo" value={`${basePath}#task-${task.id}`} />
+            <label className="recorded-field">
+              <span>Add next step</span>
+              <input name="title" type="text" required placeholder="Patch walls" className="recorded-edit-input" />
+            </label>
+            <div className="recorded-row-actions between">
+              <FormActionButton className="action-btn bright quiet" pendingLabel="Adding step">
+                Add step
+              </FormActionButton>
+            </div>
+            <details className="recorded-more-details">
+              <summary className="recorded-more-summary">Add step details</summary>
               <label className="recorded-field">
                 <span>Notes</span>
                 <input name="detailNotes" type="text" placeholder="Optional detail" className="recorded-edit-input" />
@@ -94,13 +99,8 @@ export function TaskCardProjectDetail({
                 <span>Due date</span>
                 <input name="dueAt" type="datetime-local" className="recorded-edit-input" />
               </label>
-              <div className="recorded-row-actions between">
-                <FormActionButton className="action-btn bright quiet" pendingLabel="Adding subtask">
-                  Add subtask
-                </FormActionButton>
-              </div>
-            </form>
-          </details>
+            </details>
+          </form>
 
           <details className="recorded-more-details">
             <summary className="recorded-more-summary">Parent job settings</summary>

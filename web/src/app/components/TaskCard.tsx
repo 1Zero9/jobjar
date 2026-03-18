@@ -31,7 +31,7 @@ import {
   rowStateClass,
   summarizeProject,
 } from "@/app/components/task-board-utils";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type Props = {
   task: TaskItem;
@@ -84,6 +84,23 @@ export function TaskCard({
   const rewardChipClassName = hasReward ? getRewardChipClassName(task.rewardConfirmed, task.rewardPaidAt) : null;
   const showStandardSummaryActions = !childMode && !isProject && canEditTasks;
   const summaryStateChip = getSummaryStateChip(task, childMode);
+  const taskState = getTaskState(task);
+  const needsExplicitStart = task.validationMode === "strict" && task.captureStage !== "active" && taskState !== "done";
+
+  useEffect(() => {
+    const expectedHash = `#task-${task.id}`;
+    const syncOpenFromHash = () => {
+      if (window.location.hash === expectedHash) {
+        setOpen(true);
+      }
+    };
+
+    syncOpenFromHash();
+    window.addEventListener("hashchange", syncOpenFromHash);
+    return () => {
+      window.removeEventListener("hashchange", syncOpenFromHash);
+    };
+  }, [task.id]);
 
   return (
     <details
@@ -111,7 +128,7 @@ export function TaskCard({
                   label={`Accept ${formatMoney(task.rewardCents!)}`}
                 />
               ) : null}
-              {getTaskState(task) === "done" ? (
+              {taskState === "done" ? (
                 <>
                   {canMarkRewardPaid ? (
                     <TaskCardSummaryAction
@@ -130,7 +147,7 @@ export function TaskCard({
                     label="Reopen"
                   />
                 </>
-              ) : task.captureStage !== "active" ? (
+              ) : needsExplicitStart ? (
                 <TaskCardSummaryAction
                   action={startTaskAction}
                   fields={{ taskId: task.id }}

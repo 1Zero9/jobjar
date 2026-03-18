@@ -1,8 +1,11 @@
 "use client";
 
 import {
+  completeTaskAction,
   deleteTaskAction,
   promoteTaskToProjectAction,
+  reopenTaskAction,
+  startTaskAction,
   updateRecordedTaskAction,
 } from "@/app/actions";
 import { FormActionButton } from "@/app/components/FormActionButton";
@@ -90,6 +93,9 @@ export function TaskCardStandardDetail({
   };
   const isLoadingDetail = isOpen && manageOpen && !detail && !detailError;
   const latestCompleted = getLatestCompletedOccurrence(resolvedDetail.occurrences);
+  const taskState = getTaskState(task);
+  const needsExplicitStart = task.validationMode === "strict" && task.captureStage !== "active" && taskState !== "done";
+  const canArchiveTask = canDeleteTasks && taskState === "done";
 
   return (
     <>
@@ -137,21 +143,43 @@ export function TaskCardStandardDetail({
 
         {canEditTasks ? (
           <div className="recorded-row-actions task-overview-actions">
-            <p className="task-readonly-note">
-              Use the button on the card to {getTaskState(task) === "done" ? "reopen this job" : task.captureStage === "active" ? "mark this job done" : "start this job"}.
-            </p>
+            {taskState === "done" ? (
+              <form action={reopenTaskAction}>
+                <input type="hidden" name="taskId" value={task.id} />
+                <FormActionButton className="action-btn subtle quiet" pendingLabel="Opening">
+                  Reopen job
+                </FormActionButton>
+              </form>
+            ) : needsExplicitStart ? (
+              <form action={startTaskAction}>
+                <input type="hidden" name="taskId" value={task.id} />
+                <FormActionButton className="action-btn subtle quiet" pendingLabel="Starting">
+                  Start job
+                </FormActionButton>
+              </form>
+            ) : (
+              <form action={completeTaskAction}>
+                <input type="hidden" name="taskId" value={task.id} />
+                <input type="hidden" name="note" value="" />
+                <input type="hidden" name="returnTo" value={`${basePath}#task-${task.id}`} />
+                <FormActionButton className="action-btn bright quiet" pendingLabel="Finishing">
+                  Mark done
+                </FormActionButton>
+              </form>
+            )}
             {canManageProjects ? (
               <form action={promoteTaskToProjectAction}>
                 <input type="hidden" name="taskId" value={task.id} />
-                <input type="hidden" name="returnTo" value={basePath} />
+                <input type="hidden" name="returnTo" value={`${basePath}#task-${task.id}`} />
                 <FormActionButton className="action-btn subtle quiet" pendingLabel="Promoting">
-                  Add subtasks
+                  Break into steps
                 </FormActionButton>
               </form>
             ) : null}
-            {canDeleteTasks ? (
+            {canArchiveTask ? (
               <form action={deleteTaskAction}>
                 <input type="hidden" name="taskId" value={task.id} />
+                <input type="hidden" name="returnTo" value={basePath} />
                 <FormActionButton className="action-btn warn quiet" pendingLabel="Archiving">
                   Archive job
                 </FormActionButton>

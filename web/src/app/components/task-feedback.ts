@@ -8,6 +8,12 @@ export function getTaskFeedbackMessage(error?: string) {
   if (error === "task-not-found") {
     return "That job could not be found.";
   }
+  if (error === "task-archive-complete-only") {
+    return "Finish this job before archiving it.";
+  }
+  if (error === "task-archive-not-allowed") {
+    return "Only power users and admins can archive jobs from the board.";
+  }
   if (error === "task-strict-note-required") {
     return "Add a short note before finishing this strict job.";
   }

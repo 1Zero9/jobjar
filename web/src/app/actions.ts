@@ -1589,22 +1589,45 @@ export async function deleteProjectMilestoneAction(formData: FormData) {
 }
 
 export async function deleteTaskAction(formData: FormData) {
-  const { householdId, userId: actorUserId } = await requireAdminAction();
+  const { householdId, userId: actorUserId, allowedLocationIds, role } = await requireSessionContext("/tasks");
   const taskId = String(formData.get("taskId") ?? "").trim();
   const returnTo = getReturnPath(formData.get("returnTo"), "");
   if (!taskId) {
     return;
   }
 
+  if (!canManageProjectsRole(role)) {
+    redirectToReturnPath(returnTo, { error: "task-archive-not-allowed" });
+    return;
+  }
+
   const task = await prisma.task.findFirst({
     where: {
       id: taskId,
-      room: { householdId },
+      room: getAccessibleRoomWhere(householdId, allowedLocationIds),
     },
-    select: { id: true, roomId: true, title: true },
+    select: {
+      id: true,
+      roomId: true,
+      title: true,
+      schedule: {
+        select: { id: true },
+      },
+      occurrences: {
+        orderBy: { dueAt: "desc" },
+        take: 1,
+        select: { status: true },
+      },
+    },
   });
   if (!task) {
     redirectToReturnPath(returnTo, { error: "task-not-found" });
+    return;
+  }
+
+  const taskIsCompleted = !task.schedule && task.occurrences[0]?.status === "done";
+  if (!isAdminRole(role) && !taskIsCompleted) {
+    redirectToReturnPath(returnTo, { error: "task-archive-complete-only" }, `task-${task.id}`);
     return;
   }
 
@@ -1618,7 +1641,7 @@ export async function deleteTaskAction(formData: FormData) {
   });
 
   await compactOpenTaskPriorities(task.roomId);
-  refreshViews(["/", "/log", "/tasks", "/settings", "/settings/people", "/setup/start"]);
+  refreshViews(["/", "/log", "/tasks", "/settings", "/settings/people", "/setup/start", "/admin"]);
   if (returnTo) {
     redirectToReturnPath(returnTo, { archived: "task" });
   }

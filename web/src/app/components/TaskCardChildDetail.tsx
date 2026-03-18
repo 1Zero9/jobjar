@@ -23,6 +23,8 @@ export function TaskCardChildDetail({
   basePath,
 }: Props) {
   const latestCompleted = getLatestCompletedOccurrence(task.occurrences);
+  const taskState = getTaskState(task);
+  const needsExplicitStart = task.validationMode === "strict" && task.captureStage !== "active" && taskState !== "done";
 
   return (
     <section className="kid-task-panel">
@@ -40,7 +42,7 @@ export function TaskCardChildDetail({
         {latestCompleted?.completedAt ? <p><span>Last finished</span><strong>{formatRecordedAt(latestCompleted.completedAt)}</strong></p> : null}
       </div>
       <div className="recorded-row-actions kid-task-actions">
-        {getTaskState(task) === "done" ? (
+        {taskState === "done" ? (
           canEditTasks ? (
             <form action={reopenTaskAction}>
               <input type="hidden" name="taskId" value={task.id} />
@@ -60,7 +62,7 @@ export function TaskCardChildDetail({
                 </FormActionButton>
               </form>
             ) : null}
-            {task.captureStage !== "active" ? (
+            {needsExplicitStart ? (
               <form action={startTaskAction}>
                 <input type="hidden" name="taskId" value={task.id} />
                 <FormActionButton className="action-btn subtle quiet" pendingLabel="Starting">

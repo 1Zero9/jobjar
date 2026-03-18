@@ -17,6 +17,7 @@ import { redirect } from "next/navigation";
 
 type SearchParams = {
   added?: string;
+  archived?: string;
   error?: string;
   removed?: string;
   updated?: string;
@@ -319,6 +320,7 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
     isPrivate: true,
     jobKind: true,
     captureStage: true,
+    validationMode: true,
     createdAt: true,
     estimatedMinutes: true,
     rewardCents: true,
@@ -613,13 +615,14 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
         {params.added === "project-milestone" ? <ToastNotice message="Project milestone added." tone="success" /> : null}
         {params.updated === "task" ? <ToastNotice message="Job updated." tone="info" /> : null}
         {params.updated === "done" ? <ToastNotice message="Job marked completed." tone="success" /> : null}
-        {params.updated === "project-promoted" ? <ToastNotice message="Job ready for subtasks." tone="success" /> : null}
+        {params.updated === "project-promoted" ? <ToastNotice message="Parent job ready. Add the first step below." tone="success" /> : null}
         {params.updated === "project-demoted" ? <ToastNotice message="Parent job returned to a normal job." tone="success" /> : null}
         {params.updated === "project-plan" ? <ToastNotice message="Project plan updated." tone="success" /> : null}
         {params.updated === "reward-accepted" ? <ToastNotice message="Reward accepted." tone="success" /> : null}
         {params.updated === "reward-paid" ? <ToastNotice message="Reward marked paid." tone="success" /> : null}
         {params.updated === "project-material" ? <ToastNotice message="Project material updated." tone="success" /> : null}
         {params.updated === "project-milestone" ? <ToastNotice message="Project milestone updated." tone="success" /> : null}
+        {params.archived === "task" ? <ToastNotice message="Job archived." tone="success" /> : null}
         {params.removed === "project-cost" ? <ToastNotice message="Project cost removed." tone="success" /> : null}
         {params.removed === "project-material" ? <ToastNotice message="Project material removed." tone="success" /> : null}
         {params.removed === "project-milestone" ? <ToastNotice message="Project milestone removed." tone="success" /> : null}
@@ -645,7 +648,7 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
           audienceBand={audienceBand}
           canEditTasks={canEditTasks}
           canManageProjects={canManageProjectsRole(role)}
-          canDeleteTasks={isAdminRole(role)}
+          canDeleteTasks={canManageProjectsRole(role)}
           easyMode={easyWorkspace}
           currentUserId={userId}
           basePath={mode === "projects" ? "/projects" : "/tasks"}
@@ -748,6 +751,7 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
               isPrivate: task.isPrivate,
               jobKind: task.jobKind,
               captureStage: task.captureStage,
+              validationMode: task.validationMode,
               createdAt: task.createdAt.toISOString(),
               estimatedMinutes: task.estimatedMinutes,
               rewardCents: task.rewardCents,

@@ -59,6 +59,7 @@ export type TaskItem = {
   isPrivate: boolean;
   jobKind: string;
   captureStage: string;
+  validationMode: string;
   createdAt: string;
   estimatedMinutes: number;
   rewardCents: number | null;
