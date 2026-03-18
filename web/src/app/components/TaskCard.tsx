@@ -64,7 +64,7 @@ export function TaskCard({
   const subtaskProgressLabel = getSubtaskProgressLabel(projectSummary);
   const hasLegacyProjectPlanning = hasLegacyProjectPlanningData(task);
   const canDemoteProject =
-    task.projectChildren.length === 0 &&
+    projectSummary.totalChildren === 0 &&
     task.projectCosts.length === 0 &&
     task.projectMaterials.length === 0 &&
     task.projectMilestones.length === 0;

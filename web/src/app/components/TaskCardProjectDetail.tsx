@@ -25,7 +25,7 @@ export function TaskCardProjectDetail({
   basePath,
 }: Props) {
   const projectSummary = summarizeProject(task);
-  const hasSubtasks = task.projectChildren.length > 0;
+  const hasSubtasks = projectSummary.totalChildren > 0;
 
   return (
     <section className="rounded-xl border border-border bg-surface p-3 project-panel">

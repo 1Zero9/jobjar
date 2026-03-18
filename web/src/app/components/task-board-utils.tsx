@@ -189,6 +189,7 @@ export function formatTaskPlace(locationName: string | null, roomName: string) {
 export function isProjectTask(task: TaskItem) {
   return (
     task.jobKind === "project" ||
+    (task.projectSummary?.totalChildren ?? 0) > 0 ||
     task.projectChildren.length > 0 ||
     task.projectCosts.length > 0 ||
     task.projectMaterials.length > 0 ||
@@ -200,9 +201,9 @@ export function isProjectTask(task: TaskItem) {
 
 export function summarizeProject(task: TaskItem) {
   const now = Date.now();
-  const totalChildren = task.projectChildren.length;
-  const completedChildren = task.projectChildren.filter((child) => getTaskState(child) === "done").length;
-  const overdueChildren = task.projectChildren.filter((child) => isProjectChildOverdue(child)).length;
+  const totalChildren = task.projectSummary?.totalChildren ?? task.projectChildren.length;
+  const completedChildren = task.projectSummary?.completedChildren ?? task.projectChildren.filter((child) => getTaskState(child) === "done").length;
+  const overdueChildren = task.projectSummary?.overdueChildren ?? task.projectChildren.filter((child) => isProjectChildOverdue(child)).length;
   const spentCents = task.projectCosts.reduce((sum, cost) => sum + cost.amountCents, 0);
   const totalMaterials = task.projectMaterials.length;
   const purchasedMaterials = task.projectMaterials.filter((material) => material.purchasedAt).length;
@@ -211,14 +212,15 @@ export function summarizeProject(task: TaskItem) {
   const totalMilestones = task.projectMilestones.length;
   const completedMilestones = task.projectMilestones.filter((milestone) => milestone.completedAt).length;
   const overdueMilestones = task.projectMilestones.filter((milestone) => isMilestoneOverdue(milestone)).length;
-  const totalEstimatedMinutes =
-    task.estimatedMinutes + task.projectChildren.reduce((sum, child) => sum + child.estimatedMinutes, 0);
+  const totalEstimatedMinutes = task.projectSummary
+    ? task.estimatedMinutes + task.projectSummary.totalEstimatedMinutes
+    : task.estimatedMinutes + task.projectChildren.reduce((sum, child) => sum + child.estimatedMinutes, 0);
   const overBudget = task.projectBudgetCents !== null && spentCents > task.projectBudgetCents;
-  const complete = task.projectChildren.length > 0
+  const complete = totalChildren > 0
     ? completedChildren === totalChildren
     : getTaskState(task) === "done";
   const planning =
-    task.projectChildren.length === 0 &&
+    totalChildren === 0 &&
     task.projectMilestones.length === 0 &&
     task.projectMaterials.length === 0 &&
     getTaskState(task) !== "done";

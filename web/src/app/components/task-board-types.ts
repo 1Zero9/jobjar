@@ -33,6 +33,13 @@ export type TaskStandardDetail = {
   }>;
 };
 
+export type ProjectSummarySnapshot = {
+  totalChildren: number;
+  completedChildren: number;
+  overdueChildren: number;
+  totalEstimatedMinutes: number;
+};
+
 export type TaskItem = {
   id: string;
   title: string;
@@ -59,6 +66,7 @@ export type TaskItem = {
   rewardPaidAt: string | null;
   projectTargetAt: string | null;
   projectBudgetCents: number | null;
+  projectSummary: ProjectSummarySnapshot | null;
   projectChildren: Array<{
     id: string;
     title: string;

@@ -126,6 +126,106 @@ export function RoomPillSelect({
   );
 }
 
+export function RoomSelectField({
+  locations,
+  rooms,
+  requireRoom = false,
+  className = "",
+  label = "Room",
+  helperText = "Pick the location first if you need it, then choose the room.",
+}: Props) {
+  const initialSelection = getInitialSelection(rooms, locations, requireRoom);
+  const [selectedRoomId, setSelectedRoomId] = useState(initialSelection.roomId);
+  const [selectedLocationId, setSelectedLocationId] = useState(initialSelection.locationId);
+
+  useEffect(() => {
+    const selectedRoom = rooms.find((room) => room.id === selectedRoomId) ?? null;
+
+    if (selectedRoom) {
+      persistPreferredRoom(selectedRoom.id, formatRoomName(selectedRoom.name));
+      return;
+    }
+
+    if (!selectedRoomId && !requireRoom) {
+      window.localStorage.removeItem(ROOM_PREFERENCE_ID_KEY);
+      window.localStorage.removeItem(ROOM_PREFERENCE_NAME_KEY);
+    }
+  }, [requireRoom, rooms, selectedRoomId]);
+
+  const visibleRooms = useMemo(() => {
+    if (!selectedLocationId) {
+      return rooms;
+    }
+    return rooms.filter((room) => room.location?.id === selectedLocationId);
+  }, [rooms, selectedLocationId]);
+
+  return (
+    <div className={`capture-step ${className}`.trim()}>
+      {locations.length > 1 ? (
+        <label className="capture-step-inner">
+          <span className="capture-step-label">Location</span>
+          <select
+            value={selectedLocationId}
+            onChange={(event) => {
+              const nextLocationId = event.target.value;
+              setSelectedLocationId(nextLocationId);
+              setSelectedRoomId((currentRoomId) => {
+                const currentRoom = rooms.find((room) => room.id === currentRoomId) ?? null;
+                if (!currentRoom) {
+                  return requireRoom && nextLocationId
+                    ? (rooms.find((room) => room.location?.id === nextLocationId)?.id ?? "")
+                    : currentRoomId;
+                }
+                if (!nextLocationId || currentRoom.location?.id === nextLocationId) {
+                  return currentRoomId;
+                }
+                return requireRoom
+                  ? (rooms.find((room) => room.location?.id === nextLocationId)?.id ?? "")
+                  : "";
+              });
+            }}
+            className="capture-room-select"
+          >
+            <option value="">{requireRoom ? "Choose location" : "All locations"}</option>
+            {locations.map((location) => (
+              <option key={location.id} value={location.id}>
+                {location.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : null}
+
+      <label className="capture-step-inner">
+        <div className="capture-room-heading">
+          <span className="capture-step-label">{label}</span>
+          <span className="capture-room-helper">{helperText}</span>
+        </div>
+        <select
+          name="roomId"
+          value={selectedRoomId}
+          onChange={(event) => {
+            const nextRoomId = event.target.value;
+            setSelectedRoomId(nextRoomId);
+            const selectedRoom = rooms.find((room) => room.id === nextRoomId) ?? null;
+            if (selectedRoom?.location?.id) {
+              setSelectedLocationId(selectedRoom.location.id);
+            }
+          }}
+          className="capture-room-select"
+        >
+          {!requireRoom ? <option value="">General</option> : <option value="">Choose room</option>}
+          {visibleRooms.map((room) => (
+            <option key={room.id} value={room.id}>
+              {formatRoomName(room.name)}
+            </option>
+          ))}
+        </select>
+      </label>
+    </div>
+  );
+}
+
 export function readPreferredRoom(rooms: RoomOption[]) {
   if (typeof window === "undefined") {
     return null;

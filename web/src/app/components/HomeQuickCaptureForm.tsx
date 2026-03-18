@@ -37,7 +37,7 @@ export function HomeQuickCaptureForm({ rooms, requireRoom = false }: Props) {
           type="text"
           required
           placeholder="What needs doing?"
-          className="home-quick-capture-input glass-surface"
+          className="home-quick-capture-input"
         />
         <FormActionButton className="home-quick-capture-submit" pendingLabel="Saving">
           Save job

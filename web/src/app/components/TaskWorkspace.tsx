@@ -1,7 +1,7 @@
 import { createQuickTaskAction } from "@/app/actions";
 import { FormActionButton } from "@/app/components/FormActionButton";
 import { AppPageHeader } from "@/app/components/AppPageHeader";
-import { RoomPillSelect } from "@/app/components/RoomPillSelect";
+import { RoomSelectField } from "@/app/components/RoomPillSelect";
 import { SimilarTaskField } from "@/app/components/SimilarTaskField";
 import { TasksPanelClient } from "@/app/components/TasksPanelClient";
 import { ToastNotice } from "@/app/components/ToastNotice";
@@ -141,12 +141,12 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
                 placeholder="Buy milk"
               />
 
-              <RoomPillSelect
+              <RoomSelectField
                 className="quick-log-primary-step"
                 locations={locations}
                 rooms={roomOptions}
                 requireRoom={restrictedToLocations}
-                helperText="Your last room becomes the quick add default on home."
+                helperText="Pick the location and room for this job."
               />
 
               <FormActionButton className="capture-submit-btn quick-log-submit" pendingLabel="Saving job">
@@ -339,44 +339,48 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
         title: true,
       },
     },
-    projectChildren: {
-      where: {
-        active: true,
-        ...(privateTaskAccess ? { OR: privateTaskAccess } : {}),
-      },
-      orderBy: [{ priority: "asc" as const }, { createdAt: "desc" as const }],
-      select: {
-        id: true,
-        title: true,
-        captureStage: true,
-        estimatedMinutes: true,
-        assignments: {
-          where: { assignedTo: null },
-          orderBy: { assignedFrom: "desc" as const },
-          take: 1,
-          select: {
-            user: {
-              select: {
-                displayName: true,
+    ...(includeLegacyProjectPlanning
+      ? {
+          projectChildren: {
+            where: {
+              active: true,
+              ...(privateTaskAccess ? { OR: privateTaskAccess } : {}),
+            },
+            orderBy: [{ priority: "asc" as const }, { createdAt: "desc" as const }],
+            select: {
+              id: true,
+              title: true,
+              captureStage: true,
+              estimatedMinutes: true,
+              assignments: {
+                where: { assignedTo: null },
+                orderBy: { assignedFrom: "desc" as const },
+                take: 1,
+                select: {
+                  user: {
+                    select: {
+                      displayName: true,
+                    },
+                  },
+                },
+              },
+              schedule: {
+                select: {
+                  nextDueAt: true,
+                },
+              },
+              occurrences: {
+                orderBy: { dueAt: "desc" as const },
+                take: childOccurrenceTake,
+                select: {
+                  status: true,
+                  dueAt: true,
+                },
               },
             },
           },
-        },
-        schedule: {
-          select: {
-            nextDueAt: true,
-          },
-        },
-        occurrences: {
-          orderBy: { dueAt: "desc" as const },
-          take: childOccurrenceTake,
-          select: {
-            status: true,
-            dueAt: true,
-          },
-        },
-      },
-    },
+        }
+      : {}),
     ...(includeLegacyProjectPlanning
       ? {
           projectMilestones: {
@@ -439,12 +443,6 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
         status: true,
         dueAt: true,
         completedAt: true,
-        completedBy: true,
-        completer: {
-          select: {
-            displayName: true,
-          },
-        },
       },
     },
   };
@@ -492,6 +490,77 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
       select: recordedTaskSelect,
     }),
   ]);
+
+  const projectTaskIds = includeLegacyProjectPlanning
+    ? []
+    : recordedTasks
+        .filter((task) => task.jobKind === "project")
+        .map((task) => task.id);
+
+  const projectChildSummaries = projectTaskIds.length > 0
+    ? await prisma.task.findMany({
+        where: {
+          active: true,
+          projectParentId: { in: projectTaskIds },
+          room: { householdId, ...getRoomLocationAccessWhere(allowedLocationIds) },
+          ...taskAudienceWhere,
+          AND: [
+            ...(Object.keys(memberVisibleTaskWhere).length > 0 ? [memberVisibleTaskWhere] : []),
+            ...(privateTaskAccess ? [{ OR: privateTaskAccess }] : []),
+          ],
+        },
+        select: {
+          projectParentId: true,
+          captureStage: true,
+          estimatedMinutes: true,
+          schedule: {
+            select: {
+              nextDueAt: true,
+            },
+          },
+          occurrences: {
+            orderBy: { dueAt: "desc" as const },
+            take: childOccurrenceTake,
+            select: {
+              status: true,
+              dueAt: true,
+            },
+          },
+        },
+      })
+    : [];
+
+  const projectSummaryByParentId = new Map<string, {
+    totalChildren: number;
+    completedChildren: number;
+    overdueChildren: number;
+    totalEstimatedMinutes: number;
+  }>();
+
+  for (const child of projectChildSummaries) {
+    const parentId = child.projectParentId;
+    if (!parentId) {
+      continue;
+    }
+
+    const summary = projectSummaryByParentId.get(parentId) ?? {
+      totalChildren: 0,
+      completedChildren: 0,
+      overdueChildren: 0,
+      totalEstimatedMinutes: 0,
+    };
+
+    summary.totalChildren += 1;
+    summary.totalEstimatedMinutes += child.estimatedMinutes;
+    if (getWorkspaceTaskState(child) === "done") {
+      summary.completedChildren += 1;
+    }
+    if (isWorkspaceChildOverdue(child)) {
+      summary.overdueChildren += 1;
+    }
+
+    projectSummaryByParentId.set(parentId, summary);
+  }
 
   const roomOptions = uniqueRoomsByName(rooms).filter((room) => room.name.toLowerCase() !== "unsorted");
   const peopleOptions = needsPeopleOptions ? people.map((member) => member.user) : [];
@@ -594,105 +663,158 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
                 ? "No parent jobs yet. Add subtasks to a task when work needs breaking down."
                 : memberMode ? "No jobs for you right now." : "No jobs here yet."
           }
-          tasks={recordedTasks.map((task) => ({
-            id: task.id,
-            title: task.title,
-            searchText: normalizeSearchText(
-              [
-                task.title,
-                task.detailNotes,
-                task.room.name,
-                task.room.location?.name,
-                task.assignments[0]?.user?.displayName,
-                task.projectParent?.title,
-                ...task.projectChildren.map((child) => child.title),
-                ...(includeLegacyProjectPlanning ? task.projectCosts.map((cost) => cost.title) : []),
-                ...(includeLegacyProjectPlanning
-                  ? task.projectMaterials.flatMap((material) => [material.title, material.quantityLabel, material.source])
-                  : []),
-                ...(includeLegacyProjectPlanning ? task.projectMilestones.map((milestone) => milestone.title) : []),
-              ]
-                .filter(Boolean)
-                .join(" "),
-            ),
-            createdByUserId: task.createdByUserId,
-            roomId: task.roomId,
-            roomName: task.room.name,
-            locationId: task.room.location?.id ?? null,
-            locationName: task.room.location?.name ?? null,
-            loggerName: null,
-            projectParentId: task.projectParentId,
-            projectParentTitle: task.projectParent?.title ?? null,
-            assignmentUserId: task.assignments[0]?.userId ?? null,
-            assignmentUserName: task.assignments[0]?.user?.displayName ?? null,
-            detailNotes: task.detailNotes ?? null,
-            priority: task.priority,
-            isPrivate: task.isPrivate,
-            jobKind: task.jobKind,
-            captureStage: task.captureStage,
-            createdAt: task.createdAt.toISOString(),
-            estimatedMinutes: task.estimatedMinutes,
-            rewardCents: task.rewardCents,
-            rewardConfirmed: task.rewardConfirmed,
-            rewardPaidAt: task.rewardPaidAt?.toISOString() ?? null,
-            projectTargetAt: includeLegacyProjectPlanning ? task.projectTargetAt?.toISOString() ?? null : null,
-            projectBudgetCents: includeLegacyProjectPlanning ? task.projectBudgetCents : null,
-            projectChildren: task.projectChildren.map((child) => ({
-              id: child.id,
-              title: child.title,
-              captureStage: child.captureStage,
-              estimatedMinutes: child.estimatedMinutes,
-              assignmentUserName: child.assignments[0]?.user?.displayName ?? null,
-              nextDueAt: child.schedule?.nextDueAt?.toISOString() ?? child.occurrences[0]?.dueAt.toISOString() ?? null,
-              occurrences: child.occurrences.map((occurrence) => ({
+          tasks={recordedTasks.map((task) => {
+            type LegacyProjectChild = {
+              id: string;
+              title: string;
+              captureStage: string;
+              estimatedMinutes: number;
+              assignments: Array<{ user: { displayName: string | null } | null }>;
+              schedule: { nextDueAt: Date | null } | null;
+              occurrences: Array<{ status: string; dueAt: Date }>;
+            };
+
+            type LegacyProjectCost = {
+              id: string;
+              title: string;
+              amountCents: number;
+              notedAt: Date;
+            };
+
+            type LegacyProjectMaterial = {
+              id: string;
+              title: string;
+              quantityLabel: string | null;
+              source: string | null;
+              estimatedCostCents: number | null;
+              actualCostCents: number | null;
+              purchasedAt: Date | null;
+            };
+
+            type LegacyProjectMilestone = {
+              id: string;
+              title: string;
+              targetAt: Date | null;
+              completedAt: Date | null;
+              sortOrder: number;
+            };
+
+            const legacyTask = task as typeof task & {
+              projectChildren?: LegacyProjectChild[];
+              projectCosts?: LegacyProjectCost[];
+              projectMaterials?: LegacyProjectMaterial[];
+              projectMilestones?: LegacyProjectMilestone[];
+              projectTargetAt?: Date | null;
+              projectBudgetCents?: number | null;
+            };
+            const legacyProjectChildren = includeLegacyProjectPlanning ? ((legacyTask.projectChildren ?? []) as LegacyProjectChild[]) : [];
+            const legacyProjectCosts = includeLegacyProjectPlanning ? ((legacyTask.projectCosts ?? []) as LegacyProjectCost[]) : [];
+            const legacyProjectMaterials = includeLegacyProjectPlanning ? ((legacyTask.projectMaterials ?? []) as LegacyProjectMaterial[]) : [];
+            const legacyProjectMilestones = includeLegacyProjectPlanning ? ((legacyTask.projectMilestones ?? []) as LegacyProjectMilestone[]) : [];
+
+            return {
+              id: task.id,
+              title: task.title,
+              searchText: normalizeSearchText(
+                [
+                  task.title,
+                  task.detailNotes,
+                  task.room.name,
+                  task.room.location?.name,
+                  task.assignments[0]?.user?.displayName,
+                  task.projectParent?.title,
+                  ...legacyProjectChildren.map((child) => child.title),
+                  ...legacyProjectCosts.map((cost) => cost.title),
+                  ...(includeLegacyProjectPlanning
+                    ? legacyProjectMaterials.flatMap((material) => [material.title, material.quantityLabel, material.source])
+                    : []),
+                  ...legacyProjectMilestones.map((milestone) => milestone.title),
+                ]
+                  .filter(Boolean)
+                  .join(" "),
+              ),
+              createdByUserId: task.createdByUserId,
+              roomId: task.roomId,
+              roomName: task.room.name,
+              locationId: task.room.location?.id ?? null,
+              locationName: task.room.location?.name ?? null,
+              loggerName: null,
+              projectParentId: task.projectParentId,
+              projectParentTitle: task.projectParent?.title ?? null,
+              assignmentUserId: task.assignments[0]?.userId ?? null,
+              assignmentUserName: task.assignments[0]?.user?.displayName ?? null,
+              detailNotes: task.detailNotes ?? null,
+              priority: task.priority,
+              isPrivate: task.isPrivate,
+              jobKind: task.jobKind,
+              captureStage: task.captureStage,
+              createdAt: task.createdAt.toISOString(),
+              estimatedMinutes: task.estimatedMinutes,
+              rewardCents: task.rewardCents,
+              rewardConfirmed: task.rewardConfirmed,
+              rewardPaidAt: task.rewardPaidAt?.toISOString() ?? null,
+              projectTargetAt: includeLegacyProjectPlanning ? legacyTask.projectTargetAt?.toISOString() ?? null : null,
+              projectBudgetCents: includeLegacyProjectPlanning ? (legacyTask.projectBudgetCents ?? null) : null,
+              projectSummary: projectSummaryByParentId.get(task.id) ?? null,
+              projectChildren: includeLegacyProjectPlanning
+                ? legacyProjectChildren.map((child) => ({
+                    id: child.id,
+                    title: child.title,
+                    captureStage: child.captureStage,
+                    estimatedMinutes: child.estimatedMinutes,
+                    assignmentUserName: child.assignments[0]?.user?.displayName ?? null,
+                    nextDueAt: child.schedule?.nextDueAt?.toISOString() ?? child.occurrences[0]?.dueAt.toISOString() ?? null,
+                    occurrences: child.occurrences.map((occurrence) => ({
+                      status: occurrence.status,
+                      dueAt: occurrence.dueAt.toISOString(),
+                    })),
+                  }))
+                : [],
+              projectCosts: includeLegacyProjectPlanning
+                ? legacyProjectCosts.map((cost) => ({
+                    id: cost.id,
+                    title: cost.title,
+                    amountCents: cost.amountCents,
+                    notedAt: cost.notedAt.toISOString(),
+                  }))
+                : [],
+              projectMaterials: includeLegacyProjectPlanning
+                ? legacyProjectMaterials.map((material) => ({
+                    id: material.id,
+                    title: material.title,
+                    quantityLabel: material.quantityLabel ?? null,
+                    source: material.source ?? null,
+                    estimatedCostCents: material.estimatedCostCents ?? null,
+                    actualCostCents: material.actualCostCents ?? null,
+                    purchasedAt: material.purchasedAt?.toISOString() ?? null,
+                  }))
+                : [],
+              projectMilestones: includeLegacyProjectPlanning
+                ? legacyProjectMilestones.map((milestone) => ({
+                    id: milestone.id,
+                    title: milestone.title,
+                    targetAt: milestone.targetAt?.toISOString() ?? null,
+                    completedAt: milestone.completedAt?.toISOString() ?? null,
+                    sortOrder: milestone.sortOrder,
+                  }))
+                : [],
+              schedule: task.schedule
+                ? {
+                    recurrenceType: task.schedule.recurrenceType,
+                    intervalCount: task.schedule.intervalCount,
+                    nextDueAt: task.schedule.nextDueAt?.toISOString() ?? null,
+                  }
+                : null,
+              occurrences: task.occurrences.map((occurrence) => ({
                 status: occurrence.status,
                 dueAt: occurrence.dueAt.toISOString(),
+                completedAt: occurrence.completedAt?.toISOString() ?? null,
+                completedBy: null,
+                completerName: null,
               })),
-            })),
-            projectCosts: includeLegacyProjectPlanning
-              ? task.projectCosts.map((cost) => ({
-                  id: cost.id,
-                  title: cost.title,
-                  amountCents: cost.amountCents,
-                  notedAt: cost.notedAt.toISOString(),
-                }))
-              : [],
-            projectMaterials: includeLegacyProjectPlanning
-              ? task.projectMaterials.map((material) => ({
-                  id: material.id,
-                  title: material.title,
-                  quantityLabel: material.quantityLabel ?? null,
-                  source: material.source ?? null,
-                  estimatedCostCents: material.estimatedCostCents ?? null,
-                  actualCostCents: material.actualCostCents ?? null,
-                  purchasedAt: material.purchasedAt?.toISOString() ?? null,
-                }))
-              : [],
-            projectMilestones: includeLegacyProjectPlanning
-              ? task.projectMilestones.map((milestone) => ({
-                  id: milestone.id,
-                  title: milestone.title,
-                  targetAt: milestone.targetAt?.toISOString() ?? null,
-                  completedAt: milestone.completedAt?.toISOString() ?? null,
-                  sortOrder: milestone.sortOrder,
-                }))
-              : [],
-            schedule: task.schedule
-              ? {
-                  recurrenceType: task.schedule.recurrenceType,
-                  intervalCount: task.schedule.intervalCount,
-                  nextDueAt: task.schedule.nextDueAt?.toISOString() ?? null,
-                }
-              : null,
-            occurrences: task.occurrences.map((occurrence) => ({
-              status: occurrence.status,
-              dueAt: occurrence.dueAt.toISOString(),
-              completedAt: occurrence.completedAt?.toISOString() ?? null,
-              completedBy: occurrence.completedBy ?? null,
-              completerName: occurrence.completer?.displayName ?? null,
-            })),
-            standardDetail: null,
-          }))}
+              standardDetail: null,
+            };
+          })}
         />
 
       </main>
@@ -725,4 +847,35 @@ function uniqueRoomsByName<T extends { id: string; name: string }>(rooms: T[]) {
     seen.add(key);
     return true;
   });
+}
+
+function getWorkspaceTaskState(task: {
+  captureStage: string;
+  schedule?: { nextDueAt: Date | null } | null;
+  occurrences: Array<{ status: string }>;
+}) {
+  if (task.occurrences.some((occurrence) => occurrence.status !== "done")) {
+    return "open";
+  }
+  if (task.schedule) {
+    return "open";
+  }
+  if (task.captureStage === "done" || task.occurrences[0]?.status === "done") {
+    return "done";
+  }
+  return "open";
+}
+
+function isWorkspaceChildOverdue(task: {
+  captureStage: string;
+  schedule?: { nextDueAt: Date | null } | null;
+  occurrences: Array<{ status: string; dueAt: Date }>;
+}) {
+  if (getWorkspaceTaskState(task) === "done") {
+    return false;
+  }
+
+  const openOccurrence = task.occurrences.find((occurrence) => occurrence.status !== "done");
+  const dueAt = task.schedule?.nextDueAt ?? openOccurrence?.dueAt ?? null;
+  return dueAt ? dueAt.getTime() < Date.now() : false;
 }

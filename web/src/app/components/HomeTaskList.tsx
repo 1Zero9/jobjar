@@ -55,11 +55,10 @@ export function HomeTaskList({
         <div className="today-task-list">
           {tasks.map((task) => (
             <article key={task.id} className={`today-task-card ${getHomeTaskStateClassName(task)}`.trim()}>
-              <div className="today-task-main">
+              <Link href={`/tasks#task-${task.id}`} className="today-task-link-surface">
+                <div className="today-task-main">
                 <div className="today-task-title-row">
-                  <Link href={`/tasks#task-${task.id}`} className="today-task-title">
-                    {task.title}
-                  </Link>
+                  <span className="today-task-title">{task.title}</span>
                   <span className={`today-task-state ${getHomeTaskStateClassName(task)}-badge`.trim()}>
                     {getHomeTaskStateLabel(task)}
                   </span>
@@ -69,7 +68,8 @@ export function HomeTaskList({
                   {task.projectParentTitle ? <span className="today-task-meta-chip">Part of: {task.projectParentTitle}</span> : null}
                   {task.dueAt ? <span className="today-task-meta-chip today-task-due">{formatDueLabel(task.dueAt)}</span> : null}
                 </p>
-              </div>
+                </div>
+              </Link>
               <div className="today-task-side">
                 {task.rewardCents !== null ? <span className="today-task-reward">{formatMoney(task.rewardCents)}</span> : null}
                 {renderHomeTaskActions(task, childMode, canAct)}
