@@ -54,20 +54,25 @@ export function HomeTaskList({
       ) : (
         <div className="today-task-list">
           {tasks.map((task) => (
-            <article key={task.id} className="today-task-card">
+            <article key={task.id} className={`today-task-card ${getHomeTaskStateClassName(task)}`.trim()}>
               <div className="today-task-main">
-                <Link href={`/tasks#task-${task.id}`} className="today-task-title">
-                  {task.title}
-                </Link>
+                <div className="today-task-title-row">
+                  <Link href={`/tasks#task-${task.id}`} className="today-task-title">
+                    {task.title}
+                  </Link>
+                  <span className={`today-task-state ${getHomeTaskStateClassName(task)}-badge`.trim()}>
+                    {getHomeTaskStateLabel(task)}
+                  </span>
+                </div>
                 <p className="today-task-meta">
-                  <span>{task.locationName ? `${task.locationName} · ${displayRoomName(task.roomName)}` : displayRoomName(task.roomName)}</span>
-                  {task.projectParentTitle ? <span>Part of: {task.projectParentTitle}</span> : null}
-                  {task.dueAt ? <span className="today-task-due">{formatDueLabel(task.dueAt)}</span> : null}
+                  <span className="today-task-meta-chip">{task.locationName ? `${task.locationName} · ${displayRoomName(task.roomName)}` : displayRoomName(task.roomName)}</span>
+                  {task.projectParentTitle ? <span className="today-task-meta-chip">Part of: {task.projectParentTitle}</span> : null}
+                  {task.dueAt ? <span className="today-task-meta-chip today-task-due">{formatDueLabel(task.dueAt)}</span> : null}
                 </p>
               </div>
               <div className="today-task-side">
                 {task.rewardCents !== null ? <span className="today-task-reward">{formatMoney(task.rewardCents)}</span> : null}
-                {canAct ? renderHomeTaskAction(task, childMode) : null}
+                {renderHomeTaskActions(task, childMode, canAct)}
               </div>
             </article>
           ))}
@@ -105,29 +110,89 @@ function displayRoomName(roomName: string) {
   return roomName.toLowerCase() === "unsorted" ? "General" : roomName;
 }
 
-function renderHomeTaskAction(task: HomeTaskItem, childMode: boolean) {
+function renderHomeTaskActions(task: HomeTaskItem, childMode: boolean, canAct: boolean) {
+  const openHref = `/tasks#task-${task.id}`;
   const needsStart = task.validationMode === "strict" && task.captureStage !== "active";
+
+  if (!canAct) {
+    return (
+      <div className="today-task-actions">
+        <Link href={openHref} className="action-btn subtle quiet today-task-open">
+          Open
+        </Link>
+      </div>
+    );
+  }
 
   if (needsStart) {
     return (
-      <form action={startTaskAction} className="today-task-form">
-        <input type="hidden" name="taskId" value={task.id} />
-        <input type="hidden" name="returnTo" value="/" />
-        <FormActionButton className={`action-btn subtle quiet today-task-action ${childMode ? "today-task-action-kid" : ""}`.trim()} pendingLabel="Starting">
-          Start
-        </FormActionButton>
-      </form>
+      <div className="today-task-actions">
+        <Link href={openHref} className="action-btn subtle quiet today-task-open">
+          Open
+        </Link>
+        <form action={startTaskAction} className="today-task-form">
+          <input type="hidden" name="taskId" value={task.id} />
+          <input type="hidden" name="returnTo" value="/" />
+          <FormActionButton className={`action-btn subtle quiet today-task-action ${childMode ? "today-task-action-kid" : ""}`.trim()} pendingLabel="Starting">
+            Start
+          </FormActionButton>
+        </form>
+      </div>
     );
   }
 
   return (
-    <form action={completeTaskAction} className="today-task-form">
-      <input type="hidden" name="taskId" value={task.id} />
-      <input type="hidden" name="note" value="" />
-      <input type="hidden" name="returnTo" value="/" />
-      <FormActionButton className={`action-btn bright quiet today-task-action ${childMode ? "today-task-action-kid" : ""}`.trim()} pendingLabel="Saving">
-        Done
-      </FormActionButton>
-    </form>
+    <div className="today-task-actions">
+      <Link href={openHref} className="action-btn subtle quiet today-task-open">
+        Open
+      </Link>
+      <form action={completeTaskAction} className="today-task-form">
+        <input type="hidden" name="taskId" value={task.id} />
+        <input type="hidden" name="note" value="" />
+        <input type="hidden" name="returnTo" value="/" />
+        <FormActionButton className={`action-btn bright quiet today-task-action ${childMode ? "today-task-action-kid" : ""}`.trim()} pendingLabel="Saving">
+          Done
+        </FormActionButton>
+      </form>
+    </div>
   );
+}
+
+function getHomeTaskStateClassName(task: HomeTaskItem) {
+  if (task.captureStage === "active") {
+    return "today-task-in-progress";
+  }
+  if (task.dueAt && isOverdue(task.dueAt)) {
+    return "today-task-attention";
+  }
+  if (task.dueAt && isDueToday(task.dueAt)) {
+    return "today-task-due";
+  }
+  return "today-task-open-state";
+}
+
+function getHomeTaskStateLabel(task: HomeTaskItem) {
+  if (task.captureStage === "active") {
+    return "In progress";
+  }
+  if (task.dueAt && isOverdue(task.dueAt)) {
+    return "Needs attention";
+  }
+  if (task.dueAt && isDueToday(task.dueAt)) {
+    return "Due today";
+  }
+  return "Open";
+}
+
+function isOverdue(value: string) {
+  return new Date(value).getTime() < Date.now();
+}
+
+function isDueToday(value: string) {
+  const due = new Date(value);
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const tomorrowStart = todayStart + 24 * 60 * 60 * 1000;
+  const dueTime = due.getTime();
+  return dueTime >= todayStart && dueTime < tomorrowStart;
 }

@@ -16,6 +16,16 @@ export function HomeIcon(props: IconProps) {
   );
 }
 
+export function BrandMarkIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M12 3 5 7v10l7 4 7-4V7l-7-4Z" />
+      <path d="M5 7l7 4 7-4" />
+      <path d="M12 11v10" />
+    </BaseIcon>
+  );
+}
+
 export function TasksIcon(props: IconProps) {
   return (
     <BaseIcon {...props}>

@@ -1,5 +1,6 @@
 import { HomeTaskList, type HomeTaskItem } from "@/app/components/HomeTaskList";
 import { HomeQuickCaptureForm } from "@/app/components/HomeQuickCaptureForm";
+import { PageBrandStrip } from "@/app/components/PageBrandStrip";
 import { ToastNotice } from "@/app/components/ToastNotice";
 import { getTaskFeedbackMessage } from "@/app/components/task-feedback";
 import { canAccessReportingViewsRole, canManagePeopleRole, canUseMemberActions, isMemberRole, requireSessionContext } from "@/lib/auth";
@@ -286,7 +287,10 @@ export default async function HomePage({
 
         <header className={`today-hero ${childMode ? "today-hero-kid" : ""}`.trim()}>
           <div className="today-hero-copy">
-            <span className="session-chip">{currentUser?.displayName ?? "You"}</span>
+            <PageBrandStrip
+              className="today-brand-strip"
+              trailing={<span className="session-chip">{currentUser?.displayName ?? "You"}</span>}
+            />
             <h1 className="today-greeting">
               {childMode ? `${greeting} ${currentUser?.displayName ?? "there"}` : `${greeting}, ${currentUser?.displayName ?? "there"}.`}
             </h1>

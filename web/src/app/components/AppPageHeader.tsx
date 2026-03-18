@@ -1,4 +1,4 @@
-import { APP_VERSION } from "@/lib/app-version";
+import { PageBrandStrip } from "@/app/components/PageBrandStrip";
 import type { ReactNode } from "react";
 
 type Props = {
@@ -20,15 +20,7 @@ export function AppPageHeader({
 }: Props) {
   return (
     <header className={`page-hero-card ${className}`.trim()}>
-      <div className="page-hero-topline">
-        <div className="page-hero-topline-main">
-          {icon ? <div className={`page-hero-icon ${iconClassName}`.trim()}>{icon}</div> : null}
-          <div className="page-hero-brand-row">
-            <p className="page-hero-brand">Jobjar</p>
-            <span className="version-chip">{APP_VERSION}</span>
-          </div>
-        </div>
-      </div>
+      <PageBrandStrip icon={icon} iconClassName={iconClassName} />
       <div className="page-hero-copy">
         <h1 className="page-hero-title">{title}</h1>
         <p className="page-hero-subtitle">{subtitle}</p>
