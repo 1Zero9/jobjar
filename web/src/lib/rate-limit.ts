@@ -1,42 +1,34 @@
-// In-memory rate limiter. State is per-server-instance — on serverless platforms
-// (e.g. Vercel) each lambda has its own store, so this limits brute-force within
-// a single instance rather than globally. It is still effective against naive
-// automated attacks and adds no external dependencies.
+// DB-backed rate limiter. Each attempt is recorded in the LoginAttempt table,
+// so the limit is enforced globally across all server instances (serverless-safe).
 
-type Entry = { count: number; resetAt: number };
-
-const store = new Map<string, Entry>();
-
-// Clean up expired entries periodically to avoid unbounded memory growth
-setInterval(
-  () => {
-    const now = Date.now();
-    for (const [key, entry] of store) {
-      if (now > entry.resetAt) store.delete(key);
-    }
-  },
-  5 * 60 * 1000,
-);
+import { prisma } from "@/lib/prisma";
 
 /**
  * Returns true if the request is allowed, false if the limit has been exceeded.
  * @param key      Unique key to rate-limit on (e.g. IP address or user ID)
- * @param limit    Maximum number of requests in the window
+ * @param limit    Maximum number of attempts allowed in the window
  * @param windowMs Window duration in milliseconds
  */
-export function checkRateLimit(key: string, limit: number, windowMs: number): boolean {
-  const now = Date.now();
-  const entry = store.get(key);
+export async function checkRateLimit(key: string, limit: number, windowMs: number): Promise<boolean> {
+  const windowStart = new Date(Date.now() - windowMs);
 
-  if (!entry || now > entry.resetAt) {
-    store.set(key, { count: 1, resetAt: now + windowMs });
-    return true;
-  }
+  const count = await prisma.loginAttempt.count({
+    where: {
+      key,
+      attemptedAt: { gte: windowStart },
+    },
+  });
 
-  if (entry.count >= limit) {
+  if (count >= limit) {
     return false;
   }
 
-  entry.count++;
+  await prisma.loginAttempt.create({ data: { key } });
+
+  // Prune old records for this key to keep the table lean (best-effort, non-blocking)
+  prisma.loginAttempt
+    .deleteMany({ where: { key, attemptedAt: { lt: windowStart } } })
+    .catch(() => {});
+
   return true;
 }

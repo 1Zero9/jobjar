@@ -456,6 +456,10 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
         status: true,
         dueAt: true,
         completedAt: true,
+        completedBy: true,
+        completer: {
+          select: { displayName: true },
+        },
       },
     },
   };
@@ -824,8 +828,8 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
                 status: occurrence.status,
                 dueAt: occurrence.dueAt.toISOString(),
                 completedAt: occurrence.completedAt?.toISOString() ?? null,
-                completedBy: null,
-                completerName: null,
+                completedBy: occurrence.completedBy ?? null,
+                completerName: occurrence.completer?.displayName ?? null,
               })),
               standardDetail: null,
             };

@@ -1,11 +1,24 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const PROTECTED_PATHS = ["/", "/admin"];
+const PROTECTED_PREFIXES = [
+  "/",
+  "/admin",
+  "/log",
+  "/tasks",
+  "/projects",
+  "/stats",
+  "/settings",
+  "/setup",
+  "/help",
+  "/more",
+];
 
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
-  const needsAuth = PROTECTED_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+  const needsAuth = PROTECTED_PREFIXES.some(
+    (prefix) => pathname === prefix || (prefix !== "/" && pathname.startsWith(`${prefix}/`)),
+  );
 
   if (!needsAuth) {
     return NextResponse.next();
@@ -23,5 +36,16 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/admin/:path*"],
+  matcher: [
+    "/",
+    "/admin/:path*",
+    "/log/:path*",
+    "/tasks/:path*",
+    "/projects/:path*",
+    "/stats/:path*",
+    "/settings/:path*",
+    "/setup/:path*",
+    "/help/:path*",
+    "/more/:path*",
+  ],
 };

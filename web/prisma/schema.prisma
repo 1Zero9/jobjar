@@ -179,7 +179,6 @@ model Task {
   roomId           String           @db.Uuid
   createdByUserId  String?          @db.Uuid
   title            String
-  description      String?
   detailNotes      String?
   locationDetails  String?
   jobKind          JobKind          @default(upkeep)
@@ -349,4 +348,12 @@ model NotificationLog {
   @@index([userId])
   @@index([taskId])
   @@index([sentAt])
+}
+
+model LoginAttempt {
+  id          String   @id @default(uuid()) @db.Uuid
+  key         String
+  attemptedAt DateTime @default(now())
+
+  @@index([key, attemptedAt])
 }
