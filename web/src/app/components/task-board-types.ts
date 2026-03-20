@@ -7,6 +7,7 @@ export type RoomOption = {
   id: string;
   name: string;
   designation?: string | null;
+  emoji?: string | null;
   location?: { id: string; name: string } | null;
 };
 
@@ -54,6 +55,7 @@ export type TaskItem = {
   projectParentTitle: string | null;
   assignmentUserId: string | null;
   assignmentUserName: string | null;
+  assignmentUserNickname: string | null;
   detailNotes: string | null;
   priority: number;
   isPrivate: boolean;

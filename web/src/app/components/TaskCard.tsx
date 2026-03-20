@@ -31,7 +31,7 @@ import {
   rowStateClass,
   summarizeProject,
 } from "@/app/components/task-board-utils";
-import { useEffect, useState } from "react";
+import { startTransition, useEffect, useOptimistic, useRef, useState } from "react";
 
 type Props = {
   task: TaskItem;
@@ -59,33 +59,40 @@ export function TaskCard({
   basePath,
 }: Props) {
   const [open, setOpen] = useState(initialOpen);
-  const isProject = isProjectTask(task);
-  const projectSummary = summarizeProject(task);
+  const [optimisticTask, setOptimisticTask] = useOptimistic(task);
+
+  // Swipe gesture state (refs to avoid re-renders during gesture)
+  const touchStartX = useRef<number>(0);
+  const touchStartY = useRef<number>(0);
+  const [isSwiping, setIsSwiping] = useState(false);
+
+  const isProject = isProjectTask(optimisticTask);
+  const projectSummary = summarizeProject(optimisticTask);
   const subtaskProgressLabel = getSubtaskProgressLabel(projectSummary);
-  const hasLegacyProjectPlanning = hasLegacyProjectPlanningData(task);
+  const hasLegacyProjectPlanning = hasLegacyProjectPlanningData(optimisticTask);
   const canDemoteProject =
     projectSummary.totalChildren === 0 &&
-    task.projectCosts.length === 0 &&
-    task.projectMaterials.length === 0 &&
-    task.projectMilestones.length === 0;
-  const hasReward = task.rewardCents !== null;
+    optimisticTask.projectCosts.length === 0 &&
+    optimisticTask.projectMaterials.length === 0 &&
+    optimisticTask.projectMilestones.length === 0;
+  const hasReward = optimisticTask.rewardCents !== null;
   const canAcceptReward =
     hasReward &&
-    task.assignmentUserId === currentUserId &&
-    !task.rewardConfirmed &&
-    !task.rewardPaidAt;
+    optimisticTask.assignmentUserId === currentUserId &&
+    !optimisticTask.rewardConfirmed &&
+    !optimisticTask.rewardPaidAt;
   const canMarkRewardPaid =
     hasReward &&
-    task.createdByUserId === currentUserId &&
-    task.rewardConfirmed &&
-    !task.rewardPaidAt &&
-    getTaskState(task) === "done";
-  const rewardLabel = hasReward ? getRewardStatusLabel(task.rewardCents!, task.rewardConfirmed, task.rewardPaidAt) : null;
-  const rewardChipClassName = hasReward ? getRewardChipClassName(task.rewardConfirmed, task.rewardPaidAt) : null;
+    optimisticTask.createdByUserId === currentUserId &&
+    optimisticTask.rewardConfirmed &&
+    !optimisticTask.rewardPaidAt &&
+    getTaskState(optimisticTask) === "done";
+  const rewardLabel = hasReward ? getRewardStatusLabel(optimisticTask.rewardCents!, optimisticTask.rewardConfirmed, optimisticTask.rewardPaidAt) : null;
+  const rewardChipClassName = hasReward ? getRewardChipClassName(optimisticTask.rewardConfirmed, optimisticTask.rewardPaidAt) : null;
   const showStandardSummaryActions = !childMode && !isProject && canEditTasks;
-  const summaryStateChip = getSummaryStateChip(task, childMode);
-  const taskState = getTaskState(task);
-  const needsExplicitStart = task.validationMode === "strict" && task.captureStage !== "active" && taskState !== "done";
+  const summaryStateChip = getSummaryStateChip(optimisticTask, childMode);
+  const taskState = getTaskState(optimisticTask);
+  const needsExplicitStart = optimisticTask.validationMode === "strict" && optimisticTask.captureStage !== "active" && taskState !== "done";
 
   useEffect(() => {
     const expectedHash = `#task-${task.id}`;
@@ -102,21 +109,109 @@ export function TaskCard({
     };
   }, [task.id]);
 
+  // Optimistic update helpers
+  function applyOptimisticDone() {
+    setOptimisticTask((current) => {
+      const updatedOccurrences = current.occurrences.map((occ) =>
+        occ.status !== "done" ? { ...occ, status: "done" } : occ,
+      );
+      return { ...current, captureStage: "done", occurrences: updatedOccurrences };
+    });
+  }
+
+  function applyOptimisticActive() {
+    setOptimisticTask((current) => ({ ...current, captureStage: "active" }));
+  }
+
+  function applyOptimisticReopen() {
+    setOptimisticTask((current) => {
+      // Revert captureStage to "open" and restore occurrences to open state if they were all done
+      const updatedOccurrences = current.occurrences.map((occ, index) =>
+        index === 0 && current.schedule ? { ...occ, status: "open" } : occ,
+      );
+      return { ...current, captureStage: "open", occurrences: updatedOccurrences };
+    });
+  }
+
+  // Swipe gesture handlers
+  function handleTouchStart(e: React.TouchEvent<HTMLElement>) {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  }
+
+  function handleTouchMove(e: React.TouchEvent<HTMLElement>) {
+    const deltaX = touchStartX.current - e.touches[0].clientX;
+    const deltaY = Math.abs(touchStartY.current - e.touches[0].clientY);
+    // Show swipe feedback when mostly horizontal and past a small threshold
+    if (deltaX > 20 && deltaY < 40) {
+      setIsSwiping(true);
+    }
+  }
+
+  function handleTouchEnd(e: React.TouchEvent<HTMLElement>) {
+    const endX = e.changedTouches[0].clientX;
+    const endY = e.changedTouches[0].clientY;
+    const deltaX = touchStartX.current - endX;
+    const deltaY = Math.abs(touchStartY.current - endY);
+
+    setIsSwiping(false);
+
+    // Threshold: 80px horizontal, less than 40px vertical drift
+    if (deltaX > 80 && deltaY < 40 && showStandardSummaryActions) {
+      if (taskState === "done") {
+        // No swipe action when already done
+        return;
+      }
+      if (needsExplicitStart) {
+        const fd = new FormData();
+        fd.set("taskId", task.id);
+        startTransition(async () => {
+          applyOptimisticActive();
+          await startTaskAction(fd);
+        });
+      } else {
+        const fd = new FormData();
+        fd.set("taskId", task.id);
+        fd.set("note", "");
+        fd.set("returnTo", `${basePath}#task-${task.id}`);
+        startTransition(async () => {
+          applyOptimisticDone();
+          await completeTaskAction(fd);
+        });
+      }
+    }
+  }
+
+  const summaryStyle: React.CSSProperties = isSwiping
+    ? {
+        background: "linear-gradient(to left, #bbf7d0 0%, transparent 60%)",
+        transition: "background 0.1s ease",
+      }
+    : {
+        transition: "background 0.2s ease",
+      };
+
   return (
     <details
       id={`task-${task.id}`}
-      className={`recorded-row ${rowStateClass(task)}`}
+      className={`recorded-row ${rowStateClass(optimisticTask)}`}
       open={open}
       onToggle={(event) => {
         setOpen(event.currentTarget.open);
       }}
     >
-      <summary className="recorded-row-summary">
+      <summary
+        className="recorded-row-summary"
+        style={summaryStyle}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         <div className="recorded-row-top">
-          <span className={`recorded-row-icon recorded-row-icon-${getTaskIconTone(task, isProject)}`} aria-hidden="true">
-            {renderTaskIcon(task, isProject)}
+          <span className={`recorded-row-icon recorded-row-icon-${getTaskIconTone(optimisticTask, isProject)}`} aria-hidden="true">
+            {renderTaskIcon(optimisticTask, isProject)}
           </span>
-          <p className="recorded-row-title">{task.title}</p>
+          <p className="recorded-row-title">{optimisticTask.title}</p>
           {showStandardSummaryActions ? (
             <span className="recorded-row-summary-actions" onClick={(event) => event.stopPropagation()}>
               {canAcceptReward ? (
@@ -125,7 +220,7 @@ export function TaskCard({
                   fields={{ taskId: task.id, returnTo: `${basePath}#task-${task.id}` }}
                   className="action-btn subtle quiet summary-action-btn"
                   pendingLabel="Accepting"
-                  label={`Accept ${formatMoney(task.rewardCents!)}`}
+                  label={`Accept ${formatMoney(optimisticTask.rewardCents!)}`}
                 />
               ) : null}
               {taskState === "done" ? (
@@ -145,6 +240,7 @@ export function TaskCard({
                     className="action-btn subtle quiet summary-action-btn"
                     pendingLabel="Opening"
                     label="Reopen"
+                    onOptimisticUpdate={applyOptimisticReopen}
                   />
                 </>
               ) : needsExplicitStart ? (
@@ -154,6 +250,7 @@ export function TaskCard({
                   className="action-btn subtle quiet summary-action-btn"
                   pendingLabel="Starting"
                   label="Start"
+                  onOptimisticUpdate={applyOptimisticActive}
                 />
               ) : (
                 <TaskCardSummaryAction
@@ -162,6 +259,7 @@ export function TaskCard({
                   className="action-btn bright quiet summary-action-btn"
                   pendingLabel="Finishing"
                   label="Done"
+                  onOptimisticUpdate={applyOptimisticDone}
                 />
               )}
             </span>
@@ -171,13 +269,13 @@ export function TaskCard({
         <div className="recorded-row-sub">
           {isProject ? (
             <>
-              <span className="recorded-row-room">{formatTaskPlace(task.locationName, task.roomName)}</span>
-              {task.assignmentUserName ? (
+              <span className="recorded-row-room">{formatTaskPlace(optimisticTask.locationName, optimisticTask.roomName)}</span>
+              {optimisticTask.assignmentUserName ? (
                 <span className="recorded-row-assignee">
-                  <span className="assignee-avatar" style={nameToAvatarStyle(task.assignmentUserName)}>
-                    {nameInitials(task.assignmentUserName)}
+                  <span className="assignee-avatar" style={nameToAvatarStyle(optimisticTask.assignmentUserName)}>
+                    {nameInitials(optimisticTask.assignmentUserName)}
                   </span>
-                  {task.assignmentUserName}
+                  {optimisticTask.assignmentUserName}
                 </span>
               ) : null}
               <span className="task-chip task-chip-streak">{subtaskProgressLabel}</span>
@@ -187,13 +285,13 @@ export function TaskCard({
             </>
           ) : (
             <>
-              <span className="recorded-row-room">{formatTaskPlace(task.locationName, task.roomName)}</span>
-              {task.assignmentUserName && !childMode ? (
+              <span className="recorded-row-room">{formatTaskPlace(optimisticTask.locationName, optimisticTask.roomName)}</span>
+              {optimisticTask.assignmentUserName && !childMode ? (
                 <span className="recorded-row-assignee">
-                  <span className="assignee-avatar" style={nameToAvatarStyle(task.assignmentUserName)}>
-                    {nameInitials(task.assignmentUserName)}
+                  <span className="assignee-avatar" style={nameToAvatarStyle(optimisticTask.assignmentUserName)}>
+                    {nameInitials(optimisticTask.assignmentUserName)}
                   </span>
-                  {task.assignmentUserName}
+                  {optimisticTask.assignmentUserName}
                 </span>
               ) : null}
               {summaryStateChip}
@@ -223,7 +321,7 @@ export function TaskCard({
 
         {childMode ? (
           <TaskCardChildDetail
-            task={task}
+            task={optimisticTask}
             canEditTasks={canEditTasks}
             canAcceptReward={canAcceptReward}
             hasReward={hasReward}
@@ -232,7 +330,7 @@ export function TaskCard({
           />
         ) : isProject ? (
           <TaskCardProjectDetail
-            task={task}
+            task={optimisticTask}
             peopleOptions={peopleOptions}
             canManageProjects={canManageProjects}
             canDemoteProject={canDemoteProject}
@@ -242,7 +340,7 @@ export function TaskCard({
           />
         ) : (
           <TaskCardStandardDetail
-            task={task}
+            task={optimisticTask}
             isOpen={open}
             groupedRoomOptions={groupedRoomOptions}
             peopleOptions={peopleOptions}

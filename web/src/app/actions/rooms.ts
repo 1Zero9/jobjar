@@ -12,6 +12,8 @@ export async function createRoomAction(formData: FormData) {
   const { householdId } = await requireAdminAction();
   const name = String(formData.get("name") ?? "").trim();
   const designation = String(formData.get("designation") ?? "").trim() || "General";
+  const emojiRaw = String(formData.get("emoji") ?? "").trim();
+  const emoji = emojiRaw || null;
   const locationId = String(formData.get("locationId") ?? "").trim() || null;
   const returnTo = getReturnPath(formData.get("returnTo"), "");
 
@@ -48,6 +50,7 @@ export async function createRoomAction(formData: FormData) {
       householdId,
       name,
       designation,
+      emoji,
       sortOrder: (maxSort._max.sortOrder ?? 0) + 1,
       locationId: locationId && validLocation ? locationId : null,
     },
@@ -64,6 +67,8 @@ export async function updateRoomAction(formData: FormData) {
   const roomId = String(formData.get("roomId") ?? "").trim();
   const name = String(formData.get("name") ?? "").trim();
   const designation = String(formData.get("designation") ?? "").trim() || "General";
+  const emojiRaw = String(formData.get("emoji") ?? "").trim();
+  const emoji = emojiRaw || null;
   const returnTo = getReturnPath(formData.get("returnTo"), "");
 
   if (!roomId) {
@@ -102,7 +107,7 @@ export async function updateRoomAction(formData: FormData) {
 
   await prisma.room.updateMany({
     where: { id: roomId, householdId, active: true },
-    data: { name, designation },
+    data: { name, designation, emoji },
   });
 
   refreshViews(["/", "/log", "/tasks", "/settings", "/settings/rooms"]);

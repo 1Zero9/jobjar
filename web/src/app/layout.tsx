@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import { AppShell } from "@/app/components/AppShell";
 import { SessionWatchdog } from "@/app/components/SessionWatchdog";
 import "./globals.css";
@@ -8,6 +8,12 @@ const inter = Inter({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-sans",
+});
+
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-display",
 });
 
 const themeInitScript = `
@@ -62,7 +68,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} antialiased`}>
+      <body className={`${inter.variable} ${plusJakartaSans.variable} antialiased`}>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <SessionWatchdog />
         <AppShell>{children}</AppShell>

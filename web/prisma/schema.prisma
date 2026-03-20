@@ -136,6 +136,7 @@ model HouseholdMember {
   role        MemberRole
   audienceBand MemberAudience @default(adult)
   profileTheme MemberProfileTheme @default(default_theme)
+  nickname    String?
   parentNotifyUserId String? @db.Uuid
   joinedAt    DateTime  @default(now())
   household   Household                     @relation(fields: [householdId], references: [id], onDelete: Cascade)
@@ -163,6 +164,7 @@ model Room {
   locationId  String?   @db.Uuid
   name        String
   designation String
+  emoji       String?
   sortOrder   Int       @default(0)
   active      Boolean   @default(true)
   createdAt   DateTime  @default(now())

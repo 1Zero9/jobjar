@@ -33,6 +33,7 @@ export default async function PeoplePage({
         role: true,
         audienceBand: true,
         profileTheme: true,
+        nickname: true,
         locationAccess: {
           select: {
             locationId: true,
@@ -101,6 +102,7 @@ export default async function PeoplePage({
                 <option value="viewer">Viewer</option>
               </select>
               <input name="email" type="email" placeholder="Email (optional)" className="capture-room-select" />
+              <input name="nickname" type="text" placeholder="Nickname (optional)" className="capture-room-select" />
               <details className="recorded-more-details">
                 <summary className="recorded-more-summary">Age, theme, and advanced access</summary>
                 <div className="capture-meta-grid">
@@ -152,6 +154,7 @@ export default async function PeoplePage({
                 <summary className="recorded-row-summary">
                   <div className="recorded-row-main">
                     <p className="recorded-row-title">{person.user.displayName}</p>
+                    {person.nickname ? <p className="recorded-row-placeholder" style={{ fontStyle: "italic" }}>{person.nickname}</p> : null}
                     <p className="recorded-row-placeholder">{person.user.email ?? "No email saved"}</p>
                   </div>
                   <div className="recorded-row-meta">
@@ -221,6 +224,10 @@ export default async function PeoplePage({
                         <option value="boy_blue">Boy / blue</option>
                         <option value="girl_pink">Girl / pink</option>
                       </select>
+                    </label>
+                    <label className="recorded-field">
+                      <span>Nickname (optional)</span>
+                      <input name="nickname" type="text" defaultValue={person.nickname ?? ""} placeholder="The Kitchen Ninja" className="recorded-edit-input" />
                     </label>
                     <div className="recorded-row-actions between">
                       <FormActionButton className="action-btn bright quiet" pendingLabel="Saving">

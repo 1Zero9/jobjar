@@ -32,6 +32,7 @@ export default async function RoomsPage({
         id: true,
         name: true,
         designation: true,
+        emoji: true,
         locationId: true,
         location: { select: { id: true, name: true } },
         tasks: {
@@ -88,6 +89,10 @@ export default async function RoomsPage({
             <div className="capture-step">
               <p className="capture-step-label">Add a room</p>
               <input name="name" type="text" required placeholder="Utility room" className="capture-main-input" />
+              <label className="recorded-field">
+                <span>Room emoji (optional)</span>
+                <input name="emoji" type="text" placeholder="🛋️" className="capture-room-select" />
+              </label>
               {locations.length > 0 ? (
                 <select name="locationId" defaultValue={locations[0]?.id ?? ""} className="capture-room-select">
                   <option value="">No location</option>
@@ -130,7 +135,7 @@ export default async function RoomsPage({
                     <details key={room.id} className={`recorded-row recorded-row-${rowTone(groupIndex)}`}>
                       <summary className="recorded-row-summary">
                         <div className="recorded-row-top">
-                          <p className="recorded-row-title">{room.name}</p>
+                          <p className="recorded-row-title">{room.emoji ? `${room.emoji} ` : ""}{room.name}</p>
                           <span className="recorded-row-chevron">▾</span>
                         </div>
                         <div className="recorded-row-sub">
@@ -145,6 +150,10 @@ export default async function RoomsPage({
                           <label className="recorded-field">
                             <span>Room name</span>
                             <input name="name" type="text" defaultValue={room.name} className="recorded-edit-input" />
+                          </label>
+                          <label className="recorded-field">
+                            <span>Room emoji (optional)</span>
+                            <input name="emoji" type="text" defaultValue={room.emoji ?? ""} placeholder="🛋️" className="recorded-edit-input" />
                           </label>
                           <p><span>Tasks</span><strong>{room.tasks.length}</strong></p>
                           <div className="recorded-row-actions between">

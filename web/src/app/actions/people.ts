@@ -25,6 +25,8 @@ export async function createPersonAction(formData: FormData) {
   const requestedRole = String(formData.get("role") ?? "").trim();
   const requestedAudienceBand = String(formData.get("audienceBand") ?? "").trim();
   const requestedProfileTheme = String(formData.get("profileTheme") ?? "").trim();
+  const nicknameRaw = String(formData.get("nickname") ?? "").trim();
+  const nickname = nicknameRaw || null;
   const requestedLocationIds = parseLocationIds(formData.getAll("locationIds"));
   const returnTo = getReturnPath(formData.get("returnTo"), "");
 
@@ -61,13 +63,14 @@ export async function createPersonAction(formData: FormData) {
         userId: user.id,
       },
     },
-    update: { role, audienceBand, profileTheme },
+    update: { role, audienceBand, profileTheme, nickname },
     create: {
       householdId,
       userId: user.id,
       role,
       audienceBand,
       profileTheme,
+      nickname,
     },
   });
 
@@ -168,6 +171,8 @@ export async function updatePersonProfileThemeAction(formData: FormData) {
   const userId = String(formData.get("userId") ?? "").trim();
   const requestedProfileTheme = String(formData.get("profileTheme") ?? "").trim();
   const profileTheme = parseMemberProfileTheme(requestedProfileTheme, "default_theme");
+  const nicknameRaw = String(formData.get("nickname") ?? "").trim();
+  const nickname = nicknameRaw || null;
   const returnTo = getReturnPath(formData.get("returnTo"), "/settings/people");
 
   if (!userId) {
@@ -194,7 +199,7 @@ export async function updatePersonProfileThemeAction(formData: FormData) {
         userId,
       },
     },
-    data: { profileTheme },
+    data: { profileTheme, nickname },
   });
 
   refreshViews(["/", "/log", "/tasks", "/projects", "/projects/timeline", "/stats", "/settings", "/settings/people"]);

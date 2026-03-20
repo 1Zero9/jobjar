@@ -8,6 +8,8 @@ type FormActionButtonProps = {
   className?: string;
   type?: "button" | "submit" | "reset";
   onClick?: React.MouseEventHandler<HTMLButtonElement>;
+  /** Override pending state from outside the form (e.g. from a manual startTransition) */
+  isPending?: boolean;
 };
 
 export function FormActionButton({
@@ -16,8 +18,10 @@ export function FormActionButton({
   className,
   type = "submit",
   onClick,
+  isPending: isPendingProp,
 }: FormActionButtonProps) {
-  const { pending } = useFormStatus();
+  const { pending: formPending } = useFormStatus();
+  const pending = isPendingProp ?? formPending;
 
   return (
     <button

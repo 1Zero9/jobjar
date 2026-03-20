@@ -47,7 +47,7 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
     prisma.room.findMany({
       where: { householdId, active: true, ...getRoomLocationAccessWhere(allowedLocationIds) },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-      select: { id: true, name: true, designation: true, location: { select: { id: true, name: true } } },
+      select: { id: true, name: true, designation: true, emoji: true, location: { select: { id: true, name: true } } },
     }),
     showAssignField
       ? prisma.householdMember.findMany({
@@ -438,6 +438,11 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
         user: {
           select: {
             displayName: true,
+            memberships: {
+              where: { householdId },
+              select: { nickname: true },
+              take: 1,
+            },
           },
         },
       },
@@ -468,7 +473,7 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
     prisma.room.findMany({
       where: { householdId, active: true, ...getRoomLocationAccessWhere(allowedLocationIds) },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-      select: { id: true, name: true, location: { select: { id: true, name: true } } },
+      select: { id: true, name: true, emoji: true, location: { select: { id: true, name: true } } },
     }),
     needsPeopleOptions
       ? prisma.householdMember.findMany({
@@ -761,6 +766,7 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
               projectParentTitle: task.projectParent?.title ?? null,
               assignmentUserId: task.assignments[0]?.userId ?? null,
               assignmentUserName: task.assignments[0]?.user?.displayName ?? null,
+              assignmentUserNickname: task.assignments[0]?.user?.memberships[0]?.nickname ?? null,
               detailNotes: task.detailNotes ?? null,
               priority: task.priority,
               isPrivate: task.isPrivate,

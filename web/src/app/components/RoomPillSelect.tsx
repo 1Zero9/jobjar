@@ -10,6 +10,7 @@ type LocationOption = {
 type RoomOption = {
   id: string;
   name: string;
+  emoji?: string | null;
   location: { id: string; name: string } | null;
 };
 
@@ -119,7 +120,7 @@ export function RoomPillSelect({
                 }
               }}
             >
-              {formatRoomName(room.name)}
+              {room.emoji ? `${room.emoji} ` : ""}{formatRoomName(room.name)}
             </button>
           ))}
         </div>
@@ -296,10 +297,11 @@ export function formatRoomName(roomName: string) {
 
 function formatRoomOptionLabel(room: RoomOption, duplicateRoomNames: Map<string, number>) {
   const roomName = formatRoomName(room.name);
+  const prefix = room.emoji ? `${room.emoji} ` : "";
   if ((duplicateRoomNames.get(normalizeRoomName(room.name)) ?? 0) <= 1) {
-    return roomName;
+    return `${prefix}${roomName}`;
   }
-  return `${roomName} (${room.location?.name ?? "No location"})`;
+  return `${prefix}${roomName} (${room.location?.name ?? "No location"})`;
 }
 
 function getInitialSelection(
