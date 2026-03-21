@@ -65,7 +65,7 @@ export function TasksPanelClient({
   const deferredTrimmedSearchQuery = deferredSearchQuery.trim();
   const normalizedSearchQuery = normalizeSearchText(deferredSearchQuery);
   const hasSearchQuery = showSearch && normalizedSearchQuery.length > 0;
-  const hasActiveFilters = !!selectedRoomId || !!selectedAssigneeId || selectedState !== "all";
+  const hasActiveFilters = !!selectedRoomId || !!selectedAssigneeId || selectedState === "done" || selectedState === "all";
   const hasActiveView = hasActiveFilters || hasSearchQuery;
   const visibleLimitKey = `${defaultVisibleLimit}:${selectedRoomId}:${selectedAssigneeId}:${selectedState}:${normalizedSearchQuery}`;
   const [visibleLimitState, setVisibleLimitState] = useState({
@@ -104,7 +104,7 @@ export function TasksPanelClient({
     if (selectedAssigneeId) search.set("assignee", selectedAssigneeId);
     else search.delete("assignee");
 
-    if (selectedState !== "all") search.set("state", selectedState);
+    if (selectedState === "done" || selectedState === "all") search.set("state", selectedState);
     else search.delete("state");
 
     search.delete("location");

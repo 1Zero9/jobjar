@@ -93,7 +93,7 @@ export function TaskFilters({
             <select
               value={selectedState}
               onChange={(event) => onSelectedStateChange(event.target.value as "all" | "open" | "done")}
-              className={`recorded-filter-select${selectedState !== "all" ? " filter-active" : ""}`}
+              className={`recorded-filter-select${selectedState !== "open" ? " filter-active" : ""}`}
             >
               <option value="all">{childMode ? "Everything" : "All states"}</option>
               <option value="open">{childMode ? "Ready to do" : "Open"}</option>

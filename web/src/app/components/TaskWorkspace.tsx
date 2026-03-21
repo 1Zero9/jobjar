@@ -588,7 +588,7 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
   const peopleOptions = needsPeopleOptions ? people.map((member) => member.user) : [];
   const selectedRoomId = roomOptions.some((room) => room.id === params.room) ? (params.room ?? "") : "";
   const selectedAssigneeId = !viewerMode && peopleOptions.some((person) => person.id === params.assignee) ? (params.assignee ?? "") : "";
-  const selectedState: "all" | "open" | "done" = params.state === "done" || params.state === "open" ? params.state : "all";
+  const selectedState: "all" | "open" | "done" = params.state === "done" || params.state === "all" ? params.state : "open";
   const luckyTask = params.lucky && params.lucky !== "empty"
     ? recordedTasks.find((task) => task.id === params.lucky)
     : null;
