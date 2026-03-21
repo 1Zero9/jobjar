@@ -5632,3 +5632,163 @@ html[data-theme="dark"] .glass-surface {
     grid-template-columns: 1fr;
   }
 }
+
+/* ============================================================
+   PAGE TRANSITIONS & MOTION POLISH
+   ============================================================ */
+
+/* --- Page enter: smooth fade + spring slide-up --- */
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-enter {
+  animation: page-enter 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* --- Task card stagger on page enter --- */
+@keyframes card-appear {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-enter .recorded-list .recorded-row {
+  animation: card-appear 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.page-enter .recorded-list .recorded-row:nth-child(1)  { animation-delay:  30ms; }
+.page-enter .recorded-list .recorded-row:nth-child(2)  { animation-delay:  70ms; }
+.page-enter .recorded-list .recorded-row:nth-child(3)  { animation-delay: 110ms; }
+.page-enter .recorded-list .recorded-row:nth-child(4)  { animation-delay: 145ms; }
+.page-enter .recorded-list .recorded-row:nth-child(5)  { animation-delay: 175ms; }
+.page-enter .recorded-list .recorded-row:nth-child(6)  { animation-delay: 205ms; }
+.page-enter .recorded-list .recorded-row:nth-child(7)  { animation-delay: 232ms; }
+.page-enter .recorded-list .recorded-row:nth-child(8)  { animation-delay: 256ms; }
+.page-enter .recorded-list .recorded-row:nth-child(9)  { animation-delay: 278ms; }
+.page-enter .recorded-list .recorded-row:nth-child(n+10) { animation-delay: 295ms; }
+
+/* Home page task cards stagger */
+.page-enter .today-task-list .today-task-card {
+  animation: card-appear 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.page-enter .today-task-list .today-task-card:nth-child(1) { animation-delay:  50ms; }
+.page-enter .today-task-list .today-task-card:nth-child(2) { animation-delay:  95ms; }
+.page-enter .today-task-list .today-task-card:nth-child(3) { animation-delay: 135ms; }
+.page-enter .today-task-list .today-task-card:nth-child(n+4) { animation-delay: 170ms; }
+
+/* Settings & more page action card stagger */
+.page-enter .landing-grid .landing-action-card {
+  animation: card-appear 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.page-enter .landing-grid .landing-action-card:nth-child(1) { animation-delay:  60ms; }
+.page-enter .landing-grid .landing-action-card:nth-child(2) { animation-delay: 100ms; }
+.page-enter .landing-grid .landing-action-card:nth-child(3) { animation-delay: 136ms; }
+.page-enter .landing-grid .landing-action-card:nth-child(n+4) { animation-delay: 168ms; }
+
+/* --- Task card detail fade-in when opened --- */
+@keyframes detail-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.recorded-row[open] .recorded-row-detail {
+  animation: detail-reveal 200ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* --- Task card hover lift (closed state only) --- */
+.recorded-row:not([open]) {
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.recorded-row:not([open]):hover {
+  transform: translateY(-2px);
+  box-shadow: inset 4px 0 0 var(--row-accent), 0 8px 20px rgba(0, 0, 0, 0.08);
+  border-color: color-mix(in srgb, var(--border) 80%, var(--row-accent) 20%);
+}
+
+/* --- Bottom nav: active indicator dot --- */
+.app-bottom-nav-link {
+  position: relative;
+}
+
+@keyframes indicator-pop {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.1);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+}
+
+.app-bottom-nav-link.is-active::after {
+  content: "";
+  position: absolute;
+  bottom: 0.18rem;
+  left: 50%;
+  width: 0.26rem;
+  height: 0.26rem;
+  border-radius: 50%;
+  background: currentColor;
+  animation: indicator-pop 300ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* No dot on the primary (Log) button — it's already visually prominent */
+.app-bottom-nav-link-primary.is-active::after {
+  display: none;
+}
+
+/* --- Bottom nav: icon bounce when tab becomes active --- */
+@keyframes nav-icon-bounce {
+  0%   { transform: scale(0.78) translateY(2px); }
+  55%  { transform: scale(1.12) translateY(-2px); }
+  80%  { transform: scale(0.96) translateY(0); }
+  100% { transform: scale(1)    translateY(0); }
+}
+
+.app-bottom-nav-link.is-active .app-bottom-nav-icon {
+  animation: nav-icon-bounce 380ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* --- Accessibility: respect reduced motion preference --- */
+@media (prefers-reduced-motion: reduce) {
+  .page-enter,
+  .page-enter .recorded-list .recorded-row,
+  .page-enter .today-task-list .today-task-card,
+  .page-enter .home-cards-grid .landing-action-card,
+  .page-enter .landing-cards-grid .landing-action-card {
+    animation: none;
+  }
+
+  .recorded-row[open] .recorded-row-detail {
+    animation: none;
+  }
+
+  .app-bottom-nav-link.is-active::after,
+  .app-bottom-nav-link.is-active .app-bottom-nav-icon {
+    animation: none;
+  }
+
+  .recorded-row:not([open]) {
+    transition: border-color 80ms ease, box-shadow 80ms ease;
+  }
+}

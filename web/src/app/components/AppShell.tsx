@@ -1,4 +1,5 @@
 import { AppBottomNav } from "@/app/components/AppBottomNav";
+import { PageTransition } from "@/app/components/PageTransition";
 import { canAccessReportingViewsRole, canUseMemberActions, getSessionContext } from "@/lib/auth";
 import { canAccessExtendedViews, isChildAudience } from "@/lib/member-audience";
 import type { ReactNode } from "react";
@@ -17,7 +18,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="app-shell">
-      <div className="app-shell-content">{children}</div>
+      <PageTransition>{children}</PageTransition>
       <AppBottomNav childMode={childMode} canLog={canLog} canSeeReports={canSeeReports} />
     </div>
   );

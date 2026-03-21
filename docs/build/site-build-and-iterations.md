@@ -77,6 +77,19 @@ npm run db:migrate -- --name <change-name>
 npm run db:deploy
 ```
 
+## v2.2.0 — Motion & transitions (2026-03-20)
+
+Added a full page transition system and animation polish layer:
+
+- **Page transitions**: `PageTransition` client component wraps all page content. On every route change, a spring-eased fade + slide-up plays (`cubic-bezier(0.22, 1, 0.36, 1)`, 360ms). Uses `useLayoutEffect` to reset the animation class before each paint.
+- **Task card stagger**: On page enter, task cards in `.recorded-list` animate in sequentially (30ms → 295ms delay, 10 cards). Home page task cards also stagger via `.today-task-list`.
+- **Settings/more card stagger**: Cards inside `.landing-grid` fade-slide in with 60–168ms stagger.
+- **Task card detail reveal**: When a `<details>` card is opened, the detail content (`recorded-row-detail`) fades and slides up into view (200ms).
+- **Task card hover lift**: Closed task cards lift 2px and deepen their shadow on hover, with border accent blend.
+- **Bottom nav active indicator**: A 0.26rem dot appears below the active label with a spring pop (`cubic-bezier(0.34, 1.56, 0.64, 1)`). Primary (Log) button excluded.
+- **Bottom nav icon bounce**: Active tab icon plays a 4-keyframe spring bounce (scale + translateY) when it receives the active state.
+- **Reduced motion**: All new animations are suppressed via `@media (prefers-reduced-motion: reduce)`.
+
 ## What still wants iteration
 - richer timeline interactions
 - materials budget rollup into spend
