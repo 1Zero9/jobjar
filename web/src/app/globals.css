@@ -2310,7 +2310,7 @@ html[data-theme="dark"] .kid-task-panel {
   transition: border-color 120ms ease, box-shadow 120ms ease;
 }
 
-.recorded-row.row-state-done       { --row-accent: #22c55e; --row-bg: #f8fffe; }
+.recorded-row.row-state-done       { --row-accent: #94a3b8; --row-bg: #f6f7f9; }
 .recorded-row.row-state-overdue    { --row-accent: #f43f5e; --row-bg: #fff8f9; }
 .recorded-row.row-state-due        { --row-accent: #f59e0b; --row-bg: #fffdf8; }
 .recorded-row.row-state-active     { --row-accent: #16a34a; --row-bg: #f5fdf6; }
@@ -2322,7 +2322,7 @@ html[data-theme="dark"] .recorded-row {
   --row-bg: color-mix(in srgb, var(--surface) 94%, transparent);
 }
 
-html[data-theme="dark"] .recorded-row.row-state-done       { --row-bg: rgba(16, 72, 48, 0.34); }
+html[data-theme="dark"] .recorded-row.row-state-done       { --row-bg: rgba(51, 65, 85, 0.30); }
 html[data-theme="dark"] .recorded-row.row-state-overdue    { --row-bg: rgba(104, 18, 39, 0.34); }
 html[data-theme="dark"] .recorded-row.row-state-due        { --row-bg: rgba(107, 56, 8, 0.32); }
 html[data-theme="dark"] .recorded-row.row-state-active     { --row-bg: rgba(23, 57, 110, 0.32); }
@@ -2438,9 +2438,9 @@ html[data-theme="dark"] .recorded-row[open] {
 }
 
 .recorded-row-icon-done {
-  background: var(--success-bg);
-  border-color: color-mix(in srgb, var(--success) 45%, transparent);
-  color: var(--success);
+  background: #f1f5f9;
+  border-color: rgba(148, 163, 184, 0.5);
+  color: #94a3b8;
 }
 
 .recorded-row-icon-project {
