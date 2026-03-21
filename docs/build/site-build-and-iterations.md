@@ -77,6 +77,28 @@ npm run db:migrate -- --name <change-name>
 npm run db:deploy
 ```
 
+## v2.5.0 — Fresh & playful visual redesign (2026-03-20)
+
+Replaced the corporate blue palette and Inter font with a warmer, family-friendly look:
+
+- **Green primary palette** — `#16a34a` replaces blue throughout. All shadows, borders, gradients, active states, and focus rings now use `rgba(22, 163, 74, …)`. Dark mode uses `#4ade80` as the primary accent.
+- **Background tone** — `--bg` is now `#f5faf6` (light green tint) rather than cold white. Dark mode is `#0b1a10`.
+- **Surface/border** — `--border-subtle` is `rgba(22, 163, 74, 0.16)`, giving cards a faint green edge.
+- **Nunito font** — replaces Inter as the body/UI font. Warmer, rounder letterforms. Plus Jakarta Sans retained as the display/hero font. Loaded via `next/font/google` with weights 400–900.
+- **Rounded corners** — `--radius-lg: 26px`, `--radius-md: 20px`, `--radius-sm: 14px` (slightly larger than before).
+- **Browser theme-color** — updated to green in `layout.tsx` viewport config.
+- **Profile colours preserved** — `.profile-boy-blue`, `.audience-under-12`, and related profile-theme sections were not touched.
+
+## v2.4.0 — Steps UX overhaul (2026-03-20)
+
+Rewrote the project/steps UX to be simple enough for a child or older person:
+
+- **Steps live inside the parent card only** — child tasks are filtered from the main task list (`TasksPanelClient`). The parent card shows a checklist with per-step Done buttons.
+- **Close whole job** — new `closeJobWithStepsAction`: closes all open children then the parent in one transaction.
+- **Remove steps** — new `removeStepsAction`: archives all children, resets parent `jobKind` back to `"upkeep"`, returning it to a plain task.
+- **Swipe-to-complete** — works for standard tasks in the summary row (left swipe → Done). Disabled for projects.
+- **`TaskCardProjectDetail`** rewritten: progress bar, step checklist with Done buttons, suggestion chips, simple add-step form, "Close whole job" and "Remove steps" footer actions. No more costs, materials, or milestones.
+
 ## v2.3.0 — Simplified steps model (2026-03-20)
 
 Replaced the complex project system with a simple task + steps model:
