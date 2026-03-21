@@ -189,13 +189,7 @@ export function formatTaskPlace(locationName: string | null, roomName: string) {
 export function isProjectTask(task: TaskItem) {
   return (
     task.jobKind === "project" ||
-    (task.projectSummary?.totalChildren ?? 0) > 0 ||
-    task.projectChildren.length > 0 ||
-    task.projectCosts.length > 0 ||
-    task.projectMaterials.length > 0 ||
-    task.projectMilestones.length > 0 ||
-    task.projectBudgetCents !== null ||
-    task.projectTargetAt !== null
+    (task.projectSummary?.totalChildren ?? task.projectChildren.length) > 0
   );
 }
 
@@ -263,16 +257,6 @@ export function summarizeProject(task: TaskItem) {
 
 export function getSubtaskProgressLabel(summary: ReturnType<typeof summarizeProject>) {
   return summary.totalChildren > 0 ? `${summary.completedChildren}/${summary.totalChildren} done` : "No subtasks";
-}
-
-export function hasLegacyProjectPlanningData(task: TaskItem) {
-  return (
-    task.projectCosts.length > 0 ||
-    task.projectMaterials.length > 0 ||
-    task.projectMilestones.length > 0 ||
-    task.projectBudgetCents !== null ||
-    task.projectTargetAt !== null
-  );
 }
 
 export function formatMinutes(value: number) {

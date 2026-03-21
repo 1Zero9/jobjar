@@ -77,6 +77,17 @@ npm run db:migrate -- --name <change-name>
 npm run db:deploy
 ```
 
+## v2.3.0 — Simplified steps model (2026-03-20)
+
+Replaced the complex project system with a simple task + steps model:
+
+- **No more "promote" step** — any task gets steps added directly. Tapping "Add steps" in the task detail opens an inline form. `createProjectChildTaskAction` auto-sets `jobKind: "project"` on the first step added.
+- **Auto-close parent** — when the last step is marked done, `completeTaskAction` checks all siblings. If all are done, the parent is automatically completed (captureStage → done, occurrence closed, log entry created).
+- **Suggested steps** — based on keywords in the task title, a row of tap-to-fill chip suggestions appears. Covers: paint, decorate, clean, deep clean, fix, install, build, garden, move, bathroom, kitchen, diy. Lives in `src/lib/subtask-suggestions.ts`.
+- **Simplified project detail** — removed costs, materials, milestones, demote button, legacy section. Panel now shows: progress bar, X of Y steps done, and the "Add step" form with suggestions.
+- **Child task styling** — sub-tasks (`recorded-row-child`) render with a fainter left stripe and slightly smaller title, giving a clear visual hierarchy.
+- **Removed** `hasLegacyProjectPlanningData`, `canDemoteProject`, `promoteTaskToProjectAction` from the UI layer. Data still in DB.
+
 ## v2.2.0 — Motion & transitions (2026-03-20)
 
 Added a full page transition system and animation polish layer:

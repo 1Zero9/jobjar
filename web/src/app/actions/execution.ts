@@ -77,6 +77,7 @@ export async function completeTaskAction(formData: FormData) {
       validationMode: true,
       minimumMinutes: true,
       captureStage: true,
+      projectParentId: true,
       schedule: {
         select: {
           recurrenceType: true,
@@ -186,6 +187,58 @@ export async function completeTaskAction(formData: FormData) {
       durationSeconds,
     },
   });
+
+  // Auto-close parent task when all steps are now done
+  if (task.projectParentId) {
+    const openSiblingCount = await prisma.task.count({
+      where: {
+        projectParentId: task.projectParentId,
+        active: true,
+        captureStage: { not: "done" },
+        id: { not: task.id },
+      },
+    });
+
+    if (openSiblingCount === 0) {
+      const parent = await prisma.task.findUnique({
+        where: { id: task.projectParentId },
+        select: { id: true, captureStage: true, schedule: { select: { recurrenceType: true } } },
+      });
+
+      if (parent && parent.captureStage !== "done" && !parent.schedule) {
+        await prisma.task.update({
+          where: { id: parent.id },
+          data: { captureStage: "done" },
+        });
+
+        const parentOpenOccurrence = await prisma.taskOccurrence.findFirst({
+          where: { taskId: parent.id, status: { not: "done" } },
+          select: { id: true },
+        });
+
+        if (parentOpenOccurrence) {
+          await prisma.taskOccurrence.update({
+            where: { id: parentOpenOccurrence.id },
+            data: { status: "done", completedAt: now, completedBy: currentUserId },
+          });
+        } else {
+          await prisma.taskOccurrence.create({
+            data: { taskId: parent.id, dueAt: now, status: "done", completedAt: now, completedBy: currentUserId },
+          });
+        }
+
+        await prisma.taskLog.create({
+          data: {
+            taskId: parent.id,
+            action: "completed",
+            actorUserId: currentUserId,
+            atTime: now,
+            note: "All steps completed",
+          },
+        });
+      }
+    }
+  }
 
   if (task.createdByUserId && task.createdByUserId !== currentUserId) {
     const [recipientUserId, actor] = await Promise.all([

@@ -22,7 +22,6 @@ import {
   getSubtaskProgressLabel,
   getTaskIconTone,
   getTaskState,
-  hasLegacyProjectPlanningData,
   isProjectTask,
   nameInitials,
   nameToAvatarStyle,
@@ -67,14 +66,9 @@ export function TaskCard({
   const [isSwiping, setIsSwiping] = useState(false);
 
   const isProject = isProjectTask(optimisticTask);
+  const isChildTask = Boolean(optimisticTask.projectParentId);
   const projectSummary = summarizeProject(optimisticTask);
   const subtaskProgressLabel = getSubtaskProgressLabel(projectSummary);
-  const hasLegacyProjectPlanning = hasLegacyProjectPlanningData(optimisticTask);
-  const canDemoteProject =
-    projectSummary.totalChildren === 0 &&
-    optimisticTask.projectCosts.length === 0 &&
-    optimisticTask.projectMaterials.length === 0 &&
-    optimisticTask.projectMilestones.length === 0;
   const hasReward = optimisticTask.rewardCents !== null;
   const canAcceptReward =
     hasReward &&
@@ -194,7 +188,7 @@ export function TaskCard({
   return (
     <details
       id={`task-${task.id}`}
-      className={`recorded-row ${rowStateClass(optimisticTask)}`}
+      className={`recorded-row ${rowStateClass(optimisticTask)} ${isChildTask ? "recorded-row-child" : ""}`.trim()}
       open={open}
       onToggle={(event) => {
         setOpen(event.currentTarget.open);
@@ -333,9 +327,6 @@ export function TaskCard({
             task={optimisticTask}
             peopleOptions={peopleOptions}
             canManageProjects={canManageProjects}
-            canDemoteProject={canDemoteProject}
-            hasLegacyProjectPlanning={hasLegacyProjectPlanning}
-            rewardLabel={rewardLabel}
             basePath={basePath}
           />
         ) : (

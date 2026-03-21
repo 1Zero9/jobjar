@@ -2,12 +2,13 @@
 
 import {
   completeTaskAction,
+  createProjectChildTaskAction,
   deleteTaskAction,
-  promoteTaskToProjectAction,
   reopenTaskAction,
   startTaskAction,
   updateRecordedTaskAction,
 } from "@/app/actions";
+import { getSuggestedSteps } from "@/lib/subtask-suggestions";
 import { FormActionButton } from "@/app/components/FormActionButton";
 import type { GroupedRoomOptions, PersonOption, TaskItem, TaskStandardDetail } from "@/app/components/task-board-types";
 import {
@@ -54,6 +55,8 @@ export function TaskCardStandardDetail({
   const [detail, setDetail] = useState<TaskStandardDetail | null>(task.standardDetail);
   const [detailError, setDetailError] = useState(false);
   const [manageOpen, setManageOpen] = useState(false);
+  const [stepTitle, setStepTitle] = useState("");
+  const suggestions = getSuggestedSteps(task.title);
 
   useEffect(() => {
     if (!isOpen || !manageOpen || detail || detailError) {
@@ -168,13 +171,49 @@ export function TaskCardStandardDetail({
               </form>
             )}
             {canManageProjects ? (
-              <form action={promoteTaskToProjectAction}>
-                <input type="hidden" name="taskId" value={task.id} />
-                <input type="hidden" name="returnTo" value={`${basePath}#task-${task.id}`} />
-                <FormActionButton className="action-btn subtle quiet" pendingLabel="Promoting">
-                  Break into steps
-                </FormActionButton>
-              </form>
+              <details className="recorded-more-details step-add-expander">
+                <summary className="recorded-more-summary">Add steps</summary>
+                <div className="step-add-panel">
+                  {suggestions.length > 0 ? (
+                    <div className="step-suggestions">
+                      <p className="step-suggestions-label">Suggested steps — tap to add:</p>
+                      <div className="step-suggestion-chips">
+                        {suggestions.map((step) => (
+                          <button
+                            key={step}
+                            type="button"
+                            className={`step-suggestion-chip ${stepTitle === step ? "is-selected" : ""}`.trim()}
+                            onClick={() => setStepTitle((prev) => (prev === step ? "" : step))}
+                          >
+                            {step}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                  <form action={createProjectChildTaskAction} className="recorded-edit-form">
+                    <input type="hidden" name="projectId" value={task.id} />
+                    <input type="hidden" name="returnTo" value={`${basePath}#task-${task.id}`} />
+                    <label className="recorded-field">
+                      <span>Step</span>
+                      <input
+                        name="title"
+                        type="text"
+                        required
+                        placeholder="e.g. Tape edges"
+                        className="recorded-edit-input"
+                        value={stepTitle}
+                        onChange={(e) => setStepTitle(e.target.value)}
+                      />
+                    </label>
+                    <div className="recorded-row-actions between">
+                      <FormActionButton className="action-btn bright quiet" pendingLabel="Adding">
+                        Add step
+                      </FormActionButton>
+                    </div>
+                  </form>
+                </div>
+              </details>
             ) : null}
             {canArchiveTask ? (
               <form action={deleteTaskAction}>
