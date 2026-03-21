@@ -2701,20 +2701,133 @@ html[data-theme="dark"] .project-panel {
   gap: 0.75rem;
 }
 
-/* --- Sub-task (step) visual distinction --- */
-.recorded-row-child {
-  border-left-width: 1px;
-  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--row-accent) 60%, transparent), 0 1px 3px rgba(0, 0, 0, 0.04);
-  opacity: 0.95;
+/* --- Step checklist inside parent card --- */
+.step-checklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--surface);
 }
 
-.recorded-row-child .recorded-row-title {
-  font-size: 0.93rem;
+.step-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 0.8rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  transition: background-color 120ms ease;
 }
 
-/* Step parent indicator chip styling (parent title shown in standard detail) */
+.step-row:last-child {
+  border-bottom: none;
+}
 
-/* --- Step add panel (suggestions + form) --- */
+.step-row-done {
+  background: color-mix(in srgb, var(--success-soft) 50%, var(--surface));
+}
+
+.step-row-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.35;
+}
+
+.step-row-done .step-row-title {
+  color: var(--text-muted);
+  text-decoration: line-through;
+  text-decoration-color: var(--text-muted);
+}
+
+.step-row-tick {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  background: var(--success-soft);
+  color: var(--success);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.step-done-btn {
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.28rem 0.7rem;
+  cursor: pointer;
+  transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease, transform 100ms ease;
+  white-space: nowrap;
+}
+
+.step-done-btn:hover {
+  border-color: var(--success);
+  color: var(--success);
+}
+
+.step-done-btn:active {
+  transform: scale(0.96);
+}
+
+.step-done-btn[data-pending="true"] {
+  opacity: 0.55;
+}
+
+.step-empty-note {
+  font-size: 0.84rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* --- Add step inline form --- */
+.step-add-form {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.step-add-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.92rem;
+  padding: 0.55rem 0.75rem;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.step-add-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+/* --- Step footer (close + remove) --- */
+.step-footer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding-top: 0.15rem;
+}
+
+/* --- Step add panel (suggestions + form in standard detail) --- */
 .step-add-expander {
   margin-top: 0.1rem;
 }

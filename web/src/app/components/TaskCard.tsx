@@ -325,7 +325,6 @@ export function TaskCard({
         ) : isProject ? (
           <TaskCardProjectDetail
             task={optimisticTask}
-            peopleOptions={peopleOptions}
             canManageProjects={canManageProjects}
             basePath={basePath}
           />

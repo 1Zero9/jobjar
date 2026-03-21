@@ -191,26 +191,21 @@ export function TaskCardStandardDetail({
                       </div>
                     </div>
                   ) : null}
-                  <form action={createProjectChildTaskAction} className="recorded-edit-form">
+                  <form action={createProjectChildTaskAction} className="step-add-form">
                     <input type="hidden" name="projectId" value={task.id} />
                     <input type="hidden" name="returnTo" value={`${basePath}#task-${task.id}`} />
-                    <label className="recorded-field">
-                      <span>Step</span>
-                      <input
-                        name="title"
-                        type="text"
-                        required
-                        placeholder="e.g. Tape edges"
-                        className="recorded-edit-input"
-                        value={stepTitle}
-                        onChange={(e) => setStepTitle(e.target.value)}
-                      />
-                    </label>
-                    <div className="recorded-row-actions between">
-                      <FormActionButton className="action-btn bright quiet" pendingLabel="Adding">
-                        Add step
-                      </FormActionButton>
-                    </div>
+                    <input
+                      name="title"
+                      type="text"
+                      required
+                      placeholder="Add a step…"
+                      className="step-add-input"
+                      value={stepTitle}
+                      onChange={(e) => setStepTitle(e.target.value)}
+                    />
+                    <FormActionButton className="action-btn bright quiet" pendingLabel="Adding">
+                      Add
+                    </FormActionButton>
                   </form>
                 </div>
               </details>

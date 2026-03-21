@@ -20,18 +20,9 @@ export {
 } from "@/app/actions/tasks";
 
 export {
-  promoteTaskToProjectAction,
-  demoteProjectToTaskAction,
-  updateProjectPlanAction,
   createProjectChildTaskAction,
-  createProjectCostAction,
-  deleteProjectCostAction,
-  createProjectMaterialAction,
-  toggleProjectMaterialPurchasedAction,
-  deleteProjectMaterialAction,
-  createProjectMilestoneAction,
-  toggleProjectMilestoneAction,
-  deleteProjectMilestoneAction,
+  closeJobWithStepsAction,
+  removeStepsAction,
 } from "@/app/actions/projects";
 
 export {

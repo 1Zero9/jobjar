@@ -78,6 +78,7 @@ export function TasksPanelClient({
 
   const visibleTasks = useMemo(() => {
     return tasks.filter((task) => {
+      if (task.projectParentId) return false; // steps live inside their parent card
       const matchesRoom = selectedRoomId ? task.roomId === selectedRoomId : true;
       const matchesAssignee = selectedAssigneeId ? task.assignmentUserId === selectedAssigneeId : true;
       const matchesState = selectedState === "all" ? true : getTaskState(task) === selectedState;

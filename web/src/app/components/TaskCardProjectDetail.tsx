@@ -1,51 +1,76 @@
 "use client";
 
-import { createProjectChildTaskAction } from "@/app/actions";
+import { closeJobWithStepsAction, completeTaskAction, createProjectChildTaskAction, removeStepsAction } from "@/app/actions";
 import { FormActionButton } from "@/app/components/FormActionButton";
-import type { PersonOption, TaskItem } from "@/app/components/task-board-types";
+import type { TaskItem } from "@/app/components/task-board-types";
 import { summarizeProject } from "@/app/components/task-board-utils";
 import { getSuggestedSteps } from "@/lib/subtask-suggestions";
 import { useState } from "react";
 
 type Props = {
   task: TaskItem;
-  peopleOptions: PersonOption[];
   canManageProjects: boolean;
   basePath: string;
 };
 
-export function TaskCardProjectDetail({ task, peopleOptions, canManageProjects, basePath }: Props) {
+export function TaskCardProjectDetail({ task, canManageProjects, basePath }: Props) {
   const [stepTitle, setStepTitle] = useState("");
   const projectSummary = summarizeProject(task);
   const suggestions = getSuggestedSteps(task.title);
   const progressPct = projectSummary.totalChildren > 0
     ? Math.round((projectSummary.completedChildren / projectSummary.totalChildren) * 100)
     : 0;
+  const allDone = projectSummary.totalChildren > 0 && projectSummary.completedChildren === projectSummary.totalChildren;
 
   return (
     <section className="project-panel">
-      <div className="project-panel-header">
-        <div className="project-panel-progress">
-          <div className="project-panel-progress-track">
-            <div className="project-panel-progress-fill" style={{ width: `${progressPct}%` }} />
-          </div>
-          <p className="project-panel-progress-label">
-            {projectSummary.completedChildren} of {projectSummary.totalChildren}{" "}
-            {projectSummary.totalChildren === 1 ? "step" : "steps"} done
-            {projectSummary.overdueChildren > 0 ? ` · ${projectSummary.overdueChildren} overdue` : ""}
-          </p>
+
+      {/* Progress */}
+      <div className="project-panel-progress">
+        <div className="project-panel-progress-track">
+          <div className="project-panel-progress-fill" style={{ width: `${progressPct}%` }} />
         </div>
+        <p className="project-panel-progress-label">
+          {projectSummary.completedChildren} of {projectSummary.totalChildren}{" "}
+          {projectSummary.totalChildren === 1 ? "step" : "steps"} done
+        </p>
       </div>
 
-      <p className="task-readonly-note">
-        Steps appear as individual jobs in the list. When all steps are done, this job closes automatically.
-      </p>
+      {/* Step checklist */}
+      {task.projectChildren.length > 0 ? (
+        <ul className="step-checklist">
+          {task.projectChildren.map((step) => {
+            const done = step.captureStage === "done" || step.occurrences[0]?.status === "done";
+            return (
+              <li key={step.id} className={`step-row ${done ? "step-row-done" : ""}`.trim()}>
+                <span className="step-row-title">{step.title}</span>
+                {done ? (
+                  <span className="step-row-tick" aria-label="Done">✓</span>
+                ) : canManageProjects ? (
+                  <form action={completeTaskAction}>
+                    <input type="hidden" name="taskId" value={step.id} />
+                    <input type="hidden" name="note" value="" />
+                    <input type="hidden" name="returnTo" value={`${basePath}#task-${task.id}`} />
+                    <FormActionButton className="step-done-btn" pendingLabel="…">
+                      Done
+                    </FormActionButton>
+                  </form>
+                ) : null}
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <p className="step-empty-note">No steps yet — add one below.</p>
+      )}
 
       {canManageProjects ? (
         <div className="project-manage-stack">
-          {suggestions.length > 0 ? (
+
+          {/* Suggested steps */}
+          {suggestions.length > 0 && !allDone ? (
             <div className="step-suggestions">
-              <p className="step-suggestions-label">Suggested steps — tap to add:</p>
+              <p className="step-suggestions-label">Tap to add a suggested step:</p>
               <div className="step-suggestion-chips">
                 {suggestions.map((step) => (
                   <button
@@ -61,55 +86,46 @@ export function TaskCardProjectDetail({ task, peopleOptions, canManageProjects, 
             </div>
           ) : null}
 
-          <form action={createProjectChildTaskAction} className="recorded-edit-form">
-            <input type="hidden" name="projectId" value={task.id} />
-            <input type="hidden" name="returnTo" value={`${basePath}#task-${task.id}`} />
-            <label className="recorded-field">
-              <span>Add next step</span>
+          {/* Add step — just a name, nothing else */}
+          {!allDone ? (
+            <form action={createProjectChildTaskAction} className="step-add-form">
+              <input type="hidden" name="projectId" value={task.id} />
+              <input type="hidden" name="returnTo" value={`${basePath}#task-${task.id}`} />
               <input
                 name="title"
                 type="text"
                 required
-                placeholder="e.g. Tape edges"
-                className="recorded-edit-input"
+                placeholder="Add a step…"
+                className="step-add-input"
                 value={stepTitle}
                 onChange={(e) => setStepTitle(e.target.value)}
               />
-            </label>
-            <div className="recorded-row-actions between">
-              <FormActionButton className="action-btn bright quiet" pendingLabel="Adding step">
-                Add step
+              <FormActionButton className="action-btn bright quiet" pendingLabel="Adding">
+                Add
               </FormActionButton>
-            </div>
-            <details className="recorded-more-details">
-              <summary className="recorded-more-summary">Step details</summary>
-              <label className="recorded-field">
-                <span>Notes</span>
-                <input name="detailNotes" type="text" placeholder="Optional detail" className="recorded-edit-input" />
-              </label>
-              <div className="capture-meta-grid">
-                <label className="recorded-field">
-                  <span>Assign to</span>
-                  <select name="assigneeUserId" defaultValue="" className="recorded-edit-input">
-                    <option value="">No one</option>
-                    {peopleOptions.map((person) => (
-                      <option key={person.id} value={person.id}>
-                        {person.displayName}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="recorded-field">
-                  <span>Est. minutes</span>
-                  <input name="estimatedMinutes" type="number" min={1} defaultValue={30} className="recorded-edit-input" />
-                </label>
-              </div>
-              <label className="recorded-field">
-                <span>Due date</span>
-                <input name="dueAt" type="datetime-local" className="recorded-edit-input" />
-              </label>
-            </details>
-          </form>
+            </form>
+          ) : null}
+
+          {/* Close whole job */}
+          <div className="step-footer-actions">
+            <form action={closeJobWithStepsAction}>
+              <input type="hidden" name="taskId" value={task.id} />
+              <input type="hidden" name="returnTo" value={basePath} />
+              <FormActionButton className="action-btn bright quiet" pendingLabel="Closing…">
+                {allDone ? "Close job" : "Close whole job"}
+              </FormActionButton>
+            </form>
+
+            {/* Remove steps / back to single job */}
+            <form action={removeStepsAction}>
+              <input type="hidden" name="taskId" value={task.id} />
+              <input type="hidden" name="returnTo" value={`${basePath}#task-${task.id}`} />
+              <FormActionButton className="action-btn subtle quiet" pendingLabel="Removing…">
+                Remove steps
+              </FormActionButton>
+            </form>
+          </div>
+
         </div>
       ) : null}
     </section>

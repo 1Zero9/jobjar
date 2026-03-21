@@ -243,6 +243,75 @@ export async function createProjectChildTaskAction(formData: FormData) {
   redirectToReturnPath(returnTo, { added: "project-child" }, `task-${project.id}`);
 }
 
+export async function closeJobWithStepsAction(formData: FormData) {
+  const { householdId, userId: actorUserId, allowedLocationIds } = await requireProjectManagerAction();
+  const taskId = String(formData.get("taskId") ?? "").trim();
+  const returnTo = getReturnPath(formData.get("returnTo"), "/tasks");
+  if (!taskId) return;
+
+  const task = await prisma.task.findFirst({
+    where: { id: taskId, active: true, room: getAccessibleRoomWhere(householdId, allowedLocationIds) },
+    select: {
+      id: true,
+      captureStage: true,
+      schedule: { select: { recurrenceType: true } },
+      projectChildren: { where: { active: true }, select: { id: true, captureStage: true } },
+    },
+  });
+  if (!task || task.schedule) return;
+
+  const now = new Date();
+
+  // Close all open children
+  const openChildren = task.projectChildren.filter((c) => c.captureStage !== "done");
+  for (const child of openChildren) {
+    await prisma.task.update({ where: { id: child.id }, data: { captureStage: "done" } });
+    const existingOcc = await prisma.taskOccurrence.findFirst({ where: { taskId: child.id, status: { not: "done" } }, select: { id: true } });
+    if (existingOcc) {
+      await prisma.taskOccurrence.update({ where: { id: existingOcc.id }, data: { status: "done", completedAt: now, completedBy: actorUserId } });
+    } else {
+      await prisma.taskOccurrence.create({ data: { taskId: child.id, dueAt: now, status: "done", completedAt: now, completedBy: actorUserId } });
+    }
+    await prisma.taskLog.create({ data: { taskId: child.id, action: "completed", actorUserId, atTime: now, note: "Closed with parent job" } });
+  }
+
+  // Close the parent
+  if (task.captureStage !== "done") {
+    await prisma.task.update({ where: { id: task.id }, data: { captureStage: "done" } });
+    const existingOcc = await prisma.taskOccurrence.findFirst({ where: { taskId: task.id, status: { not: "done" } }, select: { id: true } });
+    if (existingOcc) {
+      await prisma.taskOccurrence.update({ where: { id: existingOcc.id }, data: { status: "done", completedAt: now, completedBy: actorUserId } });
+    } else {
+      await prisma.taskOccurrence.create({ data: { taskId: task.id, dueAt: now, status: "done", completedAt: now, completedBy: actorUserId } });
+    }
+    await prisma.taskLog.create({ data: { taskId: task.id, action: "completed", actorUserId, atTime: now, note: "Closed all steps" } });
+  }
+
+  refreshViews(["/", "/tasks", "/stats"]);
+  redirectToReturnPath(returnTo, { updated: "job-closed" });
+}
+
+export async function removeStepsAction(formData: FormData) {
+  const { householdId, userId: actorUserId, allowedLocationIds } = await requireProjectManagerAction();
+  const taskId = String(formData.get("taskId") ?? "").trim();
+  const returnTo = getReturnPath(formData.get("returnTo"), "/tasks");
+  if (!taskId) return;
+
+  const task = await prisma.task.findFirst({
+    where: { id: taskId, active: true, room: getAccessibleRoomWhere(householdId, allowedLocationIds) },
+    select: { id: true },
+  });
+  if (!task) return;
+
+  // Archive all child steps and reset parent to a plain job
+  await prisma.task.updateMany({ where: { projectParentId: task.id, active: true }, data: { active: false } });
+  await prisma.task.update({ where: { id: task.id }, data: { jobKind: "upkeep" } });
+  await prisma.taskLog.create({ data: { taskId: task.id, action: "task_updated", actorUserId, note: "Removed steps — back to single job" } });
+
+  refreshViews(["/", "/tasks", "/stats"]);
+  redirectToReturnPath(returnTo, { updated: "steps-removed" }, `task-${task.id}`);
+}
+
 export async function createProjectCostAction(formData: FormData) {
   const { householdId, allowedLocationIds } = await requireProjectManagerAction();
   const taskId = String(formData.get("taskId") ?? "").trim();
