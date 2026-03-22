@@ -1935,6 +1935,225 @@ html[data-theme="dark"] .profile-girl-pink .page-hero-icon {
   }
 }
 
+/* ── Streak metric highlight ─────────────────────────────────────── */
+
+.today-metric-streak {
+  background: color-mix(in srgb, var(--accent) 12%, var(--accent-soft));
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.today-metric-streak .today-metric-value {
+  color: var(--accent);
+}
+
+/* ── Daily Goals panel ───────────────────────────────────────────── */
+
+.daily-goals-section {
+  gap: 0.9rem;
+}
+
+.daily-goals-all-done {
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--accent-soft) 55%, var(--card)) 0%,
+    color-mix(in srgb, var(--surface) 96%, #ffffff) 100%
+  );
+}
+
+/* Header row: ring + copy */
+.daily-goals-header {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.daily-goals-ring-wrap {
+  flex-shrink: 0;
+}
+
+.daily-goals-ring {
+  display: block;
+}
+
+.daily-goals-ring-track {
+  color: color-mix(in srgb, var(--border) 80%, transparent);
+}
+
+.daily-goals-ring-fill {
+  color: var(--accent);
+  transition: stroke-dashoffset 0.4s ease;
+}
+
+.daily-goals-ring-text {
+  font-size: 10px;
+  font-weight: 800;
+  fill: var(--text-primary);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+.daily-goals-header-copy {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.daily-goals-streak-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 14%, var(--accent-soft));
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  padding: 0.22rem 0.6rem;
+  width: fit-content;
+}
+
+.daily-goals-subhead {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+}
+
+/* Goal rows */
+.daily-goals-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.daily-goal-row {
+  display: grid;
+  grid-template-columns: 2.4rem 1fr;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--surface) 82%, var(--accent-soft));
+  border: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+  padding: 0.7rem 0.85rem 0.7rem 0.65rem;
+}
+
+.daily-goal-done {
+  border-color: color-mix(in srgb, var(--accent) 25%, transparent);
+  background: color-mix(in srgb, var(--accent-soft) 45%, var(--surface));
+}
+
+/* Icon box */
+.daily-goal-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 0.65rem;
+  flex-shrink: 0;
+}
+
+.daily-goal-icon-tasks {
+  background: color-mix(in srgb, var(--teal-soft) 80%, var(--surface));
+  color: var(--teal);
+}
+
+.daily-goal-icon-checkin {
+  background: color-mix(in srgb, var(--amber-soft) 80%, var(--surface));
+  color: var(--amber);
+}
+
+.daily-goal-icon-overdue {
+  background: color-mix(in srgb, var(--rose-soft) 80%, var(--surface));
+  color: var(--rose);
+}
+
+.daily-goal-icon-done {
+  background: color-mix(in srgb, var(--accent-soft) 80%, var(--surface));
+  color: var(--accent);
+}
+
+/* Body: label + progress */
+.daily-goal-body {
+  display: grid;
+  gap: 0.38rem;
+  min-width: 0;
+}
+
+.daily-goal-text {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.daily-goal-label {
+  color: var(--text-primary);
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.daily-goal-sublabel {
+  color: var(--text-secondary);
+  font-size: 0.76rem;
+  white-space: nowrap;
+}
+
+.daily-goal-done .daily-goal-label {
+  color: var(--accent);
+}
+
+.daily-goal-track {
+  height: 0.42rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--border) 60%, transparent);
+  overflow: hidden;
+}
+
+.daily-goal-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 70%, var(--teal)));
+  min-width: 0.42rem;
+}
+
+.daily-goals-reset {
+  margin: 0;
+  color: var(--text-tertiary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* ── Milestone progress bar on task cards ────────────────────────── */
+
+.task-milestone-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: 0.15rem;
+}
+
+.task-milestone-track {
+  flex: 1;
+  height: 0.28rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--border) 65%, transparent);
+  overflow: hidden;
+}
+
+.task-milestone-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--teal);
+  min-width: 0.28rem;
+}
+
+.task-milestone-label {
+  white-space: nowrap;
+  color: var(--text-tertiary);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
 .capture-confirmation {
   border-radius: 1rem;
   border: 1px solid transparent;

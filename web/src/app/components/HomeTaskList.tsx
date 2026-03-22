@@ -12,6 +12,8 @@ export type HomeTaskItem = {
   projectParentTitle: string | null;
   captureStage: string;
   validationMode: string;
+  milestoneTotal: number;
+  milestoneDone: number;
 };
 
 type Props = {
@@ -68,6 +70,17 @@ export function HomeTaskList({
                   {task.projectParentTitle ? <span className="today-task-meta-chip">Part of: {task.projectParentTitle}</span> : null}
                   {task.dueAt ? <span className="today-task-meta-chip today-task-due">{formatDueLabel(task.dueAt)}</span> : null}
                 </p>
+                {task.milestoneTotal > 0 ? (
+                  <div className="task-milestone-bar-wrap">
+                    <div className="task-milestone-track">
+                      <div
+                        className="task-milestone-fill"
+                        style={{ width: `${Math.round((task.milestoneDone / task.milestoneTotal) * 100)}%` }}
+                      />
+                    </div>
+                    <span className="task-milestone-label">{task.milestoneDone}/{task.milestoneTotal} milestones</span>
+                  </div>
+                ) : null}
                 </div>
               </Link>
               <div className="today-task-side">
@@ -93,14 +106,24 @@ function formatDueLabel(value: string) {
   const due = new Date(value);
   const now = new Date();
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  const tomorrowStart = todayStart + (24 * 60 * 60 * 1000);
+  const tomorrowStart = todayStart + 24 * 60 * 60 * 1000;
   const dueTime = due.getTime();
+  const msLeft = dueTime - now.getTime();
 
   if (dueTime < now.getTime()) {
     return "Overdue";
   }
   if (dueTime < tomorrowStart) {
-    return `Today ${new Intl.DateTimeFormat("en-IE", { hour: "numeric", minute: "2-digit" }).format(due)}`;
+    const hoursLeft = Math.floor(msLeft / (1000 * 60 * 60));
+    const minutesLeft = Math.floor((msLeft % (1000 * 60 * 60)) / (1000 * 60));
+    if (hoursLeft < 1) return `Due in ${minutesLeft}m`;
+    if (minutesLeft === 0) return `Due in ${hoursLeft}h`;
+    return `Due in ${hoursLeft}h ${minutesLeft}m`;
+  }
+
+  const tomorrowEnd = tomorrowStart + 24 * 60 * 60 * 1000;
+  if (dueTime < tomorrowEnd) {
+    return `Tomorrow ${new Intl.DateTimeFormat("en-IE", { hour: "numeric", minute: "2-digit" }).format(due)}`;
   }
 
   return new Intl.DateTimeFormat("en-IE", { month: "short", day: "numeric" }).format(due);
