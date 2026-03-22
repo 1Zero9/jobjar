@@ -35,7 +35,7 @@ export async function createPersonAction(formData: FormData) {
     return;
   }
 
-  if (passcodeInput && passcodeInput.length < 4) {
+  if (passcodeInput && passcodeInput.length < 8) {
     redirectToReturnPath(returnTo, { error: "person-passcode-too-short" });
     return;
   }
@@ -76,7 +76,7 @@ export async function createPersonAction(formData: FormData) {
 
   await replaceMemberLocationAccess(householdId, user.id, requestedLocationIds);
 
-  if (passcodeInput.length >= 4) {
+  if (passcodeInput.length >= 8) {
     await setUserPasswordHash(user.id, hashPassword(passcodeInput));
   }
 
@@ -289,7 +289,7 @@ export async function setPersonPasscodeAction(formData: FormData) {
     return;
   }
 
-  if (passcode.length < 4) {
+  if (passcode.length < 8) {
     redirectToReturnPath(returnTo, { error: "person-passcode-too-short" });
     return;
   }

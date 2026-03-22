@@ -1,4 +1,6 @@
+import type { MemberAudience, MemberRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { getVisibleTaskWhere } from "@/lib/project-work";
 
 function startOfThisWeek() {
   const d = new Date();
@@ -34,6 +36,8 @@ function daysAgo(days: number) {
 export type StatsFilters = {
   allowedLocationIds?: string[] | null;
   userId?: string;
+  role?: MemberRole;
+  audienceBand?: MemberAudience;
   period?: "week" | "month" | "all";
   includeRewards?: boolean;
   locationId?: string | null;
@@ -80,6 +84,8 @@ export async function getStatsData(householdId: string, filters: StatsFilters = 
   const {
     allowedLocationIds,
     userId,
+    role,
+    audienceBand,
     period = "month",
     includeRewards = true,
     locationId,
@@ -105,8 +111,23 @@ export async function getStatsData(householdId: string, filters: StatsFilters = 
     : {};
 
   const completionUserId = focusUserId ?? userId ?? null;
+  const visibleTaskWhere = userId && role && audienceBand
+    ? getVisibleTaskWhere({
+        householdId,
+        userId,
+        role,
+        audienceBand,
+        allowedLocationIds,
+      })
+    : {
+        room: {
+          householdId,
+          ...locationFilter,
+        },
+      };
 
   const taskRoomWhere = {
+    ...visibleTaskWhere,
     room: {
       householdId,
       ...locationFilter,
@@ -180,10 +201,10 @@ export async function getStatsData(householdId: string, filters: StatsFilters = 
     }),
     prisma.taskOccurrence.findMany({
       where: {
-        status: "done",
-        ...periodCompletedAtWhere,
-        task: taskRoomWhere,
-      },
+            status: "done",
+            ...periodCompletedAtWhere,
+            task: taskRoomWhere,
+          },
       orderBy: { completedAt: "desc" },
       take: 8,
       include: {

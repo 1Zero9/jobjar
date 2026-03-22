@@ -6,7 +6,6 @@ import {
   toCurrencyCentsOrNull,
   toDate,
   inferJobKindFromText,
-  resolveProjectParentId,
   resolveAssignableMemberUserId,
   getAccessibleRoomWhere,
   getReturnPath,

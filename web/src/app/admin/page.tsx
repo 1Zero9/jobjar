@@ -96,7 +96,7 @@ export default async function AdminPage({
           <form action={createPersonAction} className="mt-3 grid grid-cols-1 gap-2 rounded-xl border-accent-muted bg-accent-soft p-3 md:grid-cols-4">
             <input type="hidden" name="returnTo" value="/admin#section-people" />
             <input name="displayName" type="text" required placeholder="Name" className="admin-input px-3 py-2 text-sm" />
-            <input name="passcode" type="password" minLength={4} placeholder="Passcode (min 4)" className="admin-input px-3 py-2 text-sm" />
+            <input name="passcode" type="password" minLength={8} placeholder="Passcode (min 8)" className="admin-input px-3 py-2 text-sm" />
             <select name="role" defaultValue="member" className="admin-input px-3 py-2 text-sm">
               <option value="member">Member</option>
               <option value="power_user">Power user</option>
@@ -135,7 +135,7 @@ export default async function AdminPage({
                       <form action={setPersonPasscodeAction} className="flex gap-2">
                         <input type="hidden" name="userId" value={person.id} />
                         <input type="hidden" name="returnTo" value="/admin#section-people" />
-                        <input name="passcode" type="password" minLength={4} placeholder="Reset" className="admin-input w-28 px-2 py-1.5 text-xs" />
+                        <input name="passcode" type="password" minLength={8} placeholder="Reset" className="admin-input w-28 px-2 py-1.5 text-xs" />
                         <FormActionButton className="action-btn subtle" pendingLabel="Saving">
                           Set
                         </FormActionButton>
@@ -307,7 +307,7 @@ function getAdminErrorMessage(error?: string) {
     return "Enter a name before adding a person.";
   }
   if (error === "person-passcode-too-short") {
-    return "Passcodes must be at least 4 characters.";
+    return "Passcodes must be at least 8 characters.";
   }
   if (error === "person-not-found") {
     return "That person could not be found.";

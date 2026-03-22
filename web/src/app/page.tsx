@@ -7,12 +7,11 @@ import { canAccessReportingViewsRole, canManagePeopleRole, canUseMemberActions, 
 import { getLocationScopeLabel, getRoomLocationAccessWhere, hasLocationRestrictions } from "@/lib/location-access";
 import {
   canAccessExtendedViews,
-  getAudienceAssignedTaskWhere,
   getMemberThemeClassName,
   isChildAudience,
 } from "@/lib/member-audience";
 import { prisma } from "@/lib/prisma";
-import { getMemberVisibleTaskWhere } from "@/lib/project-work";
+import { getVisibleTaskWhere } from "@/lib/project-work";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -39,19 +38,22 @@ export default async function HomePage({
   const canSeeReports = canAccessReportingViewsRole(role) && canSeeExtended;
   const canQuickCapture = canAct && canSeeExtended && !childMode;
   const memberMode = isMemberRole(role);
-  const taskAudienceWhere = getAudienceAssignedTaskWhere(userId, audienceBand);
-  const memberVisibleTaskWhere = getMemberVisibleTaskWhere(role, userId);
   const weekStart = startOfThisWeek();
   const todayStart = startOfToday();
   const todayEnd = endOfToday();
   const restrictedToLocations = hasLocationRestrictions(allowedLocationIds);
+  const visibleTaskWhere = getVisibleTaskWhere({
+    householdId,
+    userId,
+    role,
+    audienceBand,
+    allowedLocationIds,
+  });
 
   const visibleOpenTaskWhere = {
+    ...visibleTaskWhere,
     active: true,
     captureStage: { not: "done" as const },
-    room: { householdId, ...getRoomLocationAccessWhere(allowedLocationIds) },
-    ...taskAudienceWhere,
-    ...(Object.keys(memberVisibleTaskWhere).length > 0 ? memberVisibleTaskWhere : {}),
   };
 
   const homeTaskSelect = {
@@ -182,19 +184,18 @@ export default async function HomePage({
             status: "done",
             completedBy: userId,
             completedAt: { gte: weekStart },
-            task: {
-              room: { householdId, ...getRoomLocationAccessWhere(allowedLocationIds) },
-            },
+            task: visibleTaskWhere,
           },
         }),
     viewerMode
       ? Promise.resolve([])
       : prisma.task.findMany({
           where: {
+            ...visibleTaskWhere,
             rewardCents: { not: null },
             rewardPaidAt: { gte: weekStart },
             assignments: { some: { userId, assignedTo: null } },
-            room: { householdId, ...getRoomLocationAccessWhere(allowedLocationIds) },
+            active: true,
           },
           select: {
             rewardCents: true,
@@ -207,9 +208,7 @@ export default async function HomePage({
             status: "done",
             completedBy: userId,
             completedAt: { gte: daysAgo(30) },
-            task: {
-              room: { householdId, ...getRoomLocationAccessWhere(allowedLocationIds) },
-            },
+            task: visibleTaskWhere,
           },
           orderBy: { completedAt: "desc" },
           take: 90,

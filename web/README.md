@@ -20,9 +20,9 @@ npm run db:seed
 
 ## Current product routes
 - `/log`: fast capture
-- `/tasks`: jobs board, with a personal jobs flow for `member`
-- `/projects`: project planning, child tasks, costs, milestones, and materials
-- `/projects/timeline`: project dates, overdue items, and recent completions
+- `/tasks`: jobs board, including the current parent-job/project flow
+- `/projects`: legacy entry that redirects to `/tasks`
+- `/projects/timeline`: legacy entry that redirects to `/tasks`
 - `/help`: in-app onboarding and audience guides
 - `/stats`: household reporting, including project health and shopping progress
 - `/admin`: people, room, and task shaping

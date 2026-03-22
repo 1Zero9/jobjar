@@ -23,17 +23,11 @@ export default async function LoginPage({
   const showRateLimitError = params.error === "rate-limited";
   const showSessionExpired = params.reason === "expired";
 
-  let users: Array<{ id: string; displayName: string }> = [];
+  let userCount = 0;
   let dbStatus: DbStatus = { state: "ok" };
 
   try {
-    users = await prisma.user.findMany({
-      orderBy: { createdAt: "asc" },
-      select: {
-        id: true,
-        displayName: true,
-      },
-    });
+    userCount = await prisma.user.count();
   } catch (error) {
     const missingEnvVars = ["DATABASE_URL"].filter((key) => !process.env[key]);
     const message = error instanceof Error ? error.message : "Unknown database error";
@@ -46,7 +40,7 @@ export default async function LoginPage({
     };
   }
 
-  const needsSetup = users.length === 0;
+  const needsSetup = userCount === 0;
   const dbUnavailable = dbStatus.state === "error";
   const dbError = dbStatus.state === "error" ? dbStatus : null;
 
@@ -131,15 +125,16 @@ export default async function LoginPage({
             <form action={loginAction} className="login-form">
               <input type="hidden" name="next" value={nextPath} />
               <label className="login-label">
-                <span className="login-label-text">Person</span>
-                <select name="userId" required className="login-input">
-                  <option value="">Select your name</option>
-                  {users.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.displayName}
-                    </option>
-                  ))}
-                </select>
+                <span className="login-label-text">Person or email</span>
+                <input
+                  name="identifier"
+                  type="text"
+                  required
+                  className="login-input"
+                  placeholder="Use your display name or email"
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                />
               </label>
               <label className="login-label">
                 <span className="login-label-text">Passcode</span>

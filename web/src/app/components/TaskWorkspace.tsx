@@ -9,9 +9,9 @@ import { getTaskFeedbackMessage } from "@/app/components/task-feedback";
 import { normalizeSearchText } from "@/app/components/task-board-utils";
 import { canAccessProjectViewsRole, canManageProjectsRole, canUseMemberActions, isAdminRole, isMemberRole, requireSessionContext } from "@/lib/auth";
 import { getLocationScopeLabel, getRoomLocationAccessWhere, hasLocationRestrictions } from "@/lib/location-access";
-import { canAccessExtendedViews, getAudienceAssignedTaskWhere, getMemberThemeClassName, isChildAudience } from "@/lib/member-audience";
+import { canAccessExtendedViews, getMemberThemeClassName, isChildAudience } from "@/lib/member-audience";
 import { prisma } from "@/lib/prisma";
-import { getMemberVisibleTaskWhere, getPrivateTaskAccessWhere, getProjectTaskWhere } from "@/lib/project-work";
+import { getPrivateTaskAccessWhere, getProjectTaskWhere, getVisibleTaskWhere } from "@/lib/project-work";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -32,7 +32,7 @@ type SearchParams = {
 };
 
 export async function LogWorkspace({ params }: { params: SearchParams }) {
-  const { householdId, role, audienceBand, profileTheme, allowedLocationIds } = await requireSessionContext("/log");
+  const { householdId, userId, role, audienceBand, profileTheme, allowedLocationIds } = await requireSessionContext("/log");
   if (!canAccessExtendedViews(audienceBand) || !canUseMemberActions(role)) {
     redirect("/tasks");
   }
@@ -42,6 +42,13 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
   const needsSeparatedAreaPicker = !memberMode;
   const restrictedToLocations = hasLocationRestrictions(allowedLocationIds);
   const audienceThemeClass = getMemberThemeClassName(audienceBand, profileTheme);
+  const visibleTaskWhere = getVisibleTaskWhere({
+    householdId,
+    userId,
+    role,
+    audienceBand,
+    allowedLocationIds,
+  });
 
   const [rooms, people, locations, lookupTasks] = await Promise.all([
     prisma.room.findMany({
@@ -76,8 +83,8 @@ export async function LogWorkspace({ params }: { params: SearchParams }) {
       : Promise.resolve([]),
     prisma.task.findMany({
       where: {
+        ...visibleTaskWhere,
         active: true,
-        room: { householdId, ...getRoomLocationAccessWhere(allowedLocationIds) },
       },
       orderBy: { createdAt: "desc" },
       take: 24,
@@ -305,17 +312,23 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
   if (mode === "projects" && (!canAccessExtendedViews(audienceBand) || !canAccessProjectViewsRole(role))) {
     redirect("/tasks");
   }
-  const privateTaskAccess = isAdminRole(role) ? undefined : getPrivateTaskAccessWhere(userId);
   const projectOnlyWhere = mode === "projects" ? getProjectTaskWhere() : undefined;
-  const memberVisibleTaskWhere = getMemberVisibleTaskWhere(role, userId);
   const restrictedToLocations = hasLocationRestrictions(allowedLocationIds);
-  const taskAudienceWhere = getAudienceAssignedTaskWhere(userId, audienceBand);
   const audienceThemeClass = getMemberThemeClassName(audienceBand, profileTheme);
   const childMode = isChildAudience(audienceBand);
   const memberMode = isMemberRole(role);
   const canEditTasks = canUseMemberActions(role);
   const viewerMode = role === "viewer";
   const easyWorkspace = !childMode && (memberMode || !canEditTasks);
+  const visibleTaskWhere = getVisibleTaskWhere({
+    householdId,
+    userId,
+    role,
+    audienceBand,
+    allowedLocationIds,
+    extraWhere: projectOnlyWhere,
+  });
+  const privateTaskAccess = isAdminRole(role) ? undefined : getPrivateTaskAccessWhere(userId);
   const taskTake = mode === "projects" ? 28 : 48;
   const parentOccurrenceTake = mode === "projects" ? 3 : 2;
   const childOccurrenceTake = 2;
@@ -498,14 +511,8 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
       : Promise.resolve([]),
     prisma.task.findMany({
       where: {
+        ...visibleTaskWhere,
         active: true,
-        room: { householdId, ...getRoomLocationAccessWhere(allowedLocationIds) },
-        ...taskAudienceWhere,
-        AND: [
-          ...(Object.keys(memberVisibleTaskWhere).length > 0 ? [memberVisibleTaskWhere] : []),
-          ...(privateTaskAccess ? [{ OR: privateTaskAccess }] : []),
-          ...(projectOnlyWhere ? [projectOnlyWhere] : []),
-        ],
       },
       orderBy: [{ room: { sortOrder: "asc" } }, { priority: "asc" }, { createdAt: "desc" }],
       take: taskTake,
@@ -522,14 +529,9 @@ async function WorkItemsWorkspace({ params, mode }: { params: SearchParams; mode
   const projectChildSummaries = projectTaskIds.length > 0
     ? await prisma.task.findMany({
         where: {
+          ...visibleTaskWhere,
           active: true,
           projectParentId: { in: projectTaskIds },
-          room: { householdId, ...getRoomLocationAccessWhere(allowedLocationIds) },
-          ...taskAudienceWhere,
-          AND: [
-            ...(Object.keys(memberVisibleTaskWhere).length > 0 ? [memberVisibleTaskWhere] : []),
-            ...(privateTaskAccess ? [{ OR: privateTaskAccess }] : []),
-          ],
         },
         select: {
           projectParentId: true,

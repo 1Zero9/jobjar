@@ -53,17 +53,32 @@ export async function loginAction(formData: FormData) {
   }
 
   const userId = String(formData.get("userId") ?? "").trim();
+  const identifier = String(formData.get("identifier") ?? "").trim();
   const passcode = String(formData.get("passcode") ?? "").trim();
   const nextPath = String(formData.get("next") ?? "/").trim() || "/";
 
-  if (!userId) {
+  if (!userId && !identifier) {
     redirect(`/login?next=${encodeURIComponent(nextPath)}&error=invalid`);
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { id: true },
-  });
+  const users = userId
+    ? await prisma.user.findMany({
+        where: { id: userId },
+        take: 1,
+        select: { id: true },
+      })
+    : await prisma.user.findMany({
+        where: {
+          OR: [
+            { email: { equals: identifier, mode: "insensitive" } },
+            { displayName: { equals: identifier, mode: "insensitive" } },
+          ],
+        },
+        take: 2,
+        select: { id: true },
+      });
+
+  const user = users.length === 1 ? users[0] : null;
   if (!user) {
     redirect(`/login?next=${encodeURIComponent(nextPath)}&error=invalid`);
   }

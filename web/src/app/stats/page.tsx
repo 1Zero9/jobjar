@@ -59,6 +59,8 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
   const stats = await getStatsData(householdId, {
     allowedLocationIds,
     userId,
+    role,
+    audienceBand,
     period: selectedPeriod,
     includeRewards: !viewerMode,
     locationId: selectedLocationId || null,

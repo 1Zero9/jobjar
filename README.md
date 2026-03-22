@@ -5,7 +5,7 @@ JobJar is a household work system built with Next.js, Prisma, and PostgreSQL.
 It started as a task tracker and now supports:
 - quick capture on `/log`
 - shared task management on `/tasks`
-- project planning on `/projects`
+- parent jobs and project planning inside `/tasks`
 - location-scoped views and people access controls
 - stats on `/stats`
 - admin shaping on `/admin`
@@ -17,19 +17,20 @@ It started as a task tracker and now supports:
 - `docs/user-guide/`: guide hub plus adults, teens, kids, and grandparents guides
 
 ## Current app version
-- `web/package.json` is currently `0.4.15`
+- `web/package.json` is currently `2.5.1`
 
 ## Current project behavior
 - jobs can be promoted into projects for planning
 - projects can be turned back into normal jobs when they no longer have project steps, milestones, materials, or cost lines
+- `/projects` and `/projects/timeline` currently redirect to `/tasks`
 
 ## Key routes
 - `/login`
 - `/`
 - `/log`
 - `/tasks`
-- `/projects`
-- `/projects/timeline`
+- `/projects` -> redirects to `/tasks`
+- `/projects/timeline` -> redirects to `/tasks`
 - `/help`
 - `/stats`
 - `/admin`

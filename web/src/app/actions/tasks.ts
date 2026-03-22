@@ -23,7 +23,6 @@ import {
   upsertSimpleSchedule,
   upsertPendingOccurrence,
   calculateNextDueAt,
-  isSimpleRecurrenceType,
   resolveMemberUserId,
   resolveAssignableMemberUserId,
   getAccessibleRoomWhere,

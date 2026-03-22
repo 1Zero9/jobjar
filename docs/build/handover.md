@@ -8,8 +8,8 @@ Current routes:
 - `/`: home
 - `/log`: quick capture
 - `/tasks`: jobs board, with a personal jobs flow for `member`
-- `/projects`: project board
-- `/projects/timeline`: project timeline
+- `/projects`: legacy route that redirects to `/tasks`
+- `/projects/timeline`: legacy route that redirects to `/tasks`
 - `/help`: in-app onboarding and audience guides
 - `/stats`: reporting
 - `/admin`: admin workspace
@@ -17,7 +17,7 @@ Current routes:
 - `/api/health/db`: DB health check
 
 Current package version:
-- `web/package.json`: `0.4.15`
+- `web/package.json`: `2.5.1`
 
 Recurring job behavior:
 - finishing a recurring job records the completion against the current occurrence
@@ -29,7 +29,7 @@ Recurring job behavior:
 - session cookies signed with HMAC-SHA256
 - `SESSION_SIGNING_SECRET` must be set in production
 - `HOUSEHOLD_PASSCODE` only falls back in development; production users without stored hashes need the env var set
-- login rate limiting is in-memory per server instance
+- login rate limiting is DB-backed through `LoginAttempt`
 - role model:
   - `admin`: full setup and task management
   - `power_user`: project planning and project management
@@ -103,10 +103,10 @@ npm run db:deploy
 
 ## Operational checks
 - `/api/health/db` returns `status: "ok"` and `db: "connected"`
-- `/login` should show `Create Admin` on a fresh production DB
-- `/projects` should load and show project filters, milestones, materials, and project health states
-- `/projects/timeline` should load overdue/upcoming/recent sections
-- `/stats` should show project budget/spend, shopping progress, and project risk summaries when projects exist
+- `/login` should show `Create admin and start setup` on a fresh production DB
+- `/login` should accept an exact display name or email plus passcode on a populated DB
+- `/projects` and `/projects/timeline` should redirect to `/tasks`
+- `/stats` should load only work visible to the signed-in account, including private-job restrictions
 
 ## Known next steps
 - timezone-aware due-date handling

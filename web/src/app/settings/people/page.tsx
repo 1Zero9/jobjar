@@ -94,7 +94,7 @@ export default async function PeoplePage({
             <form action={createPersonAction} className="capture-form-simple">
               <input type="hidden" name="returnTo" value="/settings/people" />
               <input name="displayName" type="text" required placeholder="Name" className="capture-main-input" />
-              <input name="passcode" type="password" minLength={4} placeholder="Passcode" className="capture-room-select" />
+              <input name="passcode" type="password" minLength={8} placeholder="Passcode" className="capture-room-select" />
               <select name="role" defaultValue="member" className="capture-room-select">
                 <option value="member">Member</option>
                 <option value="power_user">Power user</option>
@@ -270,7 +270,7 @@ export default async function PeoplePage({
                         <input type="hidden" name="returnTo" value="/settings/people" />
                         <label className="recorded-field">
                           <span>Reset passcode</span>
-                          <input name="passcode" type="password" minLength={4} placeholder="New passcode" className="recorded-edit-input" />
+                          <input name="passcode" type="password" minLength={8} placeholder="New passcode" className="recorded-edit-input" />
                         </label>
                         <div className="recorded-row-actions between">
                           <FormActionButton className="action-btn bright quiet" pendingLabel="Saving">
@@ -307,7 +307,7 @@ function getPeopleErrorMessage(error?: string) {
     return "You cannot restrict your own location access here.";
   }
   if (error === "person-passcode-too-short") {
-    return "Passcodes must be at least 4 characters.";
+    return "Passcodes must be at least 8 characters.";
   }
   if (error === "person-not-found") {
     return "That person could not be found.";

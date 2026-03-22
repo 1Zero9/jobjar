@@ -208,7 +208,7 @@ export default async function SetupStartPage({
               </label>
               <label className="recorded-field">
                 <span>Passcode</span>
-                <input name="passcode" type="password" minLength={4} required placeholder="Needed to sign in" className="recorded-edit-input" />
+                <input name="passcode" type="password" minLength={8} required placeholder="Needed to sign in" className="recorded-edit-input" />
               </label>
               <label className="recorded-field">
                 <span>Role</span>
@@ -453,7 +453,7 @@ function getSetupErrorMessage(error?: string) {
     return "Enter a name before adding a person.";
   }
   if (error === "person-passcode-too-short") {
-    return "Passcodes must be at least 4 characters.";
+    return "Passcodes must be at least 8 characters.";
   }
   if (error === "room-name-required") {
     return "Enter a room name before saving.";
