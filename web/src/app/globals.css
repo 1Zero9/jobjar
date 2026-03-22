@@ -5115,6 +5115,127 @@ html[data-theme="dark"] .project-panel {
 
 /* ─── Stats page ──────────────────────────────────────────────── */
 
+/* ── Stats level card ────────────────────────────────────────────── */
+
+.stats-level-card {
+  border: 1.5px solid color-mix(in srgb, var(--accent) 25%, var(--border));
+  border-radius: 1.4rem;
+  background: linear-gradient(
+    150deg,
+    color-mix(in srgb, var(--accent-soft) 50%, var(--card)) 0%,
+    color-mix(in srgb, var(--surface) 97%, #fff) 100%
+  );
+  box-shadow: var(--shadow-sm);
+  padding: 1.1rem 1.15rem 1rem;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.stats-level-header {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.stats-level-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.2rem;
+  height: 3.2rem;
+  border-radius: 0.9rem;
+  background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 60%, var(--teal)));
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 35%, transparent);
+  flex-shrink: 0;
+}
+
+.stats-level-num {
+  color: #fff;
+  font-size: 1.4rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.stats-level-info {
+  flex: 1;
+  display: grid;
+  gap: 0.18rem;
+  min-width: 0;
+}
+
+.stats-level-title {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 1.15rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+
+.stats-level-xp-line {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.stats-level-next {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.1rem;
+  flex-shrink: 0;
+}
+
+.stats-level-next-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-tertiary);
+}
+
+.stats-level-next-title {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.stats-level-next-gap {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.stats-level-track {
+  height: 0.6rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--border) 65%, transparent);
+  overflow: hidden;
+}
+
+.stats-level-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--teal));
+  min-width: 0.6rem;
+  transition: width 0.4s ease;
+}
+
+/* XP pip in activity rows */
+.stats-xp-pip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent-soft) 75%, white);
+  color: var(--accent);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  padding: 0.15rem 0.45rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
 .stats-filter-bar {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
@@ -5330,7 +5451,7 @@ html[data-theme="dark"] .project-panel {
 .stats-trend-fill {
   width: 100%;
   border-radius: 0.8rem;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--primary) 70%, white) 0%, var(--primary) 100%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 65%, var(--teal)) 0%, var(--accent) 100%);
   min-height: 0;
 }
 
