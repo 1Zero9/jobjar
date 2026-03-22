@@ -1,5 +1,6 @@
 import { HomeTaskList, type HomeTaskItem } from "@/app/components/HomeTaskList";
 import { HomeQuickCaptureForm } from "@/app/components/HomeQuickCaptureForm";
+import { DailyGoalsPanel } from "@/app/components/DailyGoalsPanel";
 import { PageBrandStrip } from "@/app/components/PageBrandStrip";
 import { ToastNotice } from "@/app/components/ToastNotice";
 import { getTaskFeedbackMessage } from "@/app/components/task-feedback";
@@ -104,6 +105,9 @@ export default async function HomePage({
         },
       },
     },
+    projectMilestones: {
+      select: { id: true, completedAt: true },
+    },
   };
 
   const [
@@ -115,6 +119,7 @@ export default async function HomePage({
     setupTaskCount,
     homeFeedRaw,
     completedThisWeek,
+    completedToday,
     paidThisWeek,
     recentCompletionDays,
   ] = await Promise.all([
@@ -184,6 +189,16 @@ export default async function HomePage({
             status: "done",
             completedBy: userId,
             completedAt: { gte: weekStart },
+            task: visibleTaskWhere,
+          },
+        }),
+    viewerMode
+      ? Promise.resolve(0)
+      : prisma.taskOccurrence.count({
+          where: {
+            status: "done",
+            completedBy: userId,
+            completedAt: { gte: todayStart },
             task: visibleTaskWhere,
           },
         }),
@@ -314,10 +329,10 @@ export default async function HomePage({
               <span className="today-metric-label">{childMode ? "This week" : "Due today"}</span>
               <strong className="today-metric-value">{childMode ? completedThisWeek : dueTodayTasks.length}</strong>
             </div>
-            <div className="today-metric">
-              <span className="today-metric-label">{childMode ? "Streak" : "Open jobs"}</span>
+            <div className={`today-metric ${!viewerMode && completionStreak > 1 ? "today-metric-streak" : ""}`.trim()}>
+              <span className="today-metric-label">{viewerMode ? "Open jobs" : "Streak"}</span>
               <strong className="today-metric-value">
-                {childMode ? `${completionStreak} day${completionStreak === 1 ? "" : "s"}` : openTaskCount}
+                {viewerMode ? openTaskCount : `${completionStreak} day${completionStreak === 1 ? "" : "s"}`}
               </strong>
             </div>
           </div>
@@ -366,6 +381,14 @@ export default async function HomePage({
             </p>
             <HomeQuickCaptureForm rooms={quickCaptureRooms} requireRoom={restrictedToLocations} />
           </section>
+        ) : null}
+
+        {!childMode && !viewerMode ? (
+          <DailyGoalsPanel
+            completedToday={completedToday}
+            overdueCount={overdueTasks.length}
+            streak={completionStreak}
+          />
         ) : null}
 
         {childMode ? (
@@ -476,6 +499,7 @@ function mapHomeTask(task: {
   projectParent: { title: string } | null;
   schedule: { nextDueAt: Date | null } | null;
   occurrences: Array<{ dueAt: Date }>;
+  projectMilestones: Array<{ id: string; completedAt: Date | null }>;
 }) {
   return {
     id: task.id,
@@ -487,6 +511,8 @@ function mapHomeTask(task: {
     dueAt: task.occurrences[0]?.dueAt?.toISOString() ?? task.schedule?.nextDueAt?.toISOString() ?? null,
     rewardCents: task.rewardCents,
     projectParentTitle: task.projectParent?.title ?? null,
+    milestoneTotal: task.projectMilestones.length,
+    milestoneDone: task.projectMilestones.filter((m) => m.completedAt !== null).length,
   } satisfies HomeTaskItem;
 }
 
