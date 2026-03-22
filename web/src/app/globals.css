@@ -2009,14 +2009,12 @@ html[data-theme="dark"] .profile-girl-pink .page-hero-icon {
 }
 
 .today-token-body span {
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   color: var(--text-secondary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.2;
 }
 
 /* ── Daily Goals — Quest Cards ───────────────────────────────────── */

@@ -343,7 +343,7 @@ export default async function HomePage({
               </span>
               <div className="today-token-body">
                 <strong>{childMode ? completedThisWeek : dueTodayTasks.length}</strong>
-                <span>{childMode ? "this week" : "due today"}</span>
+                <span>{childMode ? "this week" : "today"}</span>
               </div>
             </div>
             <div className={`today-token ${!viewerMode && completionStreak > 1 ? "today-token-blue today-token-active" : "today-token-blue"}`.trim()}>
@@ -354,7 +354,7 @@ export default async function HomePage({
               </span>
               <div className="today-token-body">
                 <strong>{viewerMode ? openTaskCount : completionStreak}</strong>
-                <span>{viewerMode ? "open jobs" : "day streak"}</span>
+                <span>{viewerMode ? "open" : "streak"}</span>
               </div>
             </div>
           </div>
@@ -390,6 +390,14 @@ export default async function HomePage({
           </section>
         ) : null}
 
+        {!childMode && !viewerMode ? (
+          <DailyGoalsPanel
+            completedToday={completedToday}
+            overdueCount={overdueTasks.length}
+            streak={completionStreak}
+          />
+        ) : null}
+
         {showQuickCapture ? (
           <section className="today-section today-capture-section">
             <div className="today-section-head">
@@ -403,14 +411,6 @@ export default async function HomePage({
             </p>
             <HomeQuickCaptureForm rooms={quickCaptureRooms} requireRoom={restrictedToLocations} />
           </section>
-        ) : null}
-
-        {!childMode && !viewerMode ? (
-          <DailyGoalsPanel
-            completedToday={completedToday}
-            overdueCount={overdueTasks.length}
-            streak={completionStreak}
-          />
         ) : null}
 
         {childMode ? (
