@@ -341,8 +341,6 @@ function formatMoney(cents: number) {
   }).format(cents / 100);
 }
 
-const XP_PER_JOB = 10;
-
 const LEVELS = [
   { level: 1, title: "Rookie",     min: 0    },
   { level: 2, title: "Apprentice", min: 100  },
