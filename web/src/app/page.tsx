@@ -320,20 +320,42 @@ export default async function HomePage({
             ) : null}
           </div>
 
-          <div className="today-metrics">
-            <div className="today-metric">
-              <span className="today-metric-label">{childMode ? "Today" : "Needs attention"}</span>
-              <strong className="today-metric-value">{childMode ? childHomeTasks.length : overdueTasks.length}</strong>
+          <div className="today-token-bar">
+            <div className="today-token today-token-rose">
+              <span className="today-token-icon" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M8 3v5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/>
+                  <circle cx="8" cy="11.5" r="1.2" fill="currentColor"/>
+                  <path d="M8 1L15 14H1L8 1z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
+                </svg>
+              </span>
+              <div className="today-token-body">
+                <strong>{childMode ? childHomeTasks.length : overdueTasks.length}</strong>
+                <span>{childMode ? "today" : "overdue"}</span>
+              </div>
             </div>
-            <div className="today-metric">
-              <span className="today-metric-label">{childMode ? "This week" : "Due today"}</span>
-              <strong className="today-metric-value">{childMode ? completedThisWeek : dueTodayTasks.length}</strong>
+            <div className="today-token today-token-amber">
+              <span className="today-token-icon" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.8"/>
+                  <path d="M8 5v3.5l2 1.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </span>
+              <div className="today-token-body">
+                <strong>{childMode ? completedThisWeek : dueTodayTasks.length}</strong>
+                <span>{childMode ? "this week" : "due today"}</span>
+              </div>
             </div>
-            <div className={`today-metric ${!viewerMode && completionStreak > 1 ? "today-metric-streak" : ""}`.trim()}>
-              <span className="today-metric-label">{viewerMode ? "Open jobs" : "Streak"}</span>
-              <strong className="today-metric-value">
-                {viewerMode ? openTaskCount : `${completionStreak} day${completionStreak === 1 ? "" : "s"}`}
-              </strong>
+            <div className={`today-token ${!viewerMode && completionStreak > 1 ? "today-token-blue today-token-active" : "today-token-blue"}`.trim()}>
+              <span className="today-token-icon" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M9 2L4 9h5l-2 5 7-8H9l1-4z" fill="currentColor" stroke="currentColor" strokeWidth="0.5" strokeLinejoin="round"/>
+                </svg>
+              </span>
+              <div className="today-token-body">
+                <strong>{viewerMode ? openTaskCount : completionStreak}</strong>
+                <span>{viewerMode ? "open jobs" : "day streak"}</span>
+              </div>
             </div>
           </div>
         </header>
