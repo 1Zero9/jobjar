@@ -305,7 +305,7 @@ html[data-theme="dark"] .admin-shell {
   border: 1px solid var(--border);
   border-radius: 1.5rem;
   background: color-mix(in srgb, var(--card) 92%, transparent);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-sm);
   padding: 1rem; /* overridden per-element below */
 }
 
@@ -315,8 +315,8 @@ html[data-theme="dark"] .admin-shell {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 1rem;
-  padding: 1.5rem;
+  gap: 0.8rem;
+  padding: 1.1rem 1.2rem;
 }
 
 .landing-hero {
@@ -485,9 +485,32 @@ html[data-theme="dark"] .admin-shell {
   font-size: clamp(1.7rem, 4.6vw, 2.15rem);
 }
 
+/* Sub-page brand strip is a compact nav link, not a full brand statement */
+.page-hero-card .page-hero-brand {
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  padding-bottom: 0;
+}
+
+.page-hero-card .page-brand-mark {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 0.55rem;
+}
+
+.page-hero-card .page-brand-link {
+  gap: 0.35rem;
+  opacity: 0.75;
+}
+
+.page-hero-card .page-brand-link:hover {
+  opacity: 1;
+}
+
 html[data-theme="dark"] .landing-title,
 html[data-theme="dark"] .page-hero-brand {
-  background: linear-gradient(135deg, #f0fdf4 0%, #4ade80 100%);
+  background: linear-gradient(135deg, #e0eeff 0%, #93c5fd 100%);
   -webkit-background-clip: text;
   background-clip: text;
 }
@@ -495,10 +518,10 @@ html[data-theme="dark"] .page-hero-brand {
 .page-hero-title {
   color: var(--text-primary);
   font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
-  font-size: clamp(2.45rem, 7vw, 3.15rem);
+  font-size: clamp(2rem, 6vw, 2.6rem);
   font-weight: 900;
-  letter-spacing: -0.05em;
-  line-height: 0.95;
+  letter-spacing: -0.04em;
+  line-height: 1;
   margin: 0;
 }
 
@@ -1579,8 +1602,8 @@ html[data-theme="dark"] .profile-girl-pink .page-hero-icon {
 
 .today-hero {
   display: grid;
-  gap: 1.2rem;
-  padding: 1.15rem 1.15rem 1rem;
+  gap: 1rem;
+  padding: 1rem 1.1rem 0.95rem;
 }
 
 .today-hero-copy {
@@ -1910,9 +1933,16 @@ html[data-theme="dark"] .profile-girl-pink .page-hero-icon {
 }
 
 @media (max-width: 640px) {
-  .today-metrics,
   .today-week-summary {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .today-metrics {
+    gap: 0.5rem;
+  }
+
+  .today-metric {
+    padding: 0.65rem 0.7rem;
   }
 
   .today-task-card {

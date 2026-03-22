@@ -27,7 +27,6 @@ export function PageBrandStrip({
             </span>
             <span className="page-hero-brand">JobJar</span>
           </Link>
-          <span className="version-chip">{APP_VERSION}</span>
         </div>
       </div>
       {trailing ? <div className="page-brand-strip-trailing">{trailing}</div> : null}
