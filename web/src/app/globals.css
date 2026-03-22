@@ -1953,11 +1953,13 @@ html[data-theme="dark"] .profile-girl-pink .page-hero-icon {
 
 .today-token {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.45rem;
   border-radius: 1rem;
   border: 1.5px solid transparent;
-  padding: 0.7rem 0.75rem;
+  padding: 0.75rem 0.5rem 0.65rem;
+  text-align: center;
 }
 
 .today-token-rose {
@@ -1983,9 +1985,9 @@ html[data-theme="dark"] .profile-girl-pink .page-hero-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.1rem;
-  height: 2.1rem;
-  border-radius: 0.65rem;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 0.75rem;
   flex-shrink: 0;
 }
 
@@ -1994,27 +1996,29 @@ html[data-theme="dark"] .profile-girl-pink .page-hero-icon {
 .today-token-blue  .today-token-icon { background: var(--accent); color: #fff; }
 
 .today-token-body {
-  display: grid;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 0;
-  min-width: 0;
-  overflow: hidden;
+  width: 100%;
 }
 
 .today-token-body strong {
-  font-size: 1.2rem;
+  font-size: 1.3rem;
   font-weight: 900;
   line-height: 1.1;
   color: var(--text-primary);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
 }
 
 .today-token-body span {
-  font-size: 0.65rem;
+  font-size: 0.63rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--text-secondary);
-  line-height: 1.2;
+  line-height: 1.3;
+  white-space: nowrap;
 }
 
 /* ── Daily Goals — Quest Cards ───────────────────────────────────── */

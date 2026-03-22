@@ -321,7 +321,7 @@ export default async function HomePage({
           </div>
 
           <div className="today-token-bar">
-            <div className="today-token today-token-rose">
+            <div className="today-token today-token-rose" title={childMode ? "Today" : "Overdue"}>
               <span className="today-token-icon" aria-hidden="true">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                   <path d="M8 3v5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/>
@@ -334,7 +334,7 @@ export default async function HomePage({
                 <span>{childMode ? "today" : "overdue"}</span>
               </div>
             </div>
-            <div className="today-token today-token-amber">
+            <div className="today-token today-token-amber" title={childMode ? "This week" : "Due today"}>
               <span className="today-token-icon" aria-hidden="true">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                   <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.8"/>
@@ -343,10 +343,10 @@ export default async function HomePage({
               </span>
               <div className="today-token-body">
                 <strong>{childMode ? completedThisWeek : dueTodayTasks.length}</strong>
-                <span>{childMode ? "this week" : "today"}</span>
+                <span>{childMode ? "this week" : "due today"}</span>
               </div>
             </div>
-            <div className={`today-token ${!viewerMode && completionStreak > 1 ? "today-token-blue today-token-active" : "today-token-blue"}`.trim()}>
+            <div className={`today-token ${!viewerMode && completionStreak > 1 ? "today-token-blue today-token-active" : "today-token-blue"}`.trim()} title={viewerMode ? "Open jobs" : "Streak"}>
               <span className="today-token-icon" aria-hidden="true">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                   <path d="M9 2L4 9h5l-2 5 7-8H9l1-4z" fill="currentColor" stroke="currentColor" strokeWidth="0.5" strokeLinejoin="round"/>
@@ -354,7 +354,7 @@ export default async function HomePage({
               </span>
               <div className="today-token-body">
                 <strong>{viewerMode ? openTaskCount : completionStreak}</strong>
-                <span>{viewerMode ? "open" : "streak"}</span>
+                <span>{viewerMode ? "open jobs" : "day streak"}</span>
               </div>
             </div>
           </div>
