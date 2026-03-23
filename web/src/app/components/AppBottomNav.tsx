@@ -1,6 +1,6 @@
 "use client";
 
-import { HomeIcon, LogIcon, StatsIcon, TasksIcon } from "@/lib/icons";
+import { HelpIcon, HomeIcon, LogIcon, StatsIcon, TasksIcon } from "@/lib/icons";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import type { ComponentType, SVGProps } from "react";
