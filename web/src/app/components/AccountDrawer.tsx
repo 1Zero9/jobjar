@@ -4,6 +4,7 @@ import { APP_VERSION } from "@/lib/app-version";
 import { HelpIcon, PeopleIcon, SettingsIcon } from "@/lib/icons";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { LogoutIconButton } from "./LogoutIconButton";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -24,7 +25,11 @@ function initials(name: string) {
 
 export function AccountDrawer({ displayName, isAdmin, canManagePeople }: Props) {
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const abbr = initials(displayName);
+
+  // Portal needs document to be available
+  useEffect(() => { setMounted(true); }, []);
 
   // Close on back navigation
   useEffect(() => {
@@ -34,23 +39,9 @@ export function AccountDrawer({ displayName, isAdmin, canManagePeople }: Props) 
     return () => window.removeEventListener("popstate", handler);
   }, [open]);
 
-  return (
+  const overlay = (
     <>
-      {/* Nav trigger */}
-      <button
-        type="button"
-        className="app-bottom-nav-link"
-        onClick={() => setOpen(true)}
-        aria-label="Account"
-        aria-expanded={open}
-      >
-        <span className="app-bottom-nav-icon">
-          <span className="acct-avatar-sm" aria-hidden="true">{abbr}</span>
-        </span>
-        <span className="app-bottom-nav-label">Account</span>
-      </button>
-
-      {/* Backdrop */}
+      {/* Backdrop — rendered at body level to escape nav's transform context */}
       <div
         className={`acct-backdrop${open ? " acct-backdrop-open" : ""}`}
         aria-hidden="true"
@@ -106,6 +97,27 @@ export function AccountDrawer({ displayName, isAdmin, canManagePeople }: Props) 
           ) : null}
         </div>
       </div>
+    </>
+  );
+
+  return (
+    <>
+      {/* Nav trigger — stays inside the nav */}
+      <button
+        type="button"
+        className="app-bottom-nav-link"
+        onClick={() => setOpen(true)}
+        aria-label="Account"
+        aria-expanded={open}
+      >
+        <span className="app-bottom-nav-icon">
+          <span className="acct-avatar-sm" aria-hidden="true">{abbr}</span>
+        </span>
+        <span className="app-bottom-nav-label">Account</span>
+      </button>
+
+      {/* Overlay portalled to body so it isn't clipped by the nav's transform */}
+      {mounted ? createPortal(overlay, document.body) : null}
     </>
   );
 }
