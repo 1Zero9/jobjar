@@ -1,10 +1,11 @@
 "use client";
 
-import { HelpIcon, HomeIcon, LogIcon, MoreIcon, StatsIcon, TasksIcon } from "@/lib/icons";
+import { HomeIcon, LogIcon, StatsIcon, TasksIcon } from "@/lib/icons";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import type { ComponentType, SVGProps } from "react";
 import { useEffect } from "react";
+import { AccountDrawer } from "./AccountDrawer";
 
 type NavItem = {
   href: string;
@@ -17,9 +18,12 @@ type Props = {
   childMode: boolean;
   canLog: boolean;
   canSeeReports: boolean;
+  displayName: string;
+  isAdmin: boolean;
+  canManagePeople: boolean;
 };
 
-export function AppBottomNav({ childMode, canLog, canSeeReports }: Props) {
+export function AppBottomNav({ childMode, canLog, canSeeReports, displayName, isAdmin, canManagePeople }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const items = childMode ? buildChildItems() : buildStandardItems(canLog, canSeeReports);
@@ -78,6 +82,7 @@ export function AppBottomNav({ childMode, canLog, canSeeReports }: Props) {
             </Link>
           );
         })}
+        <AccountDrawer displayName={displayName} isAdmin={isAdmin} canManagePeople={canManagePeople} />
       </div>
     </nav>
   );
@@ -99,8 +104,6 @@ function buildStandardItems(canLog: boolean, canSeeReports: boolean): NavItem[] 
     items.push({ href: "/help", label: "Help", icon: HelpIcon });
   }
 
-  items.push({ href: "/more", label: "More", icon: MoreIcon });
-
   return items;
 }
 
@@ -108,7 +111,6 @@ function buildChildItems(): NavItem[] {
   return [
     { href: "/tasks", label: "My Jobs", icon: TasksIcon },
     { href: "/", label: "Home", icon: HomeIcon },
-    { href: "/more", label: "More", icon: MoreIcon },
   ];
 }
 
